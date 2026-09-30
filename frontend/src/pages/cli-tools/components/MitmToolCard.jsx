@@ -8,7 +8,7 @@ import { TOOL_HOSTS } from "@/shared/constants/mitmToolHosts";
  * Per-tool MITM card — shows DNS status + model mappings.
  * - Auto-saves model mapping on blur or modal select
  * - Skips sudo modal if password is already cached
- * - Model mappings can only be edited when DNS is active
+ * - Model mappings are stored server-side and can be edited without local DNS
  */
 export default function MitmToolCard({
   tool,
@@ -38,6 +38,7 @@ export default function MitmToolCard({
 
   const mitmHosts = TOOL_HOSTS[tool.id] ?? [];
   const canRunWithoutPassword = isWin || hasCachedPassword || needsSudoPassword === false;
+  const mappingEnabled = true;
 
   useEffect(() => {
     if (isExpanded) loadSavedMappings();
@@ -152,7 +153,7 @@ export default function MitmToolCard({
                   <Badge variant="warning" size="sm">DNS off</Badge>
                 )}
               </div>
-              <p className="text-xs text-text-muted sm:truncate">Intercept {tool.name} requests via MITM proxy</p>
+              <p className="text-xs text-text-muted sm:truncate">Model mapping tersimpan di server Max Router</p>
             </div>
           </div>
           <span className={`material-symbols-outlined text-text-muted text-[20px] transition-transform ${isExpanded ? "rotate-180" : ""}`}>
@@ -162,6 +163,31 @@ export default function MitmToolCard({
 
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-border flex flex-col gap-4">
+            {/* Cloud connection */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-text-main">Koneksi Kiro</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">Mapping model cloud aktif tanpa wajib menyalakan DNS lokal.</p>
+                </div>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const endpoint = typeof window !== "undefined" ? window.location.origin : "";
+                    try {
+                      await navigator.clipboard.writeText(endpoint);
+                      setWarning("Alamat Max Router cloud disalin. Koneksi transparan Kiro tetap memerlukan proxy Kiro.");
+                    } catch {
+                      setWarning(`Max Router cloud: ${endpoint}`);
+                    }
+                  }}
+                  className="shrink-0 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-[11px] font-medium text-primary hover:bg-primary/20"
+                >
+                  Koneksi Kiro
+                </button>
+              </div>
+            </div>
+
             {/* Hosts */}
             {mitmHosts.length > 0 && (
               <div className="mt-2 rounded-md border border-border bg-surface/50 px-2 py-1.5">
@@ -199,8 +225,8 @@ export default function MitmToolCard({
                         onChange={(e) => handleModelMappingChange(model.alias, e.target.value)}
                         onBlur={(e) => handleMappingBlur(model.alias, e.target.value)}
                         placeholder="provider/model-id"
-                        disabled={!dnsActive}
-                        className={`w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5 ${!dnsActive ? "opacity-50 cursor-not-allowed" : ""}`}
+                        disabled={!mappingEnabled}
+                        className="w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
                       />
                       {modelMappings[model.alias] && (
                         <button
@@ -217,8 +243,8 @@ export default function MitmToolCard({
                     </div>
                     <button
                       onClick={() => openModelSelector(model.alias)}
-                      disabled={!hasActiveProviders || !dnsActive}
-                      className={`rounded border px-2 py-2 text-xs transition-colors sm:py-1.5 ${hasActiveProviders && dnsActive ? "bg-surface border-border hover:border-primary cursor-pointer" : "opacity-50 cursor-not-allowed border-border"}`}
+                      disabled={!hasActiveProviders || !mappingEnabled}
+                      className={`rounded border px-2 py-2 text-xs transition-colors sm:py-1.5 ${hasActiveProviders && mappingEnabled ? "bg-surface border-border hover:border-primary cursor-pointer" : "opacity-50 cursor-not-allowed border-border"}`}
                     >
                       Select
                     </button>
