@@ -99,6 +99,38 @@ async function getLocalKiroStatus() {
   return result;
 }
 
+async function findKiroStartMenuShortcut() {
+  if (process.platform !== "win32") return null;
+  const fs = await import("node:fs");
+  const roots = [
+    path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs"),
+    path.join(process.env.ProgramData || "", "Microsoft", "Windows", "Start Menu", "Programs"),
+  ].filter((p) => p && fs.existsSync(p));
+
+  const walk = (dir) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return null; }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const found = walk(full);
+        if (found) return found;
+      } else if (/\.lnk$/i.test(entry.name) && /^kiro(?:\.ide)?\.lnk$/i.test(entry.name.replace(/\.lnk$/i, ".lnk"))) {
+        return full;
+      } else if (/^kiro/i.test(entry.name) && /\.lnk$/i.test(entry.name)) {
+        return full;
+      }
+    }
+    return null;
+  };
+
+  for (const root of roots) {
+    const found = walk(root);
+    if (found) return found;
+  }
+  return null;
+}
+
 app.post("/api/local/launch-kiro", async (req, res) => {
   const remote = req.ip?.replace("::ffff:", "");
   if (remote !== "127.0.0.1" && remote !== "::1" && remote !== "localhost") {
@@ -117,7 +149,7 @@ app.post("/api/local/launch-kiro", async (req, res) => {
       path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro.lnk"),
       path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro", "Kiro.lnk"),
     ].filter(Boolean);
-    const executable = candidates.find((p) => fs.existsSync(p));
+    const executable = candidates.find((p) => fs.existsSync(p)) || await findKiroStartMenuShortcut();
     if (!executable) {
       return res.status(404).json({
         error: "Aplikasi Kiro tidak ditemukan",
@@ -155,7 +187,7 @@ app.get("/api/local/launch-kiro", async (req, res) => {
       path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro.lnk"),
       path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro", "Kiro.lnk"),
     ].filter(Boolean);
-    const executable = candidates.find((p) => fs.existsSync(p));
+    const executable = candidates.find((p) => fs.existsSync(p)) || await findKiroStartMenuShortcut();
     if (!executable) return res.status(404).type("text").send("Aplikasi Kiro tidak ditemukan");
     if (executable.toLowerCase().endsWith(".lnk")) {
       const child = spawn("cmd.exe", ["/c", "start", "", executable], { detached: true, stdio: "ignore", windowsHide: false });
