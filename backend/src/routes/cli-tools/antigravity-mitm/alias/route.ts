@@ -2,7 +2,6 @@
 
 
 import { getMitmAlias, setMitmAliasAll } from "../../../../models/index.js";
-import { getMitmStatus } from "../../../../mitm/manager.js";
 import { writeAliasForTool } from "../../../../lib/mitmAliasCache.js";
 
 // GET - Get MITM aliases for a tool
@@ -27,14 +26,9 @@ export async function PUT_handler(req, res) {
       return res.status(400).json({ error: "tool and mappings required" });
     }
 
-    // Check if DNS is enabled for this tool
-    const status = await getMitmStatus();
-    if (!status.dnsStatus || !status.dnsStatus[tool]) {
-      return res.json(
-        { error: `DNS must be enabled for ${tool} before editing model mappings` },
-        { status: 403 }
-      );
-    }
+    // Cloud mappings are server-side configuration and must not depend on
+    // the local Windows/Linux DNS or MITM state. DNS remains optional for
+    // transparent local interception only.
 
     const filtered = {};
     for (const [alias, model] of Object.entries(mappings)) {
