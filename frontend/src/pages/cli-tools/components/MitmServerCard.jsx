@@ -23,6 +23,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   const [mitmRouterBaseUrl, setMitmRouterBaseUrl] = useState(DEFAULT_MITM_ROUTER_BASE);
   const [port443Conflict, setPort443Conflict] = useState(null);
   const [localBridge, setLocalBridge] = useState(null);
+  const [showKiroPopup, setShowKiroPopup] = useState(false);
 
   const probeLocalBridge = useCallback(async () => {
     try {
@@ -307,19 +308,18 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 onClick={async () => {
                   setActionError(null);
                   setKiroConnecting(true);
+                  setShowKiroPopup(true);
                   try {
-                    const res = await fetch("http://127.0.0.1:3001/api/local/launch-kiro", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                    });
-                    const data = await res.json().catch(() => ({}));
-                    if (!res.ok) {
-                      throw new Error(data.error || "Bridge lokal belum berjalan");
+                    // Top-level navigation to localhost avoids HTTPS→HTTP fetch blocking.
+                    const popup = window.open("http://127.0.0.1:3001/api/local/launch-kiro", "_blank", "noopener,noreferrer");
+                    if (!popup) {
+                      setActionError("Popup diblokir browser. Izinkan pop-up untuk Max Router lalu klik lagi.");
+                    } else {
+                      setActionError(null);
+                      setTimeout(probeLocalBridge, 1500);
                     }
-                    setActionError(null);
-                    await probeLocalBridge();
                   } catch (e) {
-                    setActionError("Bridge lokal belum aktif. Jalankan Max Router/bridge di PC ini terlebih dahulu.");
+                    setActionError("Bridge lokal belum aktif di http://127.0.0.1:3001.");
                   } finally {
                     setKiroConnecting(false);
                   }
@@ -395,6 +395,43 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
           )}
         </div>
       </Card>
+
+      {showKiroPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-primary/20 bg-surface p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-[28px]">terminal</span>
+              <div>
+                <h3 className="text-base font-semibold text-text-main">Koneksi Kiro</h3>
+                <p className="text-xs text-text-muted">Menjalankan aplikasi Kiro di Windows...</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-lg border border-border bg-surface/70 p-3 text-xs text-text-muted">
+              <p className="font-medium text-text-main">Yang dilakukan Max Router:</p>
+              <ol className="mt-2 list-decimal pl-5 space-y-1">
+                <li>Menghubungi bridge lokal <code>127.0.0.1:3001</code>.</li>
+                <li>Mencari Kiro di <code>AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs</code> dan lokasi instalasi Kiro.</li>
+                <li>Menjalankan Kiro secara otomatis.</li>
+                <li>Memeriksa kembali status Kiro PC.</li>
+              </ol>
+            </div>
+            {localBridge?.kiroRunning ? (
+              <div className="mt-3 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-xs text-green-600">
+                Kiro sudah berjalan di PC.
+              </div>
+            ) : (
+              <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600">
+                Jika Kiro belum terbuka, pastikan Max Router/bridge lokal berjalan di port 3001 dan izinkan popup browser.
+              </div>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => { setShowKiroPopup(false); probeLocalBridge(); }} className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-white">
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Password Modal */}
       {showPasswordModal && (
