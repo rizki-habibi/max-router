@@ -107,7 +107,7 @@ export async function GET(req, res) {
 // POST - Start MITM server (cert + server, no DNS)
 export async function POST_handler(req, res) {
   try {
-    const { apiKey, sudoPassword, mitmRouterBaseUrl, forceKillPort443 } = req.body;
+    const { apiKey, sudoPassword, mitmRouterBaseUrl, forceKillPort443, autoSetup, connectKiro } = req.body;
     const pwd = getPassword(sudoPassword) || await loadEncryptedPassword() || "";
 
     if (!apiKey || requiresSudoPassword(pwd)) {
@@ -138,6 +138,20 @@ export async function POST_handler(req, res) {
 
     const result = await startServer(apiKey, pwd, !!forceKillPort443);
     if (!isWin) setCachedPassword(pwd);
+
+    if (autoSetup || connectKiro) {
+      await trustCert(pwd);
+      await enableToolDNS("kiro", pwd);
+      const status = await getMitmStatus();
+      return res.json({
+        success: true,
+        running: result.running,
+        pid: result.pid,
+        certTrusted: status.certTrusted,
+        dnsStatus: status.dnsStatus,
+        kiroConnected: status.dnsStatus?.kiro === true,
+      });
+    }
 
     return res.json({ success: true, running: result.running, pid: result.pid });
   } catch (error) {
@@ -179,8 +193,11 @@ export async function PATCH_handler(req, res) {
     const { tool, action, sudoPassword } = req.body;
     const pwd = getPassword(sudoPassword) || await loadEncryptedPassword() || "";
 
-    if (!tool || !action) {
-      return res.status(400).json({ error: "tool and action required" });
+    if (!action) {
+      return res.status(400).json({ error: "action required" });
+    }
+    if (action !== "trust-cert" && !tool) {
+      return res.status(400).json({ error: "tool required for DNS action" });
     }
     if (requiresSudoPassword(pwd)) {
       return res.status(400).json({ error: "Missing sudoPassword" });
