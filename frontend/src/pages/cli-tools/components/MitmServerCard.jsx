@@ -21,6 +21,21 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   const [kiroConnecting, setKiroConnecting] = useState(false);
   const [mitmRouterBaseUrl, setMitmRouterBaseUrl] = useState(DEFAULT_MITM_ROUTER_BASE);
   const [port443Conflict, setPort443Conflict] = useState(null);
+  const [localBridge, setLocalBridge] = useState(null);
+
+  const probeLocalBridge = useCallback(async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:3001/api/health", {
+        cache: "no-store",
+        credentials: "omit",
+      });
+      if (!res.ok) throw new Error("local bridge unavailable");
+      const data = await res.json();
+      setLocalBridge(data?.kiroBridge || null);
+    } catch {
+      setLocalBridge(null);
+    }
+  }, []);
 
   const serverIsWindows = status?.isWin === true;
   const canRunWithoutPassword = serverIsWindows || status?.hasCachedPassword || status?.needsSudoPassword === false;
@@ -47,8 +62,11 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   useEffect(() => {
     queueMicrotask(() => {
       fetchStatus();
+      probeLocalBridge();
     });
-  }, [fetchStatus]);
+    const timer = setInterval(probeLocalBridge, 5000);
+    return () => clearInterval(timer);
+  }, [fetchStatus, probeLocalBridge]);
 
   const handleAction = (action) => {
     setActionError(null);
@@ -159,6 +177,14 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   };
 
   const isRunning = status?.running;
+  const remoteMitmInstance = status && status.isWin === false;
+  const localKiroConnected =
+    localBridge?.localOnly === true &&
+    localBridge?.kiroInstalled === true &&
+    localBridge?.kiroRunning === true &&
+    localBridge?.kiroDnsActive === true &&
+    localBridge?.certTrusted === true &&
+    localBridge?.mitmPort443 === true;
 
   return (
     <>
@@ -188,8 +214,26 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                   {label}
                 </span>
               ))}
+              {localBridge && (
+                <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${localKiroConnected ? "text-green-600" : "text-orange-600"}`}>
+                  <span className="material-symbols-outlined text-[12px]">{localKiroConnected ? "link" : "link_off"}</span>
+                  {localKiroConnected ? "Kiro PC" : "Bridge PC"}
+                </span>
+              )}
             </div>
           </div>
+
+          {remoteMitmInstance && (
+            <div className="px-2 py-2 rounded-lg bg-orange-500/10 border border-orange-500/30 text-[11px] text-orange-700 dark:text-orange-300 leading-relaxed">
+              Max Router sedang berjalan di Railway. Sertifikat dan DNS MITM di instance Railway tidak mengubah Windows/Kiro kamu. Untuk Kiro asli, jalankan <span className="font-mono">scripts/kiro-connect.ps1</span> di PC Windows; bridge lokal akan terdeteksi otomatis di halaman ini.
+            </div>
+          )}
+
+          {localKiroConnected && (
+            <div className="px-2 py-2 rounded-lg bg-green-500/10 border border-green-500/30 text-[11px] text-green-700 dark:text-green-300 leading-relaxed">
+              Kiro terdeteksi di PC ini dan MITM lokal aktif: sertifikat dipercaya, DNS Kiro aktif, dan port 443 terhubung.
+            </div>
+          )}
 
           {/* Purpose & How it works */}
           <div className="px-2 py-2 rounded-lg bg-surface/50 border border-border/50 flex flex-col gap-2">
@@ -197,7 +241,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
               <span className="font-medium text-text-main">Purpose:</span> Use Antigravity IDE & GitHub Copilot → with ANY provider/model from 9Router
             </p>
             <p className="text-[11px] text-text-muted leading-relaxed">
-              <span className="font-medium text-text-main">How it works:</span> Antigravity/Copilot IDE request → DNS redirect to localhost:443 → MITM proxy intercepts → 9Router → response to Antigravity/Copilot
+              <span className="font-medium text-text-main">How it works:</span> Kiro → DNS lokal → MITM di PC → Max Router → provider → respons kembali ke Kiro
             </p>
           </div>
 
@@ -240,10 +284,10 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
 
           {/* Action buttons */}
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center" data-i18n-skip="true">
-            {!status?.dnsStatus?.kiro && (
+            {!status?.dnsStatus?.kiro && !remoteMitmInstance && !localKiroConnected && (
               <button
                 onClick={() => handleAction("connect-kiro")}
-                disabled={loading || !status || (serverIsWindows && !isAdmin)}
+                disabled={loading || !status || remoteMitmInstance || (serverIsWindows && !isAdmin)}
                 title={serverIsWindows && !isAdmin ? "Administrator required" : "Start MITM, trust certificate, and enable Kiro DNS"}
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-500/20 disabled:opacity-50 sm:w-auto sm:py-1.5"
               >
@@ -251,7 +295,24 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 {kiroConnecting ? "Menghubungkan Kiro..." : "Hubungkan Kiro"}
               </button>
             )}
-            {status?.certExists && !status?.certTrusted && (
+            {remoteMitmInstance && (
+              <a
+                href="http://127.0.0.1:3001/dashboard/mitm"
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-500/20 sm:w-auto sm:py-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                Buka Bridge Lokal
+              </a>
+            )}
+            {localKiroConnected && (
+              <span className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-600 sm:w-auto sm:py-1.5">
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                Kiro Terkoneksi
+              </span>
+            )}
+            {status?.certExists && !status?.certTrusted && !remoteMitmInstance && (
               <button
                 onClick={() => handleAction("trust-cert")}
                 disabled={loading}
