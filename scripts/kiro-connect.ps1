@@ -75,7 +75,6 @@ try {
 
   Write-Step "Menjalankan backend lokal..."
   $q = [char]34
-  $cmd = 'cd /d ' + $q + $InstallDir + $q + ' && npm start --workspace=9router-backend >> ' + $q + $logPath + $q + ' 2>&1'
   $logPath = Join-Path $DataDir "kiro-bridge.log"
   $cmd = 'cd /d ' + $q + $InstallDir + $q + ' && npm start --workspace=9router-backend >> ' + $q + $logPath + $q + ' 2>&1'
   Start-Process cmd.exe -ArgumentList "/c $cmd" -WindowStyle Minimized | Out-Null
