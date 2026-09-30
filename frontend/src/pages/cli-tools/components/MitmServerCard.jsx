@@ -206,11 +206,14 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
               )}
             </div>
             <div className="flex flex-wrap items-center gap-1 text-xs text-text-muted" data-i18n-skip="true">
-              {[
-                { label: "Cert", ok: status?.certExists },
-                { label: "Trusted", ok: status?.certTrusted },
-                { label: "Server", ok: remoteMitmInstance || isRunning },
-              ].map(({ label, ok }) => (
+              {(remoteMitmInstance
+                ? [{ label: "Cloud", ok: true }, { label: "Server", ok: true }]
+                : [
+                    { label: "Cert", ok: status?.certExists },
+                    { label: "Trusted", ok: status?.certTrusted },
+                    { label: "Server", ok: isRunning },
+                  ]
+              ).map(({ label, ok }) => (
                 <span key={label} className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${ok ? "text-green-600" : "text-text-muted"}`}>
                   <span className="material-symbols-outlined text-[12px]">
                     {ok ? "check_circle" : "cancel"}
@@ -242,10 +245,10 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
           {/* Purpose & How it works */}
           <div className="px-2 py-2 rounded-lg bg-surface/50 border border-border/50 flex flex-col gap-2">
             <p className="text-[11px] text-text-muted leading-relaxed">
-              <span className="font-medium text-text-main">Purpose:</span> Use Antigravity IDE & GitHub Copilot → with ANY provider/model from 9Router
+              <span className="font-medium text-text-main">Tujuan:</span> Kiro dapat memakai provider/model yang dipetakan oleh Max Router
             </p>
             <p className="text-[11px] text-text-muted leading-relaxed">
-              <span className="font-medium text-text-main">How it works:</span> Kiro → DNS lokal → MITM di PC → Max Router → provider → respons kembali ke Kiro
+              <span className="font-medium text-text-main">Alur PC:</span> Kiro → DNS lokal → MITM PC → Max Router Cloud → provider → Kiro
             </p>
           </div>
 
