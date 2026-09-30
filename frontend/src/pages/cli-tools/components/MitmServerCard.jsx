@@ -296,15 +296,33 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
               </button>
             )}
             {remoteMitmInstance && (
-              <a
-                href="http://127.0.0.1:3001/dashboard/mitm"
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-500/20 sm:w-auto sm:py-1.5"
+              <button
+                onClick={async () => {
+                  setActionError(null);
+                  setKiroConnecting(true);
+                  try {
+                    const res = await fetch("http://127.0.0.1:3001/api/local/launch-kiro", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      throw new Error(data.error || "Bridge lokal belum berjalan");
+                    }
+                    setActionError(null);
+                    await probeLocalBridge();
+                  } catch (e) {
+                    setActionError("Bridge lokal belum aktif. Jalankan Max Router/bridge di PC ini terlebih dahulu.");
+                  } finally {
+                    setKiroConnecting(false);
+                  }
+                }}
+                disabled={kiroConnecting}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-500/20 disabled:opacity-50 sm:w-auto sm:py-1.5"
               >
-                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                Buka Bridge Lokal
-              </a>
+                <span className="material-symbols-outlined text-[16px]">code</span>
+                {kiroConnecting ? "Menjalankan Kiro..." : "Jalankan Aplikasi Kiro"}
+              </button>
             )}
             {localKiroConnected && (
               <span className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-600 sm:w-auto sm:py-1.5">
