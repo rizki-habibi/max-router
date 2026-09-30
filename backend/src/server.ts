@@ -114,6 +114,8 @@ app.post("/api/local/launch-kiro", async (req, res) => {
       path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro.cmd"),
       path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro"),
       path.join(process.env.ProgramFiles || "C:\\Program Files", "Kiro", "Kiro.exe"),
+      path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro.lnk"),
+      path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro", "Kiro.lnk"),
     ].filter(Boolean);
     const executable = candidates.find((p) => fs.existsSync(p));
     if (!executable) {
@@ -135,6 +137,37 @@ app.post("/api/local/launch-kiro", async (req, res) => {
   } catch (error) {
     console.error("[local] failed to launch Kiro:", error);
     return res.status(500).json({ error: "Gagal menjalankan aplikasi Kiro" });
+  }
+});
+
+app.get("/api/local/launch-kiro", async (req, res) => {
+  const remote = req.ip?.replace("::ffff:", "");
+  if (remote !== "127.0.0.1" && remote !== "::1" && remote !== "localhost") {
+    return res.status(403).type("text").send("Local Kiro launcher only");
+  }
+  if (process.platform !== "win32") return res.status(400).type("text").send("Kiro launcher is available on Windows only");
+  try {
+    const fs = await import("node:fs");
+    const candidates = [
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro.cmd"),
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro"),
+      path.join(process.env.ProgramFiles || "C:\\Program Files", "Kiro", "Kiro.exe"),
+      path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro.lnk"),
+      path.join(process.env.APPDATA || "", "Microsoft", "Windows", "Start Menu", "Programs", "Kiro", "Kiro.lnk"),
+    ].filter(Boolean);
+    const executable = candidates.find((p) => fs.existsSync(p));
+    if (!executable) return res.status(404).type("text").send("Aplikasi Kiro tidak ditemukan");
+    if (executable.toLowerCase().endsWith(".lnk")) {
+      const child = spawn("cmd.exe", ["/c", "start", "", executable], { detached: true, stdio: "ignore", windowsHide: false });
+      child.unref();
+    } else {
+      const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false, shell: executable.endsWith(".cmd") });
+      child.unref();
+    }
+    return res.type("html").send("<!doctype html><title>Kiro</title><body style='font-family:system-ui;padding:32px'><h2>Kiro sedang dijalankan</h2><p>Tab ini boleh ditutup.</p></body>");
+  } catch (error) {
+    console.error("[local] GET failed to launch Kiro:", error);
+    return res.status(500).type("text").send("Gagal menjalankan Kiro");
   }
 });
 
