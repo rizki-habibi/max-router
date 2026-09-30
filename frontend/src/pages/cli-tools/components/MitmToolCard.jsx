@@ -35,6 +35,8 @@ export default function MitmToolCard({
   const [modelMappings, setModelMappings] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [currentEditingAlias, setCurrentEditingAlias] = useState(null);
+  const [showKiroPopup, setShowKiroPopup] = useState(false);
+  const [kiroLaunching, setKiroLaunching] = useState(false);
 
   const mitmHosts = TOOL_HOSTS[tool.id] ?? [];
   const canRunWithoutPassword = isWin || hasCachedPassword || needsSudoPassword === false;
@@ -171,19 +173,22 @@ export default function MitmToolCard({
                   <p className="text-[10px] text-text-muted mt-0.5">Mapping cloud aktif. Untuk Kiro Windows, gunakan bridge lokal jika ingin koneksi MITM transparan.</p>
                 </div>
                 <button
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    const endpoint = typeof window !== "undefined" ? window.location.origin : "";
-                    try {
-                      await navigator.clipboard.writeText(endpoint);
-                      setWarning("Alamat Max Router cloud disalin. Koneksi transparan Kiro tetap memerlukan proxy Kiro.");
-                    } catch {
-                      setWarning(`Max Router cloud: ${endpoint}`);
+                    setWarning(null);
+                    setKiroLaunching(true);
+                    setShowKiroPopup(true);
+                    const bridgeUrl = "http://127.0.0.1:3001/api/local/launch-kiro";
+                    const popup = window.open(bridgeUrl, "_blank", "noopener,noreferrer");
+                    if (!popup) {
+                      setWarning("Popup diblokir browser. Izinkan popup untuk Max Router lalu klik Koneksi Kiro lagi.");
+                    } else {
+                      setTimeout(() => setKiroLaunching(false), 1200);
                     }
                   }}
                   className="shrink-0 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-[11px] font-medium text-primary hover:bg-primary/20"
                 >
-                  Koneksi Kiro
+                  {kiroLaunching ? "Menjalankan..." : "Koneksi Kiro"}
                 </button>
               </div>
             </div>
@@ -288,6 +293,31 @@ export default function MitmToolCard({
           </div>
         )}
       </Card>
+
+      {showKiroPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-primary/20 bg-surface p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-text-main">Koneksi Kiro</h3>
+            <p className="mt-1 text-xs text-text-muted">Max Router mencoba menjalankan aplikasi Kiro di PC ini.</p>
+            <div className="mt-4 rounded-lg border border-border bg-surface/70 p-3 text-xs text-text-muted">
+              <p><span className="font-medium text-text-main">1.</span> Menghubungi bridge lokal <code>127.0.0.1:3001</code>.</p>
+              <p className="mt-1"><span className="font-medium text-text-main">2.</span> Bridge mencari Kiro di Windows.</p>
+              <p className="mt-1"><span className="font-medium text-text-main">3.</span> Kiro dijalankan dari instalasi atau Start Menu.</p>
+            </div>
+            <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600">
+              Jika Kiro tidak terbuka, jalankan Max Router/bridge lokal di PC pada port 3001.
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => { setShowKiroPopup(false); setKiroLaunching(false); }}
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-white"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Password Modal */}
       {showPasswordModal && (
