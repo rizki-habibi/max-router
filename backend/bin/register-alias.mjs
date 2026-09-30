@@ -1,4 +1,3 @@
 import { register } from "node:module";
-import { pathToFileURL } from "node:url";
 
-register("./alias-loader.mjs", pathToFileURL(new URL("./", import.meta.url)));
+register("./alias-loader.mjs", import.meta.url);
