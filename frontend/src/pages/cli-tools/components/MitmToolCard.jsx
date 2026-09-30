@@ -168,7 +168,7 @@ export default function MitmToolCard({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold text-text-main">Koneksi Kiro</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Mapping model cloud aktif tanpa wajib menyalakan DNS lokal.</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">Mapping cloud aktif. Untuk Kiro Windows, gunakan bridge lokal jika ingin koneksi MITM transparan.</p>
                 </div>
                 <button
                   onClick={async (e) => {
@@ -203,11 +203,9 @@ export default function MitmToolCard({
             )}
             {/* Info */}
             <div className="flex flex-col gap-0.5 text-[11px] text-text-muted px-1">
-              <p>Toggle DNS to redirect {tool.name} traffic through 9Router via MITM.</p>
-              {!dnsActive && (
-                <p className="text-amber-600 text-[10px] mt-1">
-                  ⚠️ Enable DNS to edit model mappings
-                </p>
+              <p>Model mapping tersimpan di server Max Router dan dapat diedit tanpa DNS lokal.</p>
+              {cloudEnabled && (
+                <p className="text-green-600 text-[10px] mt-1">Cloud aktif. DNS hanya diperlukan jika ingin mengintersep aplikasi Kiro di PC Windows melalui MITM lokal.</p>
               )}
             </div>
 
