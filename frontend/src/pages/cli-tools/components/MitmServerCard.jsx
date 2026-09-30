@@ -178,7 +178,10 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   };
 
   const isRunning = status?.running;
-  const remoteMitmInstance = status && status.isWin === false;
+  // Railway/cloud is the server itself; local MITM controls must never try to start
+  // certificates/DNS/port 443 inside the cloud container.
+  const isCloudHost = typeof window !== "undefined" && /(^|\\.)railway\\.app$/.test(window.location.hostname);
+  const remoteMitmInstance = Boolean(status && status.isWin === false && isCloudHost);
   const localKiroConnected =
     localBridge?.localOnly === true &&
     localBridge?.kiroInstalled === true &&
@@ -206,7 +209,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
               {[
                 { label: "Cert", ok: status?.certExists },
                 { label: "Trusted", ok: status?.certTrusted },
-                { label: "Server", ok: isRunning },
+                { label: "Server", ok: remoteMitmInstance || isRunning },
               ].map(({ label, ok }) => (
                 <span key={label} className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${ok ? "text-green-600" : "text-text-muted"}`}>
                   <span className="material-symbols-outlined text-[12px]">
@@ -225,8 +228,8 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
           </div>
 
           {remoteMitmInstance && (
-            <div className="px-2 py-2 rounded-lg bg-orange-500/10 border border-orange-500/30 text-[11px] text-orange-700 dark:text-orange-300 leading-relaxed">
-              Max Router sedang berjalan di Railway. Sertifikat dan DNS MITM di instance Railway tidak mengubah Windows/Kiro kamu. Untuk Kiro asli, jalankan <span className="font-mono">scripts/kiro-connect.ps1</span> di PC Windows; bridge lokal akan terdeteksi otomatis di halaman ini.
+            <div className="px-2 py-2 rounded-lg bg-green-500/10 border border-green-500/30 text-[11px] text-green-700 dark:text-green-300 leading-relaxed">
+              Max Router Cloud aktif di Railway. Tombol Start/Stop MITM lokal tidak dijalankan di server cloud. Untuk Kiro Windows, gunakan bridge lokal; setelah bridge aktif, tombol Jalankan Aplikasi Kiro dapat membuka Kiro dari PC ini.
             </div>
           )}
 
@@ -341,7 +344,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 Trust Cert
               </button>
             )}
-            {isRunning ? (
+            {!remoteMitmInstance && (isRunning ? (
               <button
                 onClick={() => handleAction("stop")}
                 disabled={loading}
@@ -360,8 +363,14 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 <span className="material-symbols-outlined text-[16px]">play_circle</span>
                 Start Server
               </button>
+            ))}
+            {remoteMitmInstance && (
+              <span className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-600 sm:w-auto sm:py-1.5">
+                <span className="material-symbols-outlined text-[16px]">cloud_done</span>
+                Cloud Server Aktif
+              </span>
             )}
-            {isRunning && (
+            {!remoteMitmInstance && isRunning && (
               <p className="text-xs text-text-muted">Enable DNS per tool below to activate interception</p>
             )}
           </div>
