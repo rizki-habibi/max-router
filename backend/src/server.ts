@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import path from "node:path";
 import net from "node:net";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { authMiddleware } from "./middleware/auth.js";
 import { buildAutoRouter } from "./autoRouter.js";
@@ -97,6 +98,45 @@ async function getLocalKiroStatus() {
   } catch {}
   return result;
 }
+
+app.post("/api/local/launch-kiro", async (req, res) => {
+  const remote = req.ip?.replace("::ffff:", "");
+  if (remote !== "127.0.0.1" && remote !== "::1" && remote !== "localhost") {
+    return res.status(403).json({ error: "Local Kiro launcher only" });
+  }
+  if (process.platform !== "win32") {
+    return res.status(400).json({ error: "Kiro launcher is available on Windows only" });
+  }
+
+  try {
+    const fs = await import("node:fs");
+    const candidates = [
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro.cmd"),
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro"),
+      path.join(process.env.ProgramFiles || "C:\\Program Files", "Kiro", "Kiro.exe"),
+    ].filter(Boolean);
+    const executable = candidates.find((p) => fs.existsSync(p));
+    if (!executable) {
+      return res.status(404).json({
+        error: "Aplikasi Kiro tidak ditemukan",
+        candidates,
+      });
+    }
+
+    const child = spawn(executable, [], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: false,
+      shell: executable.endsWith(".cmd"),
+    });
+    child.unref();
+
+    return res.json({ success: true, launched: true, executable });
+  } catch (error) {
+    console.error("[local] failed to launch Kiro:", error);
+    return res.status(500).json({ error: "Gagal menjalankan aplikasi Kiro" });
+  }
+});
 
 app.get("/api/health", async (_req, res) => {
   res.json({
