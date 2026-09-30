@@ -33,8 +33,78 @@ app.use(express.json({ limit: "128mb" }));
 app.use(express.urlencoded({ extended: true, limit: "128mb" }));
 
 // ─── Health Check (no auth) ────────────────────────────────────────────────────
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", version: "3.0.0", ts: Date.now() });
+async function getLocalKiroStatus() {
+  const isWindows = process.platform === "win32";
+  const result = {
+    localOnly: isWindows,
+    platform: process.platform,
+    kiroInstalled: false,
+    kiroRunning: false,
+    kiroDnsActive: false,
+    certExists: false,
+    certTrusted: false,
+    mitmPort443: false,
+  };
+  if (!isWindows) return result;
+
+  try {
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const child = await import("node:child_process");
+    const dataDir = process.env.DATA_DIR ||
+      path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "9router");
+    const certPath = path.join(dataDir, "mitm", "rootCA.crt");
+    result.certExists = fs.existsSync(certPath);
+
+    const hostsPath = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "drivers", "etc", "hosts");
+    const hosts = fs.existsSync(hostsPath) ? fs.readFileSync(hostsPath, "utf8") : "";
+    result.kiroDnsActive =
+      hosts.includes("q.us-east-1.amazonaws.com") &&
+      hosts.includes("codewhisperer.us-east-1.amazonaws.com");
+
+    const kiroPaths = [
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro.cmd"),
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "Kiro", "bin", "kiro"),
+      path.join(process.env.ProgramFiles || "C:\\Program Files", "Kiro", "Kiro.exe"),
+    ];
+    result.kiroInstalled = kiroPaths.some((p) => p && fs.existsSync(p));
+
+    try {
+      child.execFileSync("tasklist", ["/FI", "IMAGENAME eq Kiro.exe"], { stdio: "pipe", windowsHide: true });
+      const taskText = child.execFileSync("tasklist", ["/FI", "IMAGENAME eq Kiro.exe", "/FO", "CSV", "/NH"], { encoding: "utf8", windowsHide: true });
+      result.kiroRunning = /"Kiro\.exe"/i.test(taskText);
+    } catch {}
+
+    if (result.certExists) {
+      try {
+        child.execFileSync("certutil", ["-store", "Root", "9Router MITM Root CA"], { stdio: "pipe", windowsHide: true });
+        result.certTrusted = true;
+      } catch {}
+    }
+
+    await new Promise((resolve) => {
+      const net = require("node:net");
+      const socket = net.createConnection({ host: "127.0.0.1", port: 443 });
+      socket.setTimeout(400);
+      socket.once("connect", () => {
+        result.mitmPort443 = true;
+        socket.destroy();
+        resolve();
+      });
+      socket.once("error", resolve);
+      socket.once("timeout", () => { socket.destroy(); resolve(); });
+    });
+  } catch {}
+  return result;
+}
+
+app.get("/api/health", async (_req, res) => {
+  res.json({
+    status: "ok",
+    version: "3.0.0",
+    ts: Date.now(),
+    kiroBridge: await getLocalKiroStatus(),
+  });
 });
 
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
