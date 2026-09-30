@@ -7,6 +7,7 @@ const DEFAULT_MITM_ROUTER_BASE = getServerBaseUrl();
 
 /**
  * Shared MITM infrastructure card — manages SSL cert + server start/stop.
+ * Cloud Kiro launcher: v3.0.1.
  * DNS per-tool is handled separately in MitmToolCard.
  */
 export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }) {
