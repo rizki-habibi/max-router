@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import path from "node:path";
+import net from "node:net";
 import { fileURLToPath } from "node:url";
 import { authMiddleware } from "./middleware/auth.js";
 import { buildAutoRouter } from "./autoRouter.js";
@@ -83,7 +84,6 @@ async function getLocalKiroStatus() {
     }
 
     await new Promise((resolve) => {
-      const net = require("node:net");
       const socket = net.createConnection({ host: "127.0.0.1", port: 443 });
       socket.setTimeout(400);
       socket.once("connect", () => {
