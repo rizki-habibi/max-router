@@ -18,6 +18,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   const [pendingAction, setPendingAction] = useState(null);
   const [modalError, setModalError] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [kiroConnecting, setKiroConnecting] = useState(false);
   const [mitmRouterBaseUrl, setMitmRouterBaseUrl] = useState(DEFAULT_MITM_ROUTER_BASE);
   const [port443Conflict, setPort443Conflict] = useState(null);
 
@@ -73,6 +74,33 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "trust-cert", sudoPassword: password }),
         });
+      } else if (action === "connect-kiro") {
+        setKiroConnecting(true);
+        const keyToUse = selectedApiKey?.trim()
+          || (apiKeys?.length > 0 ? apiKeys[0].key : null)
+          || (!cloudEnabled ? "sk_9router" : null);
+        if (!keyToUse) {
+          throw new Error("API Key diperlukan untuk menghubungkan Kiro");
+        }
+        if (isRunning) {
+          res = await fetch("/api/cli-tools/antigravity-mitm", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tool: "kiro", action: "enable", sudoPassword: password }),
+          });
+        } else {
+          res = await fetch("/api/cli-tools/antigravity-mitm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              apiKey: keyToUse,
+              sudoPassword: password,
+              mitmRouterBaseUrl: mitmRouterBaseUrl.trim() || DEFAULT_MITM_ROUTER_BASE,
+              forceKillPort443,
+              connectKiro: true,
+            }),
+          });
+        }
       } else if (action === "start") {
         const keyToUse = selectedApiKey?.trim()
           || (apiKeys?.length > 0 ? apiKeys[0].key : null)
@@ -112,6 +140,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
       setActionError(e.message || "Network error");
     } finally {
       setLoading(false);
+      setKiroConnecting(false);
       setPendingAction(null);
     }
   };
@@ -211,6 +240,17 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
 
           {/* Action buttons */}
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center" data-i18n-skip="true">
+            {!status?.dnsStatus?.kiro && (
+              <button
+                onClick={() => handleAction("connect-kiro")}
+                disabled={loading || !status || (serverIsWindows && !isAdmin)}
+                title={serverIsWindows && !isAdmin ? "Administrator required" : "Start MITM, trust certificate, and enable Kiro DNS"}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-500/20 disabled:opacity-50 sm:w-auto sm:py-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">link</span>
+                {kiroConnecting ? "Menghubungkan Kiro..." : "Hubungkan Kiro"}
+              </button>
+            )}
             {status?.certExists && !status?.certTrusted && (
               <button
                 onClick={() => handleAction("trust-cert")}
