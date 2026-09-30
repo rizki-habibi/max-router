@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "node --loader ./bin/alias-loader.mjs dist/server.js",
+    "start": "node --import ./bin/register-alias.mjs dist/server.js",
     "build": "node bin/prepare-build.cjs && tsc",
     "typecheck": "tsc --noEmit"
   },
