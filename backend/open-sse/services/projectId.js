@@ -87,6 +87,15 @@ startCacheCleanup();
 export async function getProjectIdForConnection(connectionId, accessToken) {
     if (!connectionId || !accessToken) return null;
 
+    // Prefer an explicitly configured, real Google Cloud project for Antigravity.
+    // This is required for standard-tier accounts where Google does not auto-provision
+    // cloudaicompanionProject through onboardUser.
+    const configuredProjectId = String(process.env.ANTIGRAVITY_PROJECT_ID || "").trim();
+    if (configuredProjectId) {
+        projectIdCache.set(connectionId, { projectId: configuredProjectId, fetchedAt: Date.now() });
+        return configuredProjectId;
+    }
+
     // Return cached value if still fresh
     const cached = projectIdCache.get(connectionId);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
