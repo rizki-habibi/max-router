@@ -27,10 +27,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Typecheck
         run: npm run typecheck
@@ -38,11 +37,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify runtime exports
+      - name: Verify required runtime exports
         run: |
           node --input-type=module - <<'NODE'
-          import * as manager from './dist/mitm/manager.js';
-          import * as dns from './dist/mitm/dns/dnsConfig.js';
+          const manager = await import('./dist/mitm/manager.js');
+          const dns = await import('./dist/mitm/dns/dnsConfig.js');
 
           const requiredManager = [
             'getCachedPassword',
@@ -68,7 +67,39 @@ jobs:
           console.log('Runtime export audit: OK');
           NODE
 
+      - name: Import every route module
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const root = path.resolve('./dist');
+          const routes = [];
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.name === 'route.js') routes.push(full);
+            }
+          }
+          walk(root);
+          let failed = 0;
+          for (const file of routes) {
+            try {
+              await import('file://' + file);
+            } catch (error) {
+              failed++;
+              console.error(`ROUTE_IMPORT_FAILED: ${path.relative(root, file)}`);
+              console.error(error?.stack || error);
+            }
+          }
+          console.log(`Route modules checked: ${routes.length}`);
+          if (failed) throw new Error(`${failed} route module(s) failed to import`);
+          NODE
+
       - name: Start smoke test
+        env:
+          NODE_ENV: test
+          PORT: 20222
         run: |
           timeout 20s npm start > /tmp/max-router-start.log 2>&1 &
           PID=$!
