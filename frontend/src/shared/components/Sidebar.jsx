@@ -31,7 +31,6 @@ const navItems = [
   { href: "/dashboard/combos", label: "Combos", icon: "layers" },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
   { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
-  { href: "/dashboard/docs", label: "Docs", icon: "menu_book" },
 ];
 
 const debugItems = [
