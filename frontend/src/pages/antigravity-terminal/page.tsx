@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
 const MODEL = "claude-opus-4-6-thinking";
 
@@ -12,7 +12,7 @@ export default function AntigravityTerminalPage() {
 
   const prompt = useMemo(() => input.trim(), [input]);
 
-  async function runCommand(event) {
+  async function runCommand(event: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (!prompt || busy) return;
 
