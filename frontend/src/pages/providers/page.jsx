@@ -16,7 +16,6 @@ import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import {
   FREE_PROVIDERS,
   FREE_TIER_PROVIDERS,
-  WEB_COOKIE_PROVIDERS,
   OPENAI_COMPATIBLE_PREFIX,
   ANTHROPIC_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
@@ -526,44 +525,6 @@ export default function ProvidersPage() {
         )}
       </div>
       )}
-
-      {/* Web Cookie Providers — use browser subscription cookie instead of API key */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            Web Cookie Providers{" "}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Object.entries(WEB_COOKIE_PROVIDERS).map(([key, info]) => (
-            <ApiKeyProviderCard
-              key={key}
-              providerId={key}
-              provider={info}
-              stats={getProviderStats(key, "apikey")}
-              authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
-            />
-          ))}
-        </div>
-      </div>
-
-      <AddOpenAICompatibleModal
-        isOpen={showAddCompatibleModal}
-        onClose={() => setShowAddCompatibleModal(false)}
-        onCreated={(node) => {
-          setProviderNodes((prev) => [...prev, node]);
-          setShowAddCompatibleModal(false);
-        }}
-      />
-      <AddAnthropicCompatibleModal
-        isOpen={showAddAnthropicCompatibleModal}
-        onClose={() => setShowAddAnthropicCompatibleModal(false)}
-        onCreated={(node) => {
-          setProviderNodes((prev) => [...prev, node]);
-          setShowAddAnthropicCompatibleModal(false);
-        }}
-      />
 
       {/* Test Results Modal */}
       {testResults && (
