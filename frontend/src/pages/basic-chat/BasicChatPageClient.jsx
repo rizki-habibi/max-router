@@ -1020,22 +1020,32 @@ export default function BasicChatPageClient() {
                         </div>
                       ) : null}
 
-                      {message.status === "error" ? (
-                        <div className="mt-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.07] p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/10 text-amber-300">
-                              <span className="material-symbols-outlined text-[19px]">schedule</span>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-amber-100">Provider sedang membatasi permintaan</p>
-                              <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-white/65">
-                                {content.replace(/^Error:\s*/i, "")}
-                              </p>
-                              <p className="mt-2 text-[11px] text-white/35">Tunggu sampai kuota tersedia, lalu kirim ulang pesan.</p>
+                      {message.status === "error" ? (() => {
+                        const errorText = content.replace(/^Error:\s*/i, "");
+                        const isQuotaError =
+                          /\b(?:HTTP\s*)?(?:403|429)\b/i.test(errorText) ||
+                          /quota|rate.?limit|too many requests|exceeded your current quota|reset after/i.test(errorText);
+                        return (
+                          <div className={`mt-2 rounded-2xl border p-4 ${isQuotaError ? "border-amber-400/20 bg-amber-400/[0.07]" : "border-rose-400/20 bg-rose-400/[0.07]"}`}>
+                            <div className="flex items-start gap-3">
+                              <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${isQuotaError ? "bg-amber-400/10 text-amber-300" : "bg-rose-400/10 text-rose-300"}`}>
+                                <span className="material-symbols-outlined text-[19px]">{isQuotaError ? "schedule" : "error_outline"}</span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className={`text-sm font-semibold ${isQuotaError ? "text-amber-100" : "text-rose-100"}`}>
+                                  {isQuotaError ? "Provider sedang membatasi permintaan" : "Terjadi kesalahan pada provider"}
+                                </p>
+                                <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-white/65">
+                                  {errorText}
+                                </p>
+                                <p className="mt-2 text-[11px] text-white/35">
+                                  {isQuotaError ? "Tunggu sampai kuota tersedia, lalu kirim ulang pesan." : "Periksa koneksi provider atau coba model lain."}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ) : (
+                        );
+                      })() : (
                         <div className="whitespace-pre-wrap break-words text-[15px] leading-7">
                           {content}
                           {isAssistant && isStreaming && !streamingText ? <span className="inline-block animate-pulse">▋</span> : null}
@@ -1098,7 +1108,7 @@ export default function BasicChatPageClient() {
           </div>
 
           <p className="mx-auto mt-2 max-w-3xl px-4 pb-4 text-center text-[11px] text-white/30">
-            Model list is filtered from connected providers.
+            Daftar model difilter dari provider yang terhubung.
           </p>
         </div>
       </div>
