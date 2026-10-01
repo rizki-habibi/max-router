@@ -171,13 +171,3 @@ export async function POST_handler(req, res) {
   }
 }
 
-// Hide sensitive fields
-    const result = { ...newConnection };
-    delete result.apiKey;
-
-    return res.status(201).json({ connection: result });
-  } catch (error) {
-    console.log("Error creating provider:", error);
-    return res.status(500).json({ error: "Failed to create provider" });
-  }
-}
