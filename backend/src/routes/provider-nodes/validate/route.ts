@@ -249,16 +249,17 @@ export async function POST_handler(req, res) {
     }
     const validResults = results.filter((item) => item.valid);
     const detected = validResults[0] || null;
+    const uniqueModels = Array.from(new Map(validResults.flatMap((item) => item.models || []).map((model) => [model.id, model])).values());
     return res.json({
       valid: results.length === 1 ? results[0].valid : validResults.length > 0,
       total: results.length, validCount: validResults.length, invalidCount: results.length - validResults.length,
       detectedType: detected?.detectedType || null, detectedVersion: detected?.detectedVersion || null,
       baseUrl: detected?.baseUrl || null,
-      models: Array.from(new Map(validResults.flatMap((item) => item.models || []).map((model) => [model.id, model])).values()),
-      modelCount: validResults.reduce((sum, item) => sum + Number(item.modelCount || (item.models || []).length), 0),
-      freeModelCount: validResults.reduce((sum, item) => sum + Number(item.freeModelCount || (item.models || []).filter((m) => m.priceClass === "free").length), 0),
-      paidModelCount: validResults.reduce((sum, item) => sum + Number(item.paidModelCount || (item.models || []).filter((m) => m.priceClass === "paid").length), 0),
-      unknownPricingModelCount: validResults.reduce((sum, item) => sum + Number(item.unknownPricingModelCount || (item.models || []).filter((m) => m.priceClass === "unknown").length), 0),
+      models: uniqueModels,
+      modelCount: uniqueModels.length,
+      freeModelCount: uniqueModels.filter((m) => m.priceClass === "free").length,
+      paidModelCount: uniqueModels.filter((m) => m.priceClass === "paid").length,
+      unknownPricingModelCount: uniqueModels.filter((m) => m.priceClass === "unknown").length,
       supportedParameters: Array.from(new Set(validResults.flatMap((item) => (item.models || []).flatMap((m) => Array.isArray(m.supportedParameters) ? m.supportedParameters : [])))), results,
     });
   } catch (error) {
