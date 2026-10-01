@@ -8,7 +8,7 @@
  */
 
 import { CLOUD_CODE_API, LOAD_CODE_ASSIST_HEADERS, LOAD_CODE_ASSIST_METADATA } from "../config/appConstants.js";
-import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
+import { ANTIGRAVITY_ENDPOINTS, ANTIGRAVITY_LOAD_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 // connectionId -> { projectId: string, fetchedAt: number }
@@ -157,49 +157,80 @@ export function removeConnection(connectionId) {
  * @returns {Promise<string|null>}
  */
 async function fetchProjectId(accessToken, signal) {
-    const response = await fetch(CLOUD_CODE_API.loadCodeAssist, {
-        method: "POST",
-        headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}`, "Accept": "*/*" },
-        body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA }),
-        signal
-    });
+    let lastError = null;
+    let initialData = null;
 
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        throw new Error(`loadCodeAssist failed: HTTP ${response.status} ${errorText.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const projectId = extractProjectId(data);
-    if (projectId) return projectId;
-
-    // Determine the tier to use for onboarding
-    let tierID = "legacy-tier";
-    if (Array.isArray(data.allowedTiers)) {
-        for (const tier of data.allowedTiers) {
-            if (tier && typeof tier === "object" && tier.isDefault === true) {
-                if (tier.id && typeof tier.id === "string" && tier.id.trim()) {
-                    tierID = tier.id.trim();
-                    break;
-                }
+    // Try production first, then daily/sandbox. Different Antigravity
+    // versions/accounts can be pinned to different Cloud Code backends.
+    for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
+        if (signal?.aborted) return null;
+        const url = `${baseUrl}/${"v1internal"}:loadCodeAssist`;
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*" },
+                body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA }),
+                signal
+            });
+            const text = await response.text().catch(() => "");
+            if (!response.ok) {
+                lastError = `HTTP ${response.status} ${text.slice(0, 180)}`;
+                continue;
             }
+            let data;
+            try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
+            initialData = data;
+            const projectId = extractProjectId(data);
+            if (projectId) return projectId;
+
+            // The account can be authenticated but not provisioned yet.
+            let tierID = "legacy-tier";
+            if (Array.isArray(data.allowedTiers)) {
+                const preferred = data.allowedTiers.find((tier) => tier?.isDefault === true && typeof tier.id === "string" && tier.id.trim());
+                if (preferred) tierID = preferred.id.trim();
+            }
+
+            const onboarded = await onboardUser(accessToken, tierID, signal);
+            if (onboarded) return onboarded;
+
+            // onboardUser may report done without a project binding. Re-load
+            // the control plane before trying the next backend.
+            const reloaded = await reloadProjectId(accessToken, signal);
+            if (reloaded) return reloaded;
+            lastError = "authenticated but no cloudaicompanionProject was provisioned";
+        } catch (error) {
+            if (error?.name === "AbortError") return null;
+            lastError = error?.message || String(error);
         }
     }
 
-    return onboardUser(accessToken, tierID, signal);
+    console.warn(`[ProjectId] Antigravity project discovery failed: ${lastError || "unknown error"}`, initialData ? "provisioning response received" : "no loadCodeAssist response");
+    return null;
 }
 
-/**
- * Fetch project ID via onboardUser endpoint (polls until done).
- *
- * @param {string}      accessToken
- * @param {string}      tierID
- * @param {AbortSignal} externalSignal  – propagated from the connection's AbortController
- * @returns {Promise<string|null>}
- */
-async function onboardUser(accessToken, tierID, externalSignal) {
-    console.log(`[ProjectId] Onboarding user with tier: ${tierID}`);
+async function reloadProjectId(accessToken, signal) {
+    for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
+        if (signal?.aborted) return null;
+        try {
+            const response = await fetch(`${baseUrl}/v1internal:loadCodeAssist`, {
+                method: "POST",
+                headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*" },
+                body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA }),
+                signal
+            });
+            if (!response.ok) continue;
+            const data = await response.json();
+            const projectId = extractProjectId(data);
+            if (projectId) return projectId;
+        } catch (error) {
+            if (error?.name === "AbortError") return null;
+        }
+    }
+    return null;
+}
 
+async function onboardUser(accessToken, tierID, externalSignal) {
+    console.log(`[ProjectId] Onboarding Antigravity account with tier: ${tierID}`);
     const reqBody = {
         tier_id: tierID,
         metadata: {
@@ -213,71 +244,41 @@ async function onboardUser(accessToken, tierID, externalSignal) {
             ide_name: "antigravity"
         }
     };
-    const MAX_ATTEMPTS = 5;
+    const MAX_ATTEMPTS = 6;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        // Bail out immediately if the connection was removed
         if (externalSignal?.aborted) return null;
-
-        // Per-attempt timeout controller; forwards external abort as well
-        const localCtrl = new AbortController();
-        const timeoutId = setTimeout(() => localCtrl.abort(), 30_000);
-        const forwardAbort = () => localCtrl.abort();
-        externalSignal?.addEventListener("abort", forwardAbort);
-
-        try {
-            const response = await fetch(ANTIGRAVITY_ENDPOINTS.dailyOnboardUser, {
-                method: "POST",
-                headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}`, "Accept": "*/*" },
-                body: JSON.stringify(reqBody),
-                signal: localCtrl.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text().catch(() => "");
-                throw new Error(`onboardUser HTTP ${response.status}: ${errorText.slice(0, 200)}`);
-            }
-
-            const data = await response.json();
-
-            if (data.done === true) {
+        for (const baseUrl of [
+            "https://daily-cloudcode-pa.googleapis.com",
+            ...ANTIGRAVITY_LOAD_ENDPOINTS
+        ].filter((v, i, a) => a.indexOf(v) === i)) {
+            try {
+                const response = await fetch(`${baseUrl}/v1internal:onboardUser`, {
+                    method: "POST",
+                    headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*" },
+                    body: JSON.stringify(reqBody),
+                    signal: externalSignal
+                });
+                const text = await response.text().catch(() => "");
+                if (!response.ok) continue;
+                let data;
+                try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
                 const projectId = extractProjectIdFromOnboard(data);
-                if (projectId) {
-                    console.log(`[ProjectId] Successfully onboarded, project ID: ${projectId}`);
-                    return projectId;
+                if (projectId) return projectId;
+                if (data.done === true) {
+                    // done:true without a project is a real server-side provisioning
+                    // failure; do not invent a project ID.
+                    console.warn("[ProjectId] onboardUser returned done=true without project binding");
+                    continue;
                 }
-                throw new Error("onboardUser done but no project_id in response");
+            } catch (error) {
+                if (error?.name === "AbortError") return null;
             }
-
-            // Server not done yet – wait and retry
-            console.log(`[ProjectId] Onboard attempt ${attempt}/${MAX_ATTEMPTS}: not done yet, waiting...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-        } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === "AbortError") {
-                console.warn(`[ProjectId] onboardUser attempt ${attempt} aborted (timeout or connection removed)`);
-                if (externalSignal?.aborted) return null;   // connection gone – stop retrying
-                continue;
-            }
-            if (attempt === MAX_ATTEMPTS) {
-                console.warn(`[ProjectId] onboardUser failed after ${MAX_ATTEMPTS} attempts: ${error.message}`);
-                return null;
-            }
-            // Continue to next attempt instead of throwing (which would skip remaining retries)
-            console.warn(`[ProjectId] onboardUser attempt ${attempt} failed: ${error.message}, retrying...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        } finally {
-            clearTimeout(timeoutId);
-            externalSignal?.removeEventListener("abort", forwardAbort);
         }
+        if (attempt < MAX_ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, 2000));
     }
-
     return null;
 }
-
 /**
  * Extract project ID from loadCodeAssist response.
  */
