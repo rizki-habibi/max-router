@@ -11,7 +11,7 @@ const Providers       = lazy(() => import("./pages/providers/page"));
 const ProviderDetail  = lazy(() => import("./pages/providers/[id]/page"));
 const ProvidersNew    = lazy(() => import("./pages/providers/new/page"));
 const Usage           = lazy(() => import("./pages/usage/page"));
-const Quota           = lazy(() => import("./pages/quota/page"));
+
 const ProxyPools      = lazy(() => import("./pages/proxy-pools/page"));
 const Combos          = lazy(() => import("./pages/combos/page"));
 const Endpoint        = lazy(() => import("./pages/endpoint/page"));
@@ -20,6 +20,7 @@ const Automation      = lazy(() => import("./pages/automation/page"));
 const AntigravityTerminal = lazy(() => import("./pages/antigravity-terminal/page"));
 const CompatibleChat = lazy(() => import("./pages/compatible-chat/page"));
 const ModelDetection = lazy(() => import("./pages/model-detection/page"));
+const Parameters = lazy(() => import("./pages/parameters/page"));
 const Profile         = lazy(() => import("./pages/profile/page"));
 const ConsoleLog      = lazy(() => import("./pages/console-log/page"));
 const WeavyPool          = lazy(() => import("./pages/providers/weavy/pool/page"));
@@ -60,7 +61,7 @@ export default function App() {
             <Route path="providers/weavy/pool" element={<WeavyPool />} />
             <Route path="providers/:id"   element={<ProviderDetail />} />
             <Route path="usage"           element={<Usage />} />
-            <Route path="quota"           element={<Quota />} />
+            <Route path="parameters"      element={<Parameters />} />
             {/* Pricing settings page omitted in v2 currently */}
             <Route path="proxy-pools"     element={<ProxyPools />} />
             <Route path="combos"          element={<Combos />} />
