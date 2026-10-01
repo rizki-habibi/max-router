@@ -120,13 +120,25 @@ async function fetchCompatibleModelIds(connection) {
     const data = await response.json();
     const rawModels = parseOpenAIStyleModels(data);
 
-    return Array.from(
-      new Set(
-        rawModels
-          .map((model) => model?.id || model?.name || model?.model)
-          .filter((modelId) => typeof modelId === "string" && modelId.trim() !== "")
-      )
-    );
+    const seen = new Set();
+    return rawModels.map((model) => {
+      const id = model?.id || model?.name || model?.model;
+      if (typeof id !== "string" || !id.trim() || seen.has(id.trim())) return null;
+      seen.add(id.trim());
+      return {
+        id: id.trim(),
+        metadata: {
+          description: model?.description || model?.description_text || null,
+          contextWindow: model?.context_window ?? model?.contextWindow ?? model?.context_length ?? model?.max_context ?? null,
+          maxOutput: model?.max_output ?? model?.maxOutput ?? model?.max_tokens ?? null,
+          releaseDate: model?.release_date ?? model?.releaseDate ?? null,
+          input: model?.input ?? model?.modalities?.input ?? null,
+          pricing: model?.pricing ?? null,
+          capabilities: Array.isArray(model?.capabilities) ? model.capabilities : null,
+          supportedParameters: model?.supported_parameters ?? model?.supportedParameters ?? null,
+        },
+      };
+    }).filter(Boolean);
   } catch {
     return [];
   }
@@ -257,8 +269,11 @@ export async function buildModelsList(kindFilter) {
           )
         : providerModels.map((model) => model.id);
 
+      let liveCompatibleMetadata = new Map();
       if (isCompatibleProvider && rawModelIds.length === 0 && !UPSTREAM_CONNECTION_RE.test(providerId)) {
-        rawModelIds = await fetchCompatibleModelIds(conn);
+        const liveModels = await fetchCompatibleModelIds(conn);
+        rawModelIds = liveModels.map((model) => model.id);
+        liveCompatibleMetadata = new Map(liveModels.map((model) => [model.id, model.metadata]));
       }
 
       // Config-driven live catalog override (e.g. Kiro returns dynamic
@@ -331,10 +346,22 @@ export async function buildModelsList(kindFilter) {
         if (!kindFilter.includes(kind)) continue;
         if (isDisabled(outputAlias, modelId) || isDisabled(staticAlias, modelId)) continue;
 
+        const metadata = liveCompatibleMetadata.get(modelId);
         models.push({
-          id: `${outputAlias}/${modelId}`,
+          id: outputAlias + "/" + modelId,
           object: "model",
           owned_by: outputAlias,
+          ...(metadata ? {
+            description: metadata.description || undefined,
+            metadata,
+            capabilities: metadata.capabilities || undefined,
+            context_window: metadata.contextWindow || undefined,
+            max_output: metadata.maxOutput || undefined,
+            release_date: metadata.releaseDate || undefined,
+            input: metadata.input || undefined,
+            pricing: metadata.pricing || undefined,
+            supported_parameters: metadata.supportedParameters || undefined,
+          } : {}),
         });
       }
 
