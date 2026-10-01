@@ -17,7 +17,7 @@ const Combos          = lazy(() => import("./pages/combos/page"));
 const Endpoint        = lazy(() => import("./pages/endpoint/page"));
 const Translator      = lazy(() => import("./pages/translator/page"));
 const Automation      = lazy(() => import("./pages/automation/page"));
-const BasicChat       = lazy(() => import("./pages/basic-chat/page"));
+const AntigravityTerminal = lazy(() => import("./pages/antigravity-terminal/page"));
 const Profile         = lazy(() => import("./pages/profile/page"));
 const Docs            = lazy(() => import("./pages/docs/page"));
 const ConsoleLog      = lazy(() => import("./pages/console-log/page"));
@@ -71,7 +71,7 @@ export default function App() {
             <Route path="translator"      element={<Translator />} />
             <Route path="automation"      element={<Automation />} />
             <Route path="automation/ammail-tutorial" element={<AmmailTutorial />} />
-            <Route path="basic-chat"      element={<BasicChat />} />
+            <Route path="antigravity"   element={<AntigravityTerminal />} />
             <Route path="profile"         element={<Profile />} />
             <Route path="docs"            element={<Docs />} />
             <Route path="console-log"     element={<ConsoleLog />} />
