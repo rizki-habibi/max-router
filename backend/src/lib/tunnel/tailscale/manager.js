@@ -2,9 +2,12 @@ import { loadState, generateShortId } from "../shared/state.js";
 import { startFunnel, stopFunnel, isTailscaleRunning, isTailscaleRunningStrict, isTailscaleLoggedIn, startLogin, startDaemonWithPassword, provisionCert } from "./tailscale.js";
 import { waitForHealth } from "./healthCheck.js";
 import { getSettings, updateSettings } from "../../../lib/localDb.js";
-import { getCachedPassword, loadEncryptedPassword, initDbHooks } from "../../../mitm/manager.js";
+import * as mitmManager from "../../../mitm/manager.js";
 
-initDbHooks(getSettings, updateSettings);
+const getCachedPassword = () => typeof mitmManager.getCachedPassword === "function" ? mitmManager.getCachedPassword() : null;
+const loadEncryptedPassword = () => typeof mitmManager.loadEncryptedPassword === "function" ? mitmManager.loadEncryptedPassword() : null;
+
+mitmManager.initDbHooks(getSettings, updateSettings);
 
 const svc = {
   cancelToken: { cancelled: false },
