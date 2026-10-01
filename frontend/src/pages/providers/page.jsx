@@ -885,7 +885,8 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
       return;
     }
 
-    const validResults = validation.results.filter((item) => item.valid && item.baseUrl);
+    const keys = keyLines();
+    const validResults = validation.results.filter((item) => item.valid && item.baseUrl).map((item) => ({ ...item, apiKey: keys[item.keyIndex] })).filter((item) => item.apiKey);
     if (!validResults.length) {
       setMessage("Tidak ada key valid untuk disimpan.");
       return;
