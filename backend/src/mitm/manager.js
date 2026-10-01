@@ -1,5 +1,8 @@
 import crypto from "crypto";
-import { machineIdSync } from "node-machine-id";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { machineIdSync } = require("node-machine-id");
 
 const ENCRYPT_ALGO = "aes-256-gcm";
 const ENCRYPT_SALT = "9router-mitm-pwd";
