@@ -179,7 +179,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [importedModels, setImportedModels] = useState([]);
   const [usageInfo, setUsageInfo] = useState(null);
   const [testingAll, setTestingAll] = useState(false);
-  const [autoDisableFailed, setAutoDisableFailed] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [apiError, setApiError] = useState(null);
 
   const handleTestModel = async (modelId, fromAll = false) => {
@@ -194,11 +194,9 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
       const data = response.data;
       const ok = !!data.ok;
       setModelTestResults((prev) => ({ ...prev, [modelId]: ok ? "ok" : "error" }));
-      if (!ok && autoDisableFailed) await fetch("/api/models/disabled", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerAlias: providerStorageAlias, ids: [modelId] }) }).catch(() => {});
       return ok;
     } catch (error) {
       setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
-      if (autoDisableFailed) await fetch("/api/models/disabled", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerAlias: providerStorageAlias, ids: [modelId] }) }).catch(() => {});
       return false;
     } finally { setTestingModelId(null); }
   };
@@ -389,9 +387,6 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           {usageInfo.wallet && <div className="mt-2 text-xs text-text-muted">Saldo: ${usageInfo.wallet.balance_usd ?? "—"}</div>}
         </div>
       )}
-      <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs"><div><div className="font-medium">Nonaktifkan otomatis jika tes gagal</div><div className="text-text-muted">Model gagal akan dinonaktifkan.</div></div><input type="checkbox" checked={autoDisableFailed} onChange={(e) => setAutoDisableFailed(e.target.checked)} /></div>
-
-
       {importedModels.length > 0 && (
         <div className="rounded-lg border border-border bg-bg/50 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -421,7 +416,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
               fullModel={`${providerDisplayAlias}/${modelId}`}
               copied={copied}
               onCopy={onCopy}
-              onDeleteAlias={() => onDeleteAlias(alias)}
+              onDeleteAlias={() => setDeleteTarget({ alias, modelId, fullModel: `${providerDisplayAlias}/${modelId}` })}
               onTest={connections.length > 0 ? () => handleTestModel(modelId) : undefined}
               testStatus={modelTestResults[modelId]}
               isTesting={testingModelId === modelId}
@@ -430,6 +425,29 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         </div>
       )}
     </div>
+    {deleteTarget && (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-model-title">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+          <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+            <span className="material-symbols-outlined text-red-500">delete</span>
+            <div>
+              <h2 id="delete-model-title" className="text-base font-semibold">Hapus model?</h2>
+              <p className="mt-1 text-xs text-text-muted">Model ini akan dihapus dari daftar alias Max Router.</p>
+            </div>
+          </div>
+          <div className="px-5 py-4">
+            <div className="rounded-lg border border-border bg-sidebar/50 px-3 py-2">
+              <div className="text-sm font-medium break-all">{deleteTarget.fullModel}</div>
+              <div className="mt-1 text-xs text-text-muted">Tindakan ini tidak dilakukan sebelum Anda menekan “Hapus model”.</div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+            <Button size="sm" variant="secondary" onClick={() => setDeleteTarget(null)}>Batal</Button>
+            <Button size="sm" icon="delete" onClick={async () => { const target = deleteTarget; setDeleteTarget(null); await onDeleteAlias(target.alias); }}>Hapus model</Button>
+          </div>
+        </div>
+      </div>
+    )}
     <ModelApiErrorDialog
       error={apiError}
       onClose={() => setApiError(null)}
