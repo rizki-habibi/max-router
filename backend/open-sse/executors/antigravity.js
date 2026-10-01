@@ -357,20 +357,41 @@ export class AntigravityExecutor extends BaseExecutor {
           }
         }
 
-        const isForbiddenQuota = response.status === HTTP_STATUS.FORBIDDEN;
+        const isForbidden = response.status === HTTP_STATUS.FORBIDDEN;
         const isRateLimited = response.status === HTTP_STATUS.RATE_LIMITED;
 
-        if (isRateLimited || isForbiddenQuota) {
-          // Preserve the upstream body while also extracting quota metadata for the caller.
+        if (isRateLimited || isForbidden) {
+          // Google Antigravity uses HTTP 403 for both temporary quota failures
+          // and entitlement/license failures. #3501/SUBSCRIPTION_REQUIRED is
+          // NOT a quota reset and must never receive a fake retry window.
           const bodyText = await response.clone().text();
           const errorInfo = this.parseError(response, bodyText);
-          
-          // Return immediately to allow account rotation in the outer loop (chat.js)
+          const lowerBody = bodyText.toLowerCase();
+          const isLicenseError =
+            response.status === HTTP_STATUS.FORBIDDEN &&
+            (
+              lowerBody.includes("#3501") ||
+              lowerBody.includes("subscription_required") ||
+              lowerBody.includes("valid license of this product") ||
+              (lowerBody.includes("error_number") && lowerBody.includes("1001"))
+            );
+
+          if (isLicenseError) {
+            log?.error?.(
+              "LICENSE",
+              "Antigravity upstream returned #3501/SUBSCRIPTION_REQUIRED; this is an entitlement error, not a quota reset."
+            );
+          }
+
+          // Return immediately to allow account rotation in the outer loop.
+          // Explicitly mark license errors so callers do not cooldown the
+          // connection as if it were rate-limited quota.
           return {
             response,
             status: errorInfo.status,
             message: errorInfo.message,
-            resetsAtMs: errorInfo.resetsAtMs,
+            resetsAtMs: isLicenseError ? undefined : errorInfo.resetsAtMs,
+            licenseError: isLicenseError,
             url,
             headers,
             transformedBody
