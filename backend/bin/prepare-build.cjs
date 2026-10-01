@@ -16,3 +16,11 @@ fs.cpSync(srcDir, distDir, {
     return !source.endsWith(".ts") && !source.endsWith(".tsx");
   },
 });
+
+// The generated runtime contains JavaScript ESM files. Keep an explicit package
+// boundary so Node never interprets dist/*.js as CommonJS.
+fs.writeFileSync(
+  path.join(distDir, "package.json"),
+  JSON.stringify({ type: "module" }, null, 2) + "\n",
+  "utf8",
+);
