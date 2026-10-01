@@ -777,13 +777,13 @@ export default function BasicChatPageClient() {
     }
   };
 
-  const modelLabel = activeModel ? `${activeModel.name}` : "Select model";
-  const modelSubLabel = activeModel ? activeModel.requestModel : "Choose from connected providers";
+  const modelLabel = activeModel ? `${activeModel.name}` : "Pilih model";
+  const modelSubLabel = activeModel ? activeModel.requestModel : "Pilih dari provider yang terhubung";
 
   return (
-    <div className="relative flex-1 flex flex-col h-full min-h-0 min-w-0 bg-[#212121] text-white overflow-hidden">
+    <div className="relative flex-1 flex flex-col h-full min-h-0 min-w-0 bg-[#171717] text-white overflow-hidden">
       <div className="relative mx-auto flex flex-1 h-full min-h-0 w-full max-w-4xl flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 lg:px-6">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] bg-[#171717]/90 px-4 py-3 backdrop-blur-xl lg:px-6">
           <div ref={modelMenuRef} className="relative">
             <button
               type="button"
@@ -874,7 +874,7 @@ export default function BasicChatPageClient() {
                           <input
                             value={modelSearch}
                             onChange={(event) => setModelSearch(event.target.value)}
-                            placeholder="Filter model..."
+                            placeholder="Cari model..."
                             className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
                             autoFocus
                           />
@@ -931,12 +931,12 @@ export default function BasicChatPageClient() {
         {historyOpen ? (
           <div ref={historyMenuRef} className="absolute right-4 top-[72px] z-20 w-[min(360px,calc(100vw-2rem))] rounded-[20px] border border-white/10 bg-[#262626] p-2 shadow-2xl shadow-black/50 lg:right-6">
             <div className="px-3 py-2">
-              <p className="text-xs uppercase tracking-[0.22em] text-white/45">Recent chats</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-white/45">Percakapan terbaru</p>
             </div>
             <div className="max-h-[48vh] space-y-2 overflow-y-auto p-1 custom-scrollbar">
               {sessionItems.length === 0 ? (
                 <div className="rounded-[16px] border border-dashed border-white/10 bg-white/5 p-4 text-sm text-white/55">
-                  No conversations yet.
+                  Belum ada percakapan.
                 </div>
               ) : sessionItems.map((session) => {
                 const isActive = session.id === activeSessionId;
@@ -951,7 +951,7 @@ export default function BasicChatPageClient() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-white">{session.title}</p>
-                        <p className="mt-1 truncate text-xs text-white/50">{textValue(latestMessage?.content) || "Empty chat"}</p>
+                        <p className="mt-1 truncate text-xs text-white/50">{textValue(latestMessage?.content) || "Percakapan kosong"}</p>
                       </div>
                       <span className="text-[10px] text-white/40 shrink-0">{formatRelativeTime(session.updatedAt)}</span>
                     </div>
@@ -980,9 +980,9 @@ export default function BasicChatPageClient() {
                     <span className="material-symbols-outlined text-[30px]">chat</span>
                   </div>
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold text-white">Start a conversation</h2>
+                    <h2 className="text-2xl font-semibold text-white">Mulai percakapan</h2>
                     <p className="text-sm leading-6 text-white/60">
-                      Simple chat interface to interact with any AI model from connected providers. Select a model and start chatting!
+                      Pilih model di bagian atas, lalu kirim pesan. Max Router akan meneruskan percakapan ke provider yang terhubung.
                     </p>
                   </div>
                 </div>
@@ -1020,10 +1020,27 @@ export default function BasicChatPageClient() {
                         </div>
                       ) : null}
 
-                      <div className="whitespace-pre-wrap break-words text-[15px] leading-7">
-                        {content}
-                        {isAssistant && isStreaming && !streamingText ? <span className="inline-block animate-pulse">▋</span> : null}
-                      </div>
+                      {message.status === "error" ? (
+                        <div className="mt-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.07] p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/10 text-amber-300">
+                              <span className="material-symbols-outlined text-[19px]">schedule</span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-amber-100">Provider sedang membatasi permintaan</p>
+                              <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-white/65">
+                                {content.replace(/^Error:\s*/i, "")}
+                              </p>
+                              <p className="mt-2 text-[11px] text-white/35">Tunggu sampai kuota tersedia, lalu kirim ulang pesan.</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="whitespace-pre-wrap break-words text-[15px] leading-7">
+                          {content}
+                          {isAssistant && isStreaming && !streamingText ? <span className="inline-block animate-pulse">▋</span> : null}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1037,7 +1054,7 @@ export default function BasicChatPageClient() {
                 {attachments.map((attachment) => (
                   <div key={attachment.id} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
                     <span className="text-xs text-white/80 max-w-[12rem] truncate">{attachment.name}</span>
-                    <button type="button" onClick={() => removeAttachment(attachment.id)} className="text-white/55 hover:text-white" aria-label="Remove attachment">
+                    <button type="button" onClick={() => removeAttachment(attachment.id)} className="text-white/55 hover:text-white" aria-label="Hapus lampiran">
                       <span className="material-symbols-outlined text-[18px]">close</span>
                     </button>
                   </div>
@@ -1046,12 +1063,12 @@ export default function BasicChatPageClient() {
             ) : null}
 
             <div className="mx-auto w-full max-w-3xl px-4 pb-2">
-              <div className="rounded-[26px] bg-[#2f2f2f] px-3 pt-3 pb-2 shadow-[0_0_15px_rgba(0,0,0,0.10)] ring-1 ring-white/5">
+              <div className="rounded-[26px] border border-white/[0.08] bg-[#252525] px-3 pt-3 pb-2 shadow-2xl shadow-black/20 ring-1 ring-black/20">
                 <textarea
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Message AI"
+                  placeholder="Ketik pesan untuk AI..."
                   rows={1}
                   className="w-full resize-none bg-transparent px-2 text-[15px] leading-6 text-white outline-none placeholder:text-white/40 custom-scrollbar max-h-[25vh] overflow-y-auto"
                 />
@@ -1062,7 +1079,7 @@ export default function BasicChatPageClient() {
                       <span className="material-symbols-outlined text-[20px]">attach_file</span>
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAttachFiles} />
-                    <span className="text-xs font-medium text-white/30 truncate max-w-[120px]">{activeModel ? activeModel.name : "No model"}</span>
+                    <span className="text-xs font-medium text-white/30 truncate max-w-[120px]">{activeModel ? activeModel.name : "Belum ada model"}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
