@@ -146,7 +146,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
           </Button>
           {formData.iconUrl && <img src={formData.iconUrl} alt="" className="size-7 rounded-md border border-border object-contain bg-white" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
           {iconMessage && <span className="text-xs text-text-muted">{iconMessage}</span>}
-        />
+        </div>
         {!isAnthropic && (
           <Select
             label="API Type"
