@@ -37,34 +37,52 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify required runtime exports
+      - name: Verify runtime exports
         run: |
           node --input-type=module - <<'NODE'
           const manager = await import('./dist/mitm/manager.js');
           const dns = await import('./dist/mitm/dns/dnsConfig.js');
 
-          const requiredManager = [
-            'getCachedPassword',
-            'setCachedPassword',
-            'initDbHooks',
-            'loadEncryptedPassword',
-            'saveMitmSettings'
-          ];
-          const requiredDns = ['execWithPassword'];
-
-          for (const name of requiredManager) {
-            if (typeof manager[name] !== 'function') {
-              throw new Error(`Missing manager export: ${name}`);
-            }
+          for (const name of ['getCachedPassword','setCachedPassword','initDbHooks','loadEncryptedPassword','saveMitmSettings']) {
+            if (typeof manager[name] !== 'function') throw new Error('Missing manager export: ' + name);
           }
-
-          for (const name of requiredDns) {
-            if (typeof dns[name] !== 'function') {
-              throw new Error(`Missing DNS export: ${name}`);
-            }
-          }
-
+          if (typeof dns.execWithPassword !== 'function') throw new Error('Missing DNS export: execWithPassword');
           console.log('Runtime export audit: OK');
+          NODE
+
+      - name: Verify provider and database support
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const root = path.resolve('./dist');
+          const files = [];
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (/\.(js|mjs)$/.test(entry.name)) files.push(full);
+            }
+          }
+          walk(root);
+          const source = files.map(f => fs.readFileSync(f,'utf8')).join('\n');
+
+          const checks = [
+            ['Antigravity provider', 'antigravity'],
+            ['Provider connections API', '/api/providers'],
+            ['Model endpoint', '/models'],
+            ['PostgreSQL adapter', 'createPostgresAdapter'],
+            ['DATABASE_URL', 'process.env.DATABASE_URL']
+          ];
+
+          for (const [label, needle] of checks) {
+            if (!source.includes(needle)) throw new Error('Provider/DB audit gagal: ' + label);
+            console.log('OK:', label);
+          }
+
+          console.log('Provider + database audit: OK');
+          console.warn('INFO: Railway production wajib menyediakan DATABASE_URL atau persistent Volume agar koneksi OAuth tidak hilang saat redeploy.');
           NODE
 
       - name: Import every route module
@@ -72,28 +90,30 @@ jobs:
           node --input-type=module - <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
+
           const root = path.resolve('./dist');
           const routes = [];
           function walk(dir) {
-            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
               const full = path.join(dir, entry.name);
               if (entry.isDirectory()) walk(full);
               else if (entry.name === 'route.js') routes.push(full);
             }
           }
           walk(root);
+
           let failed = 0;
           for (const file of routes) {
             try {
               await import('file://' + file);
             } catch (error) {
               failed++;
-              console.error(`ROUTE_IMPORT_FAILED: ${path.relative(root, file)}`);
+              console.error('ROUTE_IMPORT_FAILED:', path.relative(root,file));
               console.error(error?.stack || error);
             }
           }
-          console.log(`Route modules checked: ${routes.length}`);
-          if (failed) throw new Error(`${failed} route module(s) failed to import`);
+          console.log('Route modules checked:', routes.length);
+          if (failed) throw new Error(failed + ' route module(s) failed to import');
           NODE
 
       - name: Start smoke test
@@ -118,3 +138,33 @@ jobs:
           name: max-router-error-log
           path: /tmp/max-router-start.log
           if-no-files-found: ignore
+
+  audit-frontend:
+    name: Audit Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify Uji Model page
+        working-directory: frontend
+        run: |
+          test -f src/pages/basic-chat/BasicChatPageClient.jsx
+          grep -q '/api/providers' src/pages/basic-chat/BasicChatPageClient.jsx
+          grep -q '/api/dashboard/chat/completions' src/pages/basic-chat/BasicChatPageClient.jsx
+          echo "Uji Model page audit: OK"
