@@ -1,4 +1,4 @@
-import { ANTIGRAVITY_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
+import { ANTIGRAVITY_ENDPOINTS, ANTIGRAVITY_ENDPOINT_FALLBACKS } from "./../../src/lib/constants/antigravity.js";
 import crypto from "crypto";
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS } from "../config/providers.js";
@@ -25,9 +25,9 @@ export class AntigravityExecutor extends BaseExecutor {
   }
 
   buildUrl(model, stream, urlIndex = 0) {
-    return stream
-      ? `${ANTIGRAVITY_ENDPOINTS.streamGenerateContent}?alt=sse`
-      : ANTIGRAVITY_ENDPOINTS.generateContent;
+    const base = ANTIGRAVITY_ENDPOINT_FALLBACKS[urlIndex] || ANTIGRAVITY_ENDPOINT_FALLBACKS[0];
+    if (!base) throw new Error("Antigravity tidak memiliki endpoint yang dikonfigurasi");
+    return base + "/v1internal:" + (stream ? "streamGenerateContent?alt=sse" : "generateContent");
   }
 
   buildHeaders(credentials, stream = true, sessionId = null) {
@@ -35,6 +35,7 @@ export class AntigravityExecutor extends BaseExecutor {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${credentials.accessToken}`,
       "User-Agent": this.config.headers?.["User-Agent"] || ANTIGRAVITY_HEADERS["User-Agent"],
+      "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
       [INTERNAL_REQUEST_HEADER.name]: INTERNAL_REQUEST_HEADER.value,
       ...(sessionId && { "X-Machine-Session-Id": sessionId }),
       "Accept": stream ? "text/event-stream" : "application/json"
@@ -42,7 +43,10 @@ export class AntigravityExecutor extends BaseExecutor {
   }
 
   transformRequest(model, body, stream, credentials) {
-    const projectId = credentials?.projectId?.trim() || this.generateProjectId();
+    const projectId = credentials?.projectId?.trim();
+    if (!projectId) {
+      throw new Error("Antigravity project ID belum tersedia; hentikan request sebelum mengirim project ID acak");
+    }
 
     // Get base request data - handle both envelope and raw body
     const isEnvelope = body && body.request && (body.model || body.project);
@@ -164,11 +168,6 @@ export class AntigravityExecutor extends BaseExecutor {
     }
   }
 
-  generateProjectId() {
-    const adj = ["useful", "bright", "swift", "calm", "bold"][Math.floor(Math.random() * 5)];
-    const noun = ["fuze", "wave", "spark", "flow", "core"][Math.floor(Math.random() * 5)];
-    return `${adj}-${noun}-${crypto.randomUUID().slice(0, 5)}`;
-  }
 
   generateSessionId() {
     return crypto.randomUUID() + Date.now().toString();
