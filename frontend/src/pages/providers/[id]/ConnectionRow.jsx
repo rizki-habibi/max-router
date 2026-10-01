@@ -166,7 +166,7 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
   };
 
   return (
-    <div className={`group flex min-w-0 flex-col gap-3 rounded-lg p-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between ${connection.isActive === false ? "opacity-60" : ""}`}>
+    <div className={`group flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-sidebar/20 p-2.5 shadow-sm transition-colors hover:border-primary/20 hover:bg-sidebar/30 sm:flex-row sm:items-center sm:justify-between ${connection.isActive === false ? "opacity-60" : ""}`}>
       <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center sm:gap-3">
         {/* Checkbox */}
         {onSelect && (
@@ -208,7 +208,7 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
             </Badge>
             {maskedKey && !isOAuthConnection && <span className="font-mono text-xs text-text-muted">Key {maskedKey}</span>}
             {usage && (
-            <div className="mt-2 w-full max-w-3xl rounded-md border-t border-border/70 pt-2">
+            <div className="mt-2 w-full rounded-md border-t border-border/70 pt-2">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold">Pemakaian & sisa key</span>
                 <span className="text-[10px] text-text-muted">{usageLoading ? "Memuat..." : "Diperbarui otomatis 1 menit"}</span>
@@ -220,7 +220,9 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
                 <div className="min-w-0"><div className="text-[9px] text-text-muted">Token masuk/keluar</div><div className="truncate text-[11px] font-medium">{formatCount(localUsage.inputTokens)} / {formatCount(localUsage.outputTokens)}</div><div className="mt-1 h-1 rounded-full bg-purple-500/20"><div className="h-full w-2/3 rounded-full bg-purple-500/55" /></div></div>
                 <div className="min-w-0"><div className="text-[9px] text-text-muted">Saldo</div><div className="text-[11px] font-medium">{usage.wallet?.balance_usd != null ? "$" + usage.wallet.balance_usd : "—"}</div><div className="mt-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"><div className={Number(usage.wallet?.balance_usd || 0) > 0 ? "h-full w-full rounded-full bg-emerald-500" : "h-full w-full rounded-full bg-red-500"} /></div></div>
               </div>
-        {hasAnyProxy && (
+            </div>
+          )}
+          {hasAnyProxy && (
               <Badge variant={proxyBadgeVariant} size="sm">
                 Proxy
               </Badge>
