@@ -147,7 +147,7 @@ const getPageInfo = (pathname) => {
   return { title: "", description: "", breadcrumbs: [] };
 };
 
-export default function Header({ onMenuClick, showMenuButton = true }) {
+export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed = false, showMenuButton = true }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
@@ -216,6 +216,19 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
           </button>
         )}
       </div>
+
+      {/* Desktop sidebar toggle */}
+      <button
+        type="button"
+        onClick={onToggleCollapse}
+        className="mr-comic-toggle hidden lg:flex items-center justify-center size-10 shrink-0"
+        title={sidebarCollapsed ? "Buka panel" : "Tutup panel"}
+        aria-label={sidebarCollapsed ? "Buka panel" : "Tutup panel"}
+      >
+        <span className="mr-comic-toggle-icon material-symbols-outlined text-[19px]">
+          {sidebarCollapsed ? "chevron_right" : "chevron_left"}
+        </span>
+      </button>
 
       {/* Page title with breadcrumbs */}
       <div className="flex flex-col min-w-0 flex-1">
@@ -379,5 +392,5 @@ function HeaderSearch() {
 
 Header.propTypes = {
   onMenuClick: PropTypes.func,
-  showMenuButton: PropTypes.bool,
+  showMenuButton: PropTypes.bool,\n  onToggleCollapse: PropTypes.func,\n  sidebarCollapsed: PropTypes.bool,
 };
