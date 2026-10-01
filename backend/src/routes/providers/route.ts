@@ -117,7 +117,7 @@ export async function POST_handler(req, res) {
 
     let providerSpecificData = normalizeProviderSpecificData(provider, body, body.providerSpecificData);
 
-    // Compatible/embedding nodes allow exactly one connection each. These guards were
+    // Compatible nodes allow exactly one connection each. These guards were
     // dropped accidentally during the bun:sqlite refactor (v0.4.28); restored to honor
     // the contract locked in by tests/unit/compatible-provider-connections.test.js (#925).
     if (isOpenAICompatibleProvider(provider)) {
@@ -134,6 +134,7 @@ export async function POST_handler(req, res) {
         apiType: node.apiType,
         baseUrl: node.baseUrl,
         nodeName: node.name,
+        iconUrl: node.iconUrl || null,
       };
     } else if (isAnthropicCompatibleProvider(provider)) {
       const node = await getProviderNodeById(provider);
