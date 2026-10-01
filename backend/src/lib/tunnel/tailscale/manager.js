@@ -7,7 +7,7 @@ import * as mitmManager from "../../../mitm/manager.js";
 const getCachedPassword = () => typeof mitmManager.getCachedPassword === "function" ? mitmManager.getCachedPassword() : null;
 const loadEncryptedPassword = () => typeof mitmManager.loadEncryptedPassword === "function" ? mitmManager.loadEncryptedPassword() : null;
 
-mitmManager.initDbHooks(getSettings, updateSettings);
+mitmManager.mitmManager.initDbHooks(getSettings, updateSettings);
 
 const svc = {
   cancelToken: { cancelled: false },
