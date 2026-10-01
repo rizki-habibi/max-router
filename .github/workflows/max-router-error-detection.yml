@@ -325,8 +325,8 @@ jobs:
       - name: Verify Compatible CLI page
         working-directory: frontend
         run: |
-          test -f src/pages/antigravity-terminal/page.tsx
-          grep -q '/api/v1/chat/completions' src/pages/antigravity-terminal/page.tsx
-          grep -q 'Compatible CLI' src/pages/antigravity-terminal/page.tsx
-          grep -q 'path="antigravity"' src/App.tsx
-          echo "Antigravity CLI page audit: OK"
+          test -f src/pages/compatible-cli/page.tsx
+          grep -q '/api/v1/chat/completions' src/pages/compatible-cli/page.tsx
+          grep -q 'Compatible CLI' src/pages/compatible-cli/page.tsx
+          grep -q 'path="compatible-cli"' src/App.tsx
+          echo "Compatible CLI page audit: OK"
