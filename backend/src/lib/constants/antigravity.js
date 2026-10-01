@@ -21,4 +21,5 @@ export const ANTIGRAVITY_ENDPOINTS = Object.freeze({
   fetchAvailableModels: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:fetchAvailableModels`,
   generateContent: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:generateContent`,
   streamGenerateContent: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:streamGenerateContent`,
+  retrieveUserQuota: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:retrieveUserQuota`,
 });
