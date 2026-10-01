@@ -142,7 +142,7 @@ export class AntigravityService {
     const response = await fetch(this.config.onboardUserEndpoint, {
       method: "POST",
       headers: this.getApiHeaders(accessToken),
-      body: JSON.stringify({ tierId, metadata: this.getMetadata() }),
+      body: JSON.stringify({ tier_id: tierId, metadata: this.getMetadata() }),
     });
 
     if (!response.ok) {
