@@ -194,6 +194,11 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         refreshedCredentials.projectId = pid;
         // Persist to DB in background so subsequent requests have it immediately
         updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch(() => { });
+      } else if (provider === "antigravity") {
+        const message = "Antigravity account belum memiliki Google Cloud project ID. Reconnect/provision akun Antigravity terlebih dahulu; Max Router tidak boleh mengirim project ID acak.";
+        log.error("AUTH", message);
+        await markAccountUnavailable(credentials.connectionId, HTTP_STATUS.BAD_GATEWAY, message, provider, model);
+        return errorResponse(HTTP_STATUS.BAD_GATEWAY, message);
       }
     }
 
