@@ -56,15 +56,12 @@ function ModelApiErrorDialog({ error, onClose, onRetry }) {
               <span className="material-symbols-outlined text-red-500">error</span>
               <h2 className="text-base font-semibold">Gagal mengambil model</h2>
             </div>
-            <p className="mt-1 text-xs text-text-muted">
-              Respons endpoint tidak sesuai format yang diharapkan.
-            </p>
+            <p className="mt-1 text-xs text-text-muted">Respons endpoint tidak sesuai format yang diharapkan.</p>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-text-muted hover:bg-sidebar hover:text-text">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-
         <div className="space-y-3 px-5 py-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="rounded-lg border border-border p-3">
@@ -76,21 +73,18 @@ function ModelApiErrorDialog({ error, onClose, onRetry }) {
               <div className="mt-1 font-mono text-sm">{error.isHtml ? "HTML" : error.contentType || "unknown"}</div>
             </div>
           </div>
-
           <div className="rounded-lg border border-border p-3">
             <div className="text-[10px] uppercase tracking-wide text-text-muted">Endpoint</div>
             <div className="mt-1 break-all font-mono text-xs">{error.url}</div>
           </div>
-
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
             <div className="text-xs font-medium text-red-500">
               {error.isHtml
-                ? "Server mengembalikan HTML. Ini biasanya berarti route API salah, rewrite/proxy bermasalah, atau deployment mengirim halaman frontend."
+                ? "Server mengembalikan HTML. Kemungkinan route API/rewrite/proxy salah atau deployment mengirim halaman frontend."
                 : error.message || "Server mengembalikan respons yang tidak dapat diproses sebagai JSON."}
             </div>
             {error.htmlTitle && <div className="mt-1 text-xs text-text-muted">Judul halaman: {error.htmlTitle}</div>}
           </div>
-
           {error.raw && (
             <details className="rounded-lg border border-border">
               <summary className="cursor-pointer px-3 py-2 text-xs font-medium">Lihat respons mentah</summary>
@@ -98,7 +92,6 @@ function ModelApiErrorDialog({ error, onClose, onRetry }) {
             </details>
           )}
         </div>
-
         <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-4">
           <Button size="sm" variant="secondary" icon="content_copy" onClick={copyDetails}>Salin detail</Button>
           <Button size="sm" variant="secondary" icon="open_in_new" onClick={() => window.open(error.url, "_blank", "noopener,noreferrer")}>Buka endpoint</Button>
@@ -107,17 +100,9 @@ function ModelApiErrorDialog({ error, onClose, onRetry }) {
         </div>
       </div>
     </div>
-    <ModelApiErrorDialog
-      error={apiError}
-      onClose={() => setApiError(null)}
-      onRetry={() => {
-        setApiError(null);
-        handleImport();
-      }}
-    />
-    </>
   );
 }
+
 function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
   const borderColor = testStatus === "ok"
     ? "border-green-500/40"
@@ -445,6 +430,15 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         </div>
       )}
     </div>
+    <ModelApiErrorDialog
+      error={apiError}
+      onClose={() => setApiError(null)}
+      onRetry={() => {
+        setApiError(null);
+        handleImport();
+      }}
+    />
+    </>
   );
 }
 
