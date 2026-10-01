@@ -10,6 +10,29 @@ import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels
 
 const GEMINI_CLI_MODELS_URL = ANTIGRAVITY_ENDPOINTS.fetchAvailableModels;
 
+const readJsonResponse = async (response) => {
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (error) {
+      const preview = text.replace(/\s+/g, " ").slice(0, 500);
+      const err = new Error(
+        /html/i.test(contentType) || /^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text)
+          ? `Upstream mengembalikan HTML, bukan JSON (HTTP ${response.status}).`
+          : `Respons upstream bukan JSON yang valid (HTTP ${response.status}).`
+      );
+      err.contentType = contentType;
+      err.rawPreview = preview;
+      err.parseError = error?.message || "JSON parse failed";
+      throw err;
+    }
+  }
+  return { data, text, contentType };
+};
+
 const normalizeModelMetadata = (model) => {
   if (!model || typeof model !== "object") return model;
   const capabilities = model.capabilities && typeof model.capabilities === "object" ? model.capabilities : {};
@@ -292,13 +315,18 @@ const PROVIDER_MODELS_CONFIG = {
           }
 
           if (response.ok) {
-            const data = await response.json();
-            const models = parseModels(data);
-            if (models.length > 0) return { models };
-            lastError = "Antigravity terhubung tetapi API mengembalikan 0 model";
+            try {
+              const { data } = await readJsonResponse(response);
+              const models = parseModels(data);
+              if (models.length > 0) return { models };
+              lastError = "Antigravity terhubung tetapi API mengembalikan 0 model";
+            } catch (parseError) {
+              lastError = `Antigravity API ${response.status}: ${parseError.message}${parseError.contentType ? ` [${parseError.contentType}]` : ""}`;
+              if (parseError.rawPreview) lastError += ` — ${parseError.rawPreview}`;
+            }
           } else {
             const body = await response.text();
-            lastError = `Antigravity API ${response.status}: ${body.slice(0, 300)}`;
+            lastError = `Antigravity API ${response.status}: ${body.slice(0, 500)}`;
           }
         } catch (error) {
           lastError = error.message;
@@ -599,8 +627,21 @@ export async function GET_handler(req, res, { params }) {
         });
       }
 
-      const data = await response.json();
-      const models = normalizeModels(data.data || data.models || data.results || []);
+      let data;
+      try {
+        ({ data } = await readJsonResponse(response));
+      } catch (parseError) {
+        return res.status(502).json({
+          error: "Upstream /models mengembalikan respons yang bukan JSON.",
+          status: response.status,
+          contentType: parseError.contentType || "unknown",
+          upstreamError: parseError.message,
+          upstreamPreview: parseError.rawPreview || "",
+          endpoint: usedUrl,
+          source: "upstream",
+        });
+      }
+      const models = normalizeModels(data?.data || data?.models || data?.results || []);
       let usage = null;
 
       try {
@@ -697,8 +738,21 @@ export async function GET_handler(req, res, { params }) {
         });
       }
 
-      const data = await response.json();
-      const models = normalizeModels(data.data || data.models || data.results || []);
+      let data;
+      try {
+        ({ data } = await readJsonResponse(response));
+      } catch (parseError) {
+        return res.status(502).json({
+          error: "Upstream Anthropic /models mengembalikan respons yang bukan JSON.",
+          status: response.status,
+          contentType: parseError.contentType || "unknown",
+          upstreamError: parseError.message,
+          upstreamPreview: parseError.rawPreview || "",
+          endpoint: response.url || baseUrl,
+          source: "upstream",
+        });
+      }
+      const models = normalizeModels(data?.data || data?.models || data?.results || []);
       await persistModelCatalog(connection, models, null, candidates.find((url) => url && response.url === url) || baseUrl);
       return res.json({
         provider: connection.provider,
@@ -774,7 +828,22 @@ export async function GET_handler(req, res, { params }) {
       );
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      ({ data } = await readJsonResponse(response));
+    } catch (parseError) {
+      console.log(`Invalid JSON from ${connection.provider} models endpoint:`, parseError.message, parseError.rawPreview || "");
+      return res.status(502).json({
+        error: "Provider /models mengembalikan respons yang bukan JSON.",
+        provider: connection.provider,
+        status: response.status,
+        contentType: parseError.contentType || "unknown",
+        upstreamError: parseError.message,
+        upstreamPreview: parseError.rawPreview || "",
+        endpoint: url,
+        source: "upstream",
+      });
+    }
     const models = config.parseResponse(data);
 
     return res.json({
