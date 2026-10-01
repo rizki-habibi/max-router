@@ -70,6 +70,8 @@ jobs:
 
           const checks = [
             ['Antigravity provider', 'antigravity'],
+            ['Antigravity fetchAvailableModels endpoint', 'v1internal:fetchAvailableModels'],
+            ['Antigravity object-model parser', 'Object.entries(data.models)'],
             ['Provider connections API', '/api/providers'],
             ['Model endpoint', '/models'],
             ['PostgreSQL adapter', 'createPostgresAdapter'],
@@ -79,6 +81,10 @@ jobs:
           for (const [label, needle] of checks) {
             if (!source.includes(needle)) throw new Error('Provider/DB audit gagal: ' + label);
             console.log('OK:', label);
+          }
+
+          if (source.includes('v1internal:models')) {
+            throw new Error('Antigravity masih memakai endpoint lama v1internal:models');
           }
 
           console.log('Provider + database audit: OK');
