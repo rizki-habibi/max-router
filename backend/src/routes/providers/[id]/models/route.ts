@@ -1,4 +1,4 @@
-import { ANTIGRAVITY_ENDPOINTS } from "../../../../lib/constants/antigravity.js";
+import { ANTIGRAVITY_ENDPOINTS } from "./../../../../lib/constants/antigravity.js";
 
 import { getProviderConnectionById } from "../../../../models/index.js";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "../../../../shared/constants/providers.js";

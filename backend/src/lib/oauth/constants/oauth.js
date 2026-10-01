@@ -2,7 +2,7 @@
  * OAuth Configuration Constants
  */
 import { platform, arch } from "os";
-import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_API_VERSION, ANTIGRAVITY_ENDPOINTS } from "../../constants/antigravity.js";
+import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_API_VERSION, ANTIGRAVITY_ENDPOINTS } from "./../../constants/antigravity.js";
 
 /**
  * Get the platform enum value based on the current OS.

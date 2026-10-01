@@ -1,5 +1,5 @@
 import { platform, arch } from "os";
-import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
+import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
 
 // === Gemini CLI ===
 export const GEMINI_CLI_VERSION = "0.34.0";

@@ -1,4 +1,4 @@
-import { AntigravityExecutor } from "./antigravity.js";
+import { AntigravityExecutor } from "./../../src/lib/constants/antigravity.js";
 import { AzureExecutor } from "./azure.js";
 import { GeminiCLIExecutor } from "./gemini-cli.js";
 import { GithubExecutor } from "./github.js";
@@ -54,7 +54,7 @@ export function hasSpecializedExecutor(provider) {
 }
 
 export { BaseExecutor } from "./base.js";
-export { AntigravityExecutor } from "./antigravity.js";
+export { AntigravityExecutor } from "./../../src/lib/constants/antigravity.js";
 export { AzureExecutor } from "./azure.js";
 export { GeminiCLIExecutor } from "./gemini-cli.js";
 export { GithubExecutor } from "./github.js";

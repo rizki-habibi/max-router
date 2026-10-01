@@ -1,4 +1,4 @@
-import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
+import { ANTIGRAVITY_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
 import crypto from "crypto";
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS } from "../config/providers.js";

@@ -1,5 +1,5 @@
 import { PROVIDERS } from "../config/providers.js";
-import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
+import { ANTIGRAVITY_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.js";
 
 const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";

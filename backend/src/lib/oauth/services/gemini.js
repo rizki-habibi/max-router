@@ -2,7 +2,7 @@ import crypto from "crypto";
 import open from "open";
 import { GEMINI_CONFIG, getOAuthClientMetadata } from "../constants/oauth.js";
 import { getServerCredentials } from "../config/index.js";
-import { ANTIGRAVITY_ENDPOINTS } from "../../constants/antigravity.js";
+import { ANTIGRAVITY_ENDPOINTS } from "./../../constants/antigravity.js";
 import { startLocalServer } from "../utils/server.js";
 import { spinner as createSpinner } from "../utils/ui.js";
 
