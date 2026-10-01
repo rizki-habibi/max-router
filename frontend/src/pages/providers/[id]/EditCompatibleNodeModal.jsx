@@ -33,6 +33,8 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
   const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
+  const [iconLoading, setIconLoading] = useState(false);
+  const [iconMessage, setIconMessage] = useState("");
 
   useEffect(() => {
     if (node) {
@@ -67,6 +69,22 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
       await onSave(payload);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResolveIcon = async () => {
+    setIconMessage("");
+    setIconLoading(true);
+    try {
+      const res = await fetch("/api/provider-nodes/favicon?url=" + encodeURIComponent(formData.baseUrl));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.iconUrl) throw new Error(data.error || "Favicon tidak ditemukan");
+      setFormData((prev) => ({ ...prev, iconUrl: data.iconUrl }));
+      setIconMessage("Favicon resmi ditemukan.");
+    } catch (error) {
+      setIconMessage(error?.message || "Gagal mengambil favicon");
+    } finally {
+      setIconLoading(false);
     }
   };
 
@@ -119,8 +137,15 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
           label="Icon URL (opsional)"
           value={formData.iconUrl || ""}
           onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-          placeholder="https://contoh.com/logo.svg"
-          hint="URL HTTPS logo resmi provider."
+          placeholder="Otomatis dari Base URL atau https://contoh.com/logo.svg"
+          hint="Bisa diisi manual atau ambil favicon resmi dari domain Base URL."
+        />
+        <div className="-mt-2 flex flex-wrap items-center gap-2">
+          <Button type="button" variant="secondary" onClick={handleResolveIcon} disabled={iconLoading || !formData.baseUrl.trim()}>
+            {iconLoading ? "Mengambil favicon..." : "Ambil favicon resmi"}
+          </Button>
+          {formData.iconUrl && <img src={formData.iconUrl} alt="" className="size-7 rounded-md border border-border object-contain bg-white" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+          {iconMessage && <span className="text-xs text-text-muted">{iconMessage}</span>}
         />
         {!isAnthropic && (
           <Select
