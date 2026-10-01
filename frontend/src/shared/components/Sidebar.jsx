@@ -5,13 +5,6 @@ import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { cn } from "@/shared/utils/cn";
 import { APP_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
-
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { Link } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
-import { cn } from "@/shared/utils/cn";
-import { APP_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
