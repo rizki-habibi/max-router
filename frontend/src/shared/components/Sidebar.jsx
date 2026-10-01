@@ -12,23 +12,23 @@ import NineRemotePromoModal from "./NineRemotePromoModal";
 
 const navItems = [
   { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
-  { href: "/dashboard/providers", label: "Providers", icon: "dns" },
-  { href: "/dashboard/chat", label: "Compatible Chat", icon: "chat" },
+  { href: "/dashboard/providers", label: "Penyedia", icon: "dns" },
+  { href: "/dashboard/chat", label: "Obrolan Kompatibel", icon: "chat" },
   { href: "/dashboard/model-detection", label: "Deteksi Model", icon: "manage_search" },
-  { href: "/dashboard/antigravity", label: "Compatible CLI", icon: "terminal" },
-  { href: "/dashboard/combos", label: "Combos", icon: "layers" },
-  { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
+  { href: "/dashboard/antigravity", label: "CLI Kompatibel", icon: "terminal" },
+  { href: "/dashboard/combos", label: "Gabungan", icon: "layers" },
+  { href: "/dashboard/usage", label: "Penggunaan", icon: "bar_chart" },
   { href: "/dashboard/parameters", label: "Parameter", icon: "tune" },
 ];
 
 const debugItems = [
-  { href: "/dashboard/console-log", label: "Console Log", icon: "terminal" },
-  { href: "/dashboard/translator", label: "Translator", icon: "translate" },
+  { href: "/dashboard/console-log", label: "Log Konsol", icon: "terminal" },
+  { href: "/dashboard/translator", label: "Penerjemah", icon: "translate" },
 ];
 
 const systemItems = [
-  { href: "/dashboard/proxy-pools", label: "Proxy Pools", icon: "lan" },
-  { href: "/dashboard/automation", label: "Automation", icon: "smart_toy" },
+  { href: "/dashboard/proxy-pools", label: "Kumpulan Proksi", icon: "lan" },
+  { href: "/dashboard/automation", label: "Otomatisasi", icon: "smart_toy" },
 ];
 
 export default function Sidebar({ onClose }) {
@@ -123,7 +123,7 @@ export default function Sidebar({ onClose }) {
           {updateInfo && (
             <div className="flex flex-col gap-1.5 rounded p-1 -m-1">
               <span className="text-xs font-semibold text-green-600 dark:text-amber-500">
-                ↑ New version available: v{updateInfo.latestVersion}
+                ↑ Versi baru tersedia: v{updateInfo.latestVersion}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -134,11 +134,11 @@ export default function Sidebar({ onClose }) {
                 </button>
                 <button
                   onClick={() => copy(INSTALL_CMD)}
-                  title="Copy install command"
+                  title="Salin perintah pemasangan"
                   className="flex-1 text-left hover:opacity-80 transition-opacity cursor-pointer min-w-0"
                 >
                   <code className="block text-[10px] text-green-600/80 dark:text-amber-400/70 font-mono truncate">
-                    {copied ? "✓ copied!" : INSTALL_CMD}
+                    {copied ? "✓ tersalin!" : INSTALL_CMD}
                   </code>
                 </button>
               </div>
@@ -242,7 +242,7 @@ export default function Sidebar({ onClose }) {
               <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
                 computer
               </span>
-              <span className="text-[13px] font-medium">Remote</span>
+              <span className="text-[13px] font-medium">Jarak Jauh</span>
             </button>
 
             {/* Settings */}
@@ -264,7 +264,7 @@ export default function Sidebar({ onClose }) {
               >
                 settings
               </span>
-              <span className="text-[13px] font-medium">Settings</span>
+              <span className="text-[13px] font-medium">Pengaturan</span>
             </Link>
           </div>
         </nav>
@@ -279,9 +279,9 @@ export default function Sidebar({ onClose }) {
         isOpen={showUpdateModal}
         onClose={() => setShowUpdateModal(false)}
         onConfirm={handleUpdate}
-        title="Update 9Router V3"
+        title="Perbarui 9Router V3"
         message={`Show install command for v${updateInfo?.latestVersion || ""}? You can copy it and shutdown to install manually.`}
-        confirmText="Show Command"
+        confirmText="Tampilkan Perintah"
         cancelText="Cancel"
         variant="primary"
       />
@@ -304,10 +304,10 @@ export default function Sidebar({ onClose }) {
               <div className="flex items-center justify-center size-16 rounded-full bg-red-500/20 text-red-500 mx-auto mb-4">
                 <span className="material-symbols-outlined text-[32px]">power_off</span>
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">Server Disconnected</h2>
-              <p className="text-text-muted mb-6">The proxy server has been stopped.</p>
+              <h2 className="text-xl font-semibold text-white mb-2">Server Terputus</h2>
+              <p className="text-text-muted mb-6">Server proksi telah dihentikan.</p>
               <Button variant="secondary" onClick={() => globalThis.location.reload()}>
-                Reload Page
+                Muat Ulang Halaman
               </Button>
             </div>
           )}
@@ -330,31 +330,31 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
           <span className="material-symbols-outlined text-[24px]">content_copy</span>
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Update 9Router V3{latestVersion ? ` to v${latestVersion}` : ""}</h2>
+          <h2 className="text-lg font-semibold">Perbarui 9Router V3{latestVersion ? ` ke v${latestVersion}` : ""}</h2>
           <p className="text-xs text-white/60">
             {isDisconnected
-              ? "Server stopped. Paste the command into a terminal to install."
+              ? "Server berhenti. Tempel perintah ke terminal untuk memasang."
               : isCountingDown
-                ? `Command copied. Server will stop in ${countdown}s...`
-                : "Click the button below to copy the install command and shutdown."}
+                ? `Perintah tersalin. Server akan berhenti dalam ${countdown} detik...`
+                : "Klik tombol di bawah untuk menyalin perintah pemasangan dan mematikan server."}
           </p>
         </div>
       </div>
 
-      <p className="text-sm text-white/80 mb-2">Install command:</p>
+      <p className="text-sm text-white/80 mb-2">Perintah pemasangan:</p>
       <div className="w-full px-3 py-2 rounded bg-white/5 mb-4">
         <code className="text-xs font-mono text-amber-400 break-all">{installCmd}</code>
       </div>
 
       <ol className="text-xs text-white/70 space-y-1 list-decimal list-inside mb-4">
-        <li>Click <strong>Copy & Shutdown</strong> below.</li>
-        <li>Paste the command into your terminal and press Enter.</li>
-        <li>Run <code className="px-1 rounded bg-white/10 text-green-400">9router</code> again after install.</li>
+        <li>Klik <strong>Salin & Matikan</strong> di bawah.</li>
+        <li>Tempel perintah ke terminal lalu tekan Enter.</li>
+        <li>Jalankan <code className="px-1 rounded bg-white/10 text-green-400">9router</code> lagi setelah pemasangan.</li>
       </ol>
 
       {isDisconnected ? (
         <Button variant="secondary" fullWidth onClick={() => globalThis.location.reload()}>
-          Reload Page
+          Muat Ulang Halaman
         </Button>
       ) : (
         <div className="flex gap-2">
@@ -362,7 +362,7 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
             Cancel
           </Button>
           <Button variant="primary" fullWidth onClick={onCopyAndShutdown} disabled={isCountingDown}>
-            {copied ? "✓ Copied — shutting down..." : isCountingDown ? `Shutting down in ${countdown}s` : "Copy & Shutdown"}
+            {copied ? "✓ Tersalin — mematikan..." : isCountingDown ? `Mematikan dalam ${countdown} detik` : "Salin & Matikan"}
           </Button>
         </div>
       )}
