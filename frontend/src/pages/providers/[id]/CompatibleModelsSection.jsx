@@ -138,7 +138,7 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
               </span>
             </button>
             <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-              {copied === `model-${modelId}` ? "Copied!" : "Copy"}
+              {copied === `model-${modelId}` ? "Tersalin" : "Copy"}
             </span>
           </div>
           {onTest && (
@@ -153,7 +153,7 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
                 </span>
               </button>
               <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                {isTesting ? "Testing..." : "Test"}
+                {isTesting ? "Menguji..." : "Test"}
               </span>
             </div>
           )}
@@ -162,7 +162,7 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
       <button
         onClick={onDeleteAlias}
         className="p-1 hover:bg-red-50 rounded text-red-500"
-        title="Remove model"
+        title="Hapus model"
       >
         <span className="material-symbols-outlined text-sm">delete</span>
       </button>
@@ -213,9 +213,9 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   };
 
   const handleTestAll = async () => {
-    if (testingAll || testingModelId || allModels.length === 0) return;
+    if (testingAll || testingModelId || activeModels.length === 0) return;
     setTestingAll(true);
-    for (const item of allModels) await handleTestModel(item.modelId, true);
+    for (const item of activeModels) await handleTestModel(item.modelId, true);
     setTestingAll(false);
   };
 
@@ -229,7 +229,9 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     alias,
   }));
 
-  const errorModels = allModels.filter(({ modelId }) => modelTestResults[modelId] === "error");
+  const activeModels = allModels.filter(({ modelId }) => !disabledModelIds.includes(modelId));
+  const disabledModels = allModels.filter(({ modelId }) => disabledModelIds.includes(modelId));
+  const errorModels = activeModels.filter(({ modelId }) => modelTestResults[modelId] === "error");
 
   const handleBulkAction = async () => {
     if (!bulkAction || errorModels.length === 0 || bulkBusy) return;
@@ -386,9 +388,25 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   return (
     <>
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-text-muted">
-        Add {isAnthropic ? "Anthropic" : "OpenAI"}-compatible models manually or import them from the /models endpoint.
-      </p>
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-2/30 p-4">
+        <div>
+          <h3 className="text-lg font-semibold">Model Tersedia</h3>
+          <p className="mt-1 text-sm text-text-muted">Tambahkan model {isAnthropic ? "Anthropic" : "OpenAI"} secara manual atau ambil otomatis dari endpoint /models.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-border px-2.5 py-1 text-xs">Aktif: {activeModels.length}</span>
+          <span className="rounded-full border border-border px-2.5 py-1 text-xs">Error: {errorModels.length}</span>
+          <span className="rounded-full border border-border px-2.5 py-1 text-xs">Nonaktif: {disabledModels.length}</span>
+          {errorModels.length > 0 && <>
+            <Button size="sm" variant="secondary" icon="block" onClick={() => setBulkAction("disable")}>Nonaktifkan model error ({errorModels.length})</Button>
+            <Button size="sm" variant="secondary" icon="delete_sweep" onClick={() => setBulkAction("delete")}>Hapus model error ({errorModels.length})</Button>
+          </>}
+          {disabledModels.length > 0 && <Button size="sm" variant="secondary" icon="restart_alt" onClick={async () => {
+            const res = await fetch(`/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}`, { method: "DELETE" });
+            if (res.ok) setDisabledModelIds([]);
+          }}>Aktifkan semua nonaktif</Button>}
+        </div>
+      </div>
 
       <div className="flex items-end gap-2 flex-wrap">
         <div className="flex-1 min-w-[240px]">
@@ -404,12 +422,12 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           />
         </div>
         <Button size="sm" icon="add" onClick={handleAdd} disabled={!newModel.trim() || adding}>
-          {adding ? "Adding..." : "Add"}
+          {adding ? "Menambahkan..." : "Add"}
         </Button>
         <Button size="sm" variant="secondary" icon="download" onClick={handleImport} disabled={!canImport || importing}>
-          {importing ? "Importing..." : "Import from /models"}
+          {importing ? "Mengambil..." : "Ambil model dari /models"}
         </Button>
-        <Button size="sm" variant="secondary" icon="science" onClick={handleTestAll} disabled={testingAll || !!testingModelId || allModels.length === 0}>{testingAll ? "Menguji semua..." : "Tes Semua Model"}</Button>
+        <Button size="sm" variant="secondary" icon="science" onClick={handleTestAll} disabled={testingAll || !!testingModelId || activeModels.length === 0}>{testingAll ? "Menguji semua..." : "Tes Semua Model"}</Button>
         {errorModels.length > 0 && <>
           <Button size="sm" variant="secondary" icon="block" onClick={() => setBulkAction("disable")}>Nonaktifkan Error ({errorModels.length})</Button>
           <Button size="sm" variant="secondary" icon="delete_sweep" onClick={() => setBulkAction("delete")}>Hapus Error ({errorModels.length})</Button>
@@ -455,7 +473,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
 
       {allModels.length > 0 && (
         <div className="flex flex-col gap-3">
-          {allModels.map(({ modelId, fullModel, alias }) => (
+          {activeModels.map(({ modelId, fullModel, alias }) => (
             <CompatibleModelRow
               key={fullModel}
               modelId={modelId}
