@@ -172,6 +172,12 @@ export async function initDb() {
   await getAdapter();
 }
 
+// Persistent model-test jobs
+export {
+  createModelTestJob, getModelTestJob, listRunningModelTestJobs,
+  getLatestModelTestJob, updateModelTestJob, recordModelTestJobResult,
+} from "./repos/modelTestJobsRepo.js";
+
 // Automation (CodeBuddy & Ammail)
 export {
   listCodeBuddyAccounts, getCodeBuddyAccount, insertCodeBuddyAccount,
