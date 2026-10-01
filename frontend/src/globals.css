@@ -620,3 +620,103 @@ button {
 .mr-soft-gradient {
   background: linear-gradient(135deg, rgba(103,183,255,.10), rgba(124,92,255,.08) 52%, rgba(255,255,255,.55));
 }
+
+
+/* ============================================================
+   Max Router — Gen-Z Comic Dashboard UI
+   ============================================================ */
+.mr-sidebar {
+  position: relative;
+  isolation: isolate;
+  box-shadow: 8px 0 30px rgba(23, 32, 51, 0.06);
+}
+.dark .mr-sidebar {
+  box-shadow: 8px 0 35px rgba(0, 0, 0, 0.20);
+}
+.mr-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .45;
+  background-image: radial-gradient(rgba(37, 99, 235, .10) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+.dark .mr-sidebar::before {
+  opacity: .16;
+}
+.mr-comic-dots > div {
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+  transition: transform .2s ease;
+}
+.mr-comic-dots > div:hover {
+  transform: scale(1.18) rotate(-8deg);
+}
+.mr-comic-nav-item {
+  position: relative;
+  min-height: 38px;
+  border: 1px solid transparent;
+}
+.mr-comic-nav-item:hover {
+  transform: translateX(2px);
+  border-color: rgba(37,99,235,.10);
+  background: rgba(37,99,235,.07);
+}
+.mr-comic-nav-item.bg-primary\/10 {
+  border-color: rgba(37,99,235,.18);
+  background: linear-gradient(135deg, rgba(37,99,235,.13), rgba(124,92,255,.08));
+  box-shadow: 3px 4px 0 rgba(37,99,235,.08);
+  font-weight: 700;
+}
+.mr-comic-nav-item.bg-primary\/10::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--mr-blue, #2563eb);
+  box-shadow: 0 0 0 4px rgba(37,99,235,.08);
+}
+.mr-comic-toggle {
+  border: 2px solid var(--mr-ink, #172033);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff 0%, #eef6ff 100%);
+  box-shadow: 4px 4px 0 var(--mr-ink, #172033);
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+  cursor: pointer;
+}
+.dark .mr-comic-toggle {
+  border-color: #e5e7eb;
+  background: linear-gradient(135deg, #252a3a 0%, #1d2333 100%);
+  box-shadow: 4px 4px 0 rgba(255,255,255,.75);
+}
+.mr-comic-toggle:hover {
+  transform: translate(2px, 2px) rotate(-1deg);
+  box-shadow: 2px 2px 0 var(--mr-ink, #172033);
+  background: linear-gradient(135deg, #eaf4ff 0%, #f4efff 100%);
+}
+.dark .mr-comic-toggle:hover {
+  box-shadow: 2px 2px 0 rgba(255,255,255,.75);
+}
+.mr-comic-toggle:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+.mr-comic-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--mr-sky, #67b7ff), var(--mr-purple, #7c5cff));
+  color: white;
+  box-shadow: 0 5px 12px rgba(37,99,235,.22);
+}
+@media (max-width: 1023px) {
+  .mr-sidebar {
+    box-shadow: 12px 0 40px rgba(0,0,0,.18);
+  }
+}
