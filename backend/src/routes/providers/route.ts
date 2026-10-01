@@ -68,6 +68,7 @@ export async function GET(req, res) {
       return {
         ...c,
         name,
+        hasApiKey: Boolean(c.apiKey),
         apiKey: undefined,
         accessToken: undefined,
         refreshToken: undefined,
@@ -155,7 +156,7 @@ export async function POST_handler(req, res) {
         isActive: true,
         testStatus: "unknown",
       });
-      const safe = { ...connection };
+      const safe = { ...connection, hasApiKey: Boolean(connection.apiKey) };
       delete safe.apiKey;
       created.push(safe);
     }
