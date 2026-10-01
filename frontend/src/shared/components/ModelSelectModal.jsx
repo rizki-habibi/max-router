@@ -32,8 +32,9 @@ export default function ModelSelectModal({
 }) {
   // Filter activeProviders by serviceKinds when kindFilter set (e.g. "webSearch", "webFetch")
   const filteredActiveProviders = useMemo(() => {
-    if (!kindFilter) return activeProviders;
-    return activeProviders.filter((p) => {
+    const compatibleOnly = activeProviders.filter((p) => isOpenAICompatibleProvider(p.provider) || isAnthropicCompatibleProvider(p.provider));
+    if (!kindFilter) return compatibleOnly;
+    return compatibleOnly.filter((p) => {
       const info = AI_PROVIDERS[p.provider];
       const kinds = info?.serviceKinds || ["llm"];
       return kinds.includes(kindFilter);
@@ -134,9 +135,7 @@ export default function ModelSelectModal({
     const activeConnectionIds = filteredActiveProviders.map(p => p.provider);
 
     // No-auth providers: filter by kindFilter as well
-    const noAuthIds = kindFilter
-      ? NO_AUTH_PROVIDER_IDS.filter((id) => (AI_PROVIDERS[id]?.serviceKinds || ["llm"]).includes(kindFilter))
-      : NO_AUTH_PROVIDER_IDS;
+    const noAuthIds = [];
 
     // Only show connected providers (including both standard and custom)
     const providerIdsToShow = new Set([
