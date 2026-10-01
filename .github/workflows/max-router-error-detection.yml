@@ -384,6 +384,16 @@ jobs:
           cat /tmp/max-router-start.log
           kill $PID || true
 
+      - name: Final route import gate
+        if: always()
+        run: |
+          if grep -q "ROUTE_IMPORT_FAILED:" /tmp/route-import-errors.log 2>/dev/null; then
+            echo "ROUTE_IMPORT_GATE: FAIL"
+            grep "ROUTE_IMPORT_FAILED:" /tmp/route-import-errors.log || true
+            exit 1
+          fi
+          echo "ROUTE_IMPORT_GATE: OK"
+
       - name: Upload failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
