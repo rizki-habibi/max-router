@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node --import ./bin/register-alias.mjs dist/server.js",
-    "build": "node bin/prepare-build.cjs && tsc",
+    "build": "node bin/prepare-build.cjs && tsc && node bin/sync-open-sse.cjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
