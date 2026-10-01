@@ -94,7 +94,7 @@ jobs:
         run: |
           test -f dist/open-sse/executors/antigravity.js
 
-          if grep -nF '\\\\n          const errorInfo' dist/open-sse/executors/antigravity.js; then
+          if grep -nF '\\n          const errorInfo' dist/open-sse/executors/antigravity.js; then
             echo 'FAIL: dist masih mengandung literal newline corruption pada errorInfo'
             exit 1
           fi
