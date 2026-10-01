@@ -160,12 +160,19 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
       const res = await fetch(`/api/providers/${activeConnection.id}/models`);
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to import models");
+        const detail = [
+          data.error,
+          data.upstreamError ? "Upstream: " + data.upstreamError : "",
+          Array.isArray(data.candidates) ? "Dicoba: " + data.candidates.join(" | ") : "",
+        ].filter(Boolean).join("\n");
+        alert(detail || "Gagal mengambil model.");
         return;
       }
-      const models = data.models || [];
+      const models = Array.isArray(data.models) ? data.models : [];
       setImportedModels(models);
       setUsageInfo(data.usage || null);
+      if (data.warning) console.warn("[Model Import]", data.warning, data.upstreamError || "");
+
       if (models.length === 0) {
         alert("No models returned from /models.");
         return;
@@ -241,7 +248,12 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
 
       {importedModels.length > 0 && (
         <div className="rounded-lg border border-border bg-bg/50 p-3">
-          <div className="mb-2 text-xs font-medium text-text-muted">Deteksi Model & Parameter</div>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="text-xs font-medium text-text-muted">Deteksi Model & Parameter</div>
+            <span className="text-[10px] rounded-full px-2 py-0.5 border border-border">
+              {importedModels.length} model terdeteksi
+            </span>
+          </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {importedModels.map((model) => (
               <div key={model.id || model.name} className="rounded-lg border border-border px-3 py-2 text-xs">
