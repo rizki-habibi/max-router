@@ -934,7 +934,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <Modal isOpen={isOpen} title="Add OpenAI Compatible" onClose={onClose}>
+    <Modal isOpen={isOpen} title="Tambah Provider Kompatibel (OpenAI)" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <Input
           label="Name"
@@ -942,6 +942,13 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="OpenAI Compatible (Prod)"
           hint="Nama tampilan provider kompatibel."
+        />
+        <Input
+          label="Icon URL (opsional)"
+          value={formData.iconUrl || ""}
+          onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
+          placeholder="https://contoh.com/logo.svg"
+          hint="URL HTTPS logo resmi provider. Jika kosong, ikon kompatibel bawaan digunakan."
         />
         <Input
           label="Prefix"
@@ -1055,6 +1062,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
         body: JSON.stringify({
           name: formData.name,
           prefix: formData.prefix,
+          iconUrl: formData.iconUrl,
           baseUrl: formData.baseUrl,
           type: "anthropic-compatible",
         }),
@@ -1136,7 +1144,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <Modal isOpen={isOpen} title="Add Anthropic Compatible" onClose={onClose}>
+    <Modal isOpen={isOpen} title="Tambah Provider Kompatibel (Messages)" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <Input
           label="Name"
