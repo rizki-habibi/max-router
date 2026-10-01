@@ -28,13 +28,25 @@ function quotaState(usage){
 }
 function QuotaMeter({usage}){
  const q=quotaState(usage);
- if(!q)return <div className="text-[10px] text-text-muted">Token tersisa: —<div className="mt-1 h-1.5 w-full rounded-full bg-border/50" title="Provider tidak menyediakan sisa token melalui endpoint resmi"/></div>;
- const cls=q.pct<=10?"bg-red-500":q.pct<50?"bg-amber-400":"bg-emerald-500";
- const label=q.kind==="token"?"Token tersisa":"Permintaan tersisa";
- return <div className="min-w-[150px]">
-   <div className="flex items-center justify-between gap-2 text-[10px]"><span className="text-text-muted">{label}</span><b>{n(q.remaining)} / {n(q.limit)}</b></div>
-   <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border/50" title={q.pct.toFixed(0)+"% tersisa"}><div className={"h-full rounded-full "+cls} style={{width:q.pct+"%"}}/></div>
-   <div className={"mt-0.5 text-[9px] "+(q.pct<=10?"text-red-500":q.pct<50?"text-amber-500":"text-emerald-500")}>{q.pct<=10?"Hampir habis":q.pct<50?"Sisa sedang":"Masih banyak"}</div>
+ const local=usage?.local||{};
+ const input=Number(local.inputTokens)||0;
+ const output=Number(local.outputTokens)||0;
+ const total=input+output;
+ const requests=Number(local.requests)||0;
+ const cache=Number(local.cacheReadTokens)||0;
+ return <div className="min-w-[190px] space-y-2">
+   {q ? <div>
+     <div className="flex items-center justify-between gap-2 text-[10px]"><span className="text-text-muted">{q.kind==="token"?"Token tersisa":"Permintaan tersisa"}</span><b>{n(q.remaining)} / {n(q.limit)}</b></div>
+     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border/50"><div className={"h-full rounded-full "+(q.pct<=10?"bg-red-500":q.pct<50?"bg-amber-400":"bg-emerald-500")} style={{width:q.pct+"%"}}/></div>
+   </div> : null}
+   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
+     <span className="text-text-muted">Token dipakai</span><b>{n(total)}</b>
+     <span className="text-text-muted">Input</span><span>{n(input)}</span>
+     <span className="text-text-muted">Output</span><span>{n(output)}</span>
+     <span className="text-text-muted">Request</span><span>{n(requests)}</span>
+     {cache>0&&<><span className="text-text-muted">Cache read</span><span>{n(cache)}</span></>}
+   </div>
+   {!q&&<div className="text-[9px] text-text-muted">Sisa token akun: tidak disediakan provider</div>}
  </div>
 }
 QuotaMeter.propTypes={usage:PropTypes.object};
@@ -53,7 +65,7 @@ Row.propTypes={c:PropTypes.object.isRequired,index:PropTypes.number.isRequired,t
 
 export default function ProviderConnectionsTable({connections,proxyPools=[],selectedIds=[],allSelected,onSelect,onSelectAll,onMoveUp,onMoveDown,onToggleActive,onEdit,onDelete,onTest,testingIds=[],providerName,providerIcon,officialWebsite,officialBaseUrl,onAddKey,requireApiKey=false}){
  const [q,setQ]=useState(""),[status,setStatus]=useState("all"),[sort,setSort]=useState("priority"),[usage,setUsage]=useState({});
- useEffect(()=>{let stop=false;const load=async()=>{const out={};await Promise.all(connections.map(async c=>{try{const r=await fetch("/api/usage/"+encodeURIComponent(c.id),{cache:"no-store"}),d=await r.json().catch(()=>null);if(r.ok&&d&&!d.error)out[c.id]={...d,_loadedAt:Date.now()}}catch{}}));if(!stop)setUsage(out)};load();const t=setInterval(load,60000);return()=>{stop=true;clearInterval(t)}},[connections]);
+ useEffect(()=>{let stop=false;const load=async()=>{const out={};await Promise.all(connections.map(async c=>{try{const r=await fetch("/api/usage/"+encodeURIComponent(c.id),{cache:"no-store"}),d=await r.json().catch(()=>null);if(r.ok&&d&&!d.error)out[c.id]={...d,_loadedAt:Date.now()}}catch{}}));if(!stop)setUsage(out)};load();const t=setInterval(load,15000);return()=>{stop=true;clearInterval(t)}},[connections]);
   const rows=useMemo(
     ()=>connections.filter(c=>{
       if(requireApiKey&&!c.hasApiKey)return false;
