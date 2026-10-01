@@ -149,6 +149,107 @@ jobs:
           if (failed) throw new Error(failed + ' route module(s) failed to import');
           NODE
 
+
+
+      - name: Deep OAuth and runtime static audit
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const required = [
+            'src/lib/oauth/antigravity-pkce.js',
+            'src/lib/oauth/providers.js',
+            'src/lib/oauth/utils/server.js',
+          ];
+
+          for (const file of required) {
+            if (!fs.existsSync(file)) throw new Error('Missing required OAuth file: ' + file);
+          }
+
+          const helper = fs.readFileSync('src/lib/oauth/antigravity-pkce.js', 'utf8');
+          const providers = fs.readFileSync('src/lib/oauth/providers.js', 'utf8');
+          const server = fs.readFileSync('src/lib/oauth/utils/server.js', 'utf8');
+
+          const requiredPatterns = [
+            ['PKCE S256 challenge', 'code_challenge_method'],
+            ['PKCE verifier', 'code_verifier'],
+            ['Antigravity token endpoint', 'tokenUrl'],
+            ['Antigravity canonical base', 'ANTIGRAVITY_CONFIG'],
+            ['clear session', 'clearAntigravitySession'],
+            ['session verifier storage', 'codeVerifier'],
+          ];
+
+          for (const [label, needle] of requiredPatterns) {
+            const combined = helper + '\n' + providers + '\n' + server;
+            if (!combined.includes(needle)) throw new Error('OAuth audit gagal: ' + label);
+          }
+
+          if (!helper.includes('code_challenge_method: "S256"')) {
+            throw new Error('Antigravity PKCE wajib menggunakan S256');
+          }
+          if (!helper.includes('code_verifier: codeVerifier')) {
+            throw new Error('Antigravity token exchange tidak mengirim code_verifier');
+          }
+          if (!server.includes('registerAntigravitySession({ state, codeVerifier, redirectUri })')) {
+            throw new Error('Callback proxy tidak menyimpan PKCE verifier');
+          }
+          if (!server.includes('session.codeVerifier')) {
+            throw new Error('Callback proxy tidak memakai verifier dari session');
+          }
+
+          // Detect accidental use of the legacy non-PKCE Antigravity handler.
+          const agBlockStart = providers.indexOf('  antigravity: {');
+          const agBlockEnd = providers.indexOf('  iflow: {', agBlockStart);
+          if (agBlockStart < 0 || agBlockEnd < 0) throw new Error('Antigravity provider block tidak ditemukan');
+          const agBlock = providers.slice(agBlockStart, agBlockEnd);
+          if (agBlock.includes('flowType: "authorization_code"')) {
+            console.warn('WARNING: legacy Antigravity provider block masih authorization_code; route PKCE override tetap wajib dipakai.');
+          }
+
+          console.log('Deep OAuth static audit: OK');
+          NODE
+
+      - name: Compile-only runtime import audit
+        run: |
+          node --input-type=module - <<'NODE'
+          const modules = [
+            './dist/lib/oauth/antigravity-pkce.js',
+            './dist/lib/oauth/providers.js',
+            './dist/lib/oauth/utils/server.js',
+            './dist/routes/oauth/[provider]/[action]/route.js'
+          ];
+          for (const mod of modules) {
+            try {
+              await import(mod);
+              console.log('IMPORT_OK:', mod);
+            } catch (error) {
+              console.error('IMPORT_FAILED:', mod);
+              console.error(error?.stack || error);
+              process.exitCode = 1;
+            }
+          }
+          if (process.exitCode) throw new Error('One or more OAuth runtime modules failed to import');
+          NODE
+
+      - name: Validate production database guard
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const candidates = [
+            'src/lib/db/driver.js',
+            'src/lib/db/driver.ts',
+            'src/lib/localDb.js',
+            'src/lib/localDb.ts'
+          ];
+          const existing = candidates.filter(fs.existsSync);
+          const source = existing.map(f => fs.readFileSync(f, 'utf8')).join('\n');
+          if (!source.includes('DATABASE_URL')) throw new Error('DATABASE_URL guard tidak ditemukan');
+          if (!source.includes('ALLOW_EPHEMERAL_SQLITE')) throw new Error('Production SQLite escape hatch/guard tidak ditemukan');
+          console.log('Production DB persistence audit: OK');
+          NODE
+
       - name: Start smoke test
         env:
           NODE_ENV: test
