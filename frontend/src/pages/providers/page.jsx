@@ -1154,6 +1154,13 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
           hint="Required. A friendly label for this node."
         />
         <Input
+          label="Icon URL (opsional)"
+          value={formData.iconUrl || ""}
+          onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
+          placeholder="https://contoh.com/logo.svg"
+          hint="URL HTTPS logo resmi provider. Jika kosong, ikon kompatibel bawaan digunakan."
+        />
+        <Input
           label="Prefix"
           value={formData.prefix}
           onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
