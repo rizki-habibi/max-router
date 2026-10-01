@@ -1,4 +1,5 @@
-import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";\n/**
+import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
+/**
  * Usage Fetcher - Get usage data from provider APIs
  */
 
