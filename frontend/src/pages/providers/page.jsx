@@ -814,147 +814,228 @@ ApiKeyProviderCard.propTypes = {
 };
 
 function AddCompatibleModal({ isOpen, onClose, onCreated }) {
-  const [form, setForm] = useState({
-    type: "openai-compatible",
-    name: "",
-    prefix: "",
-    baseUrl: "https://api.openai.com/v1",
-    iconUrl: "",
-    apiType: "chat",
-    bulk: "",
-  });
-  const [nodes, setNodes] = useState([]);
+  const [name, setName] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [iconUrl, setIconUrl] = useState("");
+  const [apiKeys, setApiKeys] = useState("");
+  const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [validation, setValidation] = useState(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!isOpen) return;
-    fetch("/api/provider-nodes").then((r) => r.json()).then((data) => {
-      const list = Array.isArray(data?.nodes) ? data.nodes.filter((n) => n.type === "openai-compatible" || n.type === "anthropic-compatible") : [];
-      setNodes(list);
-      if (list[0]) {
-        setForm((prev) => ({
-          ...prev,
-          type: list[0].type,
-          name: list[0].name || "",
-          prefix: list[0].prefix || "",
-          baseUrl: list[0].baseUrl || prev.baseUrl,
-          iconUrl: list[0].iconUrl || "",
-          apiType: list[0].apiType || "chat",
-        }));
-      }
-    }).catch(() => {});
+    if (!isOpen) {
+      setName("");
+      setBaseUrl("");
+      setIconUrl("");
+      setApiKeys("");
+      setChecking(false);
+      setSaving(false);
+      setValidation(null);
+      setMessage("");
+    }
   }, [isOpen]);
 
-  const selectNode = (nodeId) => {
-    const node = nodes.find((n) => n.id === nodeId);
-    if (!node) return;
-    setForm((prev) => ({
-      ...prev,
-      type: node.type,
-      name: node.name || "",
-      prefix: node.prefix || "",
-      baseUrl: node.baseUrl || prev.baseUrl,
-      iconUrl: node.iconUrl || "",
-      apiType: node.apiType || "chat",
-    }));
-  };
+  const keyLines = () => Array.from(new Set(
+    apiKeys.split(/\\r?\\n/).map((value) => value.trim()).filter(Boolean)
+  ));
 
-  const parseBulk = (raw) => {
-    const lines = raw.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    const keyLike = (s) => /^(sk-|sk_|key-|api[_-]?key|[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{8,})/i.test(s);
-    const keys = [];
-    const models = [];
-    for (const line of lines) {
-      if (keyLike(line)) keys.push(line);
-      else models.push(line);
-    }
-    return keys.map((apiKey, i) => ({
-      apiKey,
-      defaultModel: models[i] || models[0] || "",
-      name: `${form.name.trim() || "Provider Kompatibel"} #${i + 1}`,
-    }));
-  };
-
-  const handleSubmit = async () => {
-    const batch = parseBulk(form.bulk);
-    if (!form.baseUrl.trim() || !form.prefix.trim() || !batch.length) {
-      setMessage("Isi Base URL, Prefix, dan minimal satu API key.");
+  const handleCheck = async () => {
+    const keys = keyLines();
+    if (!baseUrl.trim() || !keys.length) {
+      setMessage("Isi Base URL dan minimal satu API key.");
       return;
     }
+
+    setChecking(true);
+    setMessage("");
+    setValidation(null);
+    try {
+      const data = await fetchProviderNodeValidation({
+        baseUrl: baseUrl.trim(),
+        apiKeys: keys,
+      });
+      setValidation(data);
+      if (data.validCount > 0) {
+        setMessage(
+          data.validCount === data.total
+            ? "Semua API key valid."
+            : data.validCount + " key valid, " + data.invalidCount + " key tidak valid."
+        );
+      } else {
+        setMessage(data.error || "Tidak ada API key yang valid.");
+      }
+    } catch (error) {
+      setMessage(error?.name === "AbortError" ? "Pemeriksaan timeout (>15 detik)." : "Gagal memeriksa API key.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const slugify = (value) => {
+    const slug = value.trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return slug || "provider";
+  };
+
+  const handleSave = async () => {
+    if (!validation?.results?.length || validation.validCount === 0) {
+      setMessage("Periksa API key terlebih dahulu.");
+      return;
+    }
+
+    const validResults = validation.results.filter((item) => item.valid && item.baseUrl);
+    if (!validResults.length) {
+      setMessage("Tidak ada key valid untuk disimpan.");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     try {
-      const nodeRes = await fetch("/api/provider-nodes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim() || "Provider Kompatibel",
-          prefix: form.prefix.trim(),
-          iconUrl: form.iconUrl.trim(),
-          apiType: form.apiType,
-          baseUrl: form.baseUrl.trim(),
-          type: form.type,
-        }),
-      });
-      const nodeData = await nodeRes.json();
-      let providerId = nodeData?.node?.id;
-      if (!nodeRes.ok && nodeData?.node?.id) providerId = nodeData.node.id;
-      if (!providerId) {
-        const existing = nodes.find((n) => n.type === form.type && n.prefix === form.prefix.trim() && n.baseUrl === form.baseUrl.trim());
-        providerId = existing?.id;
-      }
-      if (!providerId) {
-        setMessage(nodeData?.error || "Gagal membuat provider kompatibel.");
-        return;
+      const groups = new Map();
+      for (const item of validResults) {
+        const groupKey = (item.detectedType || "openai-compatible") + "|" + item.baseUrl;
+        if (!groups.has(groupKey)) groups.set(groupKey, []);
+        groups.get(groupKey).push(item);
       }
 
-      const res = await fetch("/api/providers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: providerId, batch }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage(data?.error || "Gagal menyimpan API key.");
-        return;
+      let createdCount = 0;
+      let groupIndex = 0;
+
+      for (const [, group] of groups) {
+        groupIndex += 1;
+        const detectedType = group[0].detectedType || "openai-compatible";
+        const detectedBaseUrl = group[0].baseUrl;
+        const providerName = name.trim() || "Provider Kompatibel";
+        const prefix = slugify(providerName) + (groups.size > 1 ? "-" + groupIndex : "");
+
+        const nodeRes = await fetch("/api/provider-nodes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: providerName + (groups.size > 1 ? " " + groupIndex : ""),
+            prefix,
+            iconUrl: iconUrl.trim(),
+            baseUrl: detectedBaseUrl,
+            type: detectedType,
+            apiType: "chat",
+          }),
+        });
+        const nodeData = await nodeRes.json();
+        if (!nodeRes.ok || !nodeData?.node?.id) {
+          throw new Error(nodeData?.error || "Gagal membuat provider.");
+        }
+
+        const providerRes = await fetch("/api/providers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: nodeData.node.id,
+            batch: group.map((item) => ({ apiKey: item.apiKey })),
+          }),
+        });
+        const providerData = await providerRes.json();
+        if (!providerRes.ok) {
+          throw new Error(providerData?.error || "Gagal menyimpan API key.");
+        }
+        createdCount += Number(providerData.createdCount || group.length);
       }
-      setMessage(`${data.createdCount || batch.length} key berhasil ditambahkan.`);
-      setForm((prev) => ({ ...prev, bulk: "" }));
+
+      setMessage(createdCount + " API key valid berhasil disimpan.");
       await onCreated();
+      setTimeout(onClose, 500);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Gagal menyimpan.");
+      setMessage(error instanceof Error ? error.message : "Gagal menyimpan provider.");
     } finally {
       setSaving(false);
     }
   };
 
+  const statusIcon = (result) => result.valid ? "check_circle" : "cancel";
+  const statusClass = (result) => result.valid ? "text-green-500" : "text-red-500";
+
   return (
     <Modal isOpen={isOpen} title="Tambah Provider Kompatibel" onClose={onClose}>
       <div className="flex flex-col gap-4">
-        <Select
-          label="Jenis kompatibilitas"
-          value={nodes.find((n) => n.type === form.type)?.id || ""}
-          options={nodes.map((n) => ({ value: n.id, label: `${n.name || "Provider"} · ${n.type === "anthropic-compatible" ? "Messages" : "OpenAI"}` }))}
-          onChange={(e) => selectNode(e.target.value)}
+        <Input
+          label="Nama"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Misalnya Mercury"
         />
-        <Input label="Nama otomatis" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Mercury" />
-        <Input label="Prefix" value={form.prefix} onChange={(e) => setForm({ ...form, prefix: e.target.value })} placeholder="mercury" />
-        <Input label="Base URL" value={form.baseUrl} onChange={(e) => setForm({ ...form, baseUrl: e.target.value })} placeholder="https://api.example.com/v1" />
-        <Input label="Icon URL resmi (opsional)" value={form.iconUrl} onChange={(e) => setForm({ ...form, iconUrl: e.target.value })} placeholder="https://example.com/logo.svg" />
-        <label className="text-sm font-medium">API Key + Model (bisa banyak)</label>
-        <textarea
-          value={form.bulk}
-          onChange={(e) => setForm({ ...form, bulk: e.target.value })}
-          rows={9}
-          className="w-full rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs"
-          placeholder={"Tempel berurutan, contoh:\nAPI_KEY_1\nmodel-1\nAPI_KEY_2\nmodel-2\nAPI_KEY_3\nmodel-3"}
+        <Input
+          label="Base URL"
+          value={baseUrl}
+          onChange={(e) => setBaseUrl(e.target.value)}
+          placeholder="https://api.example.com"
+          hint="Bisa root, /v1, /v2, atau endpoint kompatibel. Sistem akan mencari versi otomatis."
         />
-        <p className="text-xs text-text-muted">Sistem mendeteksi baris key dan model otomatis, lalu membuat #1, #2, #3 dan seterusnya. Base URL node yang dipilih dipakai untuk semua key.</p>
-        {message && <div className="rounded-lg bg-surface-2 px-3 py-2 text-sm">{message}</div>}
+        <Input
+          label="Icon resmi URL (opsional)"
+          value={iconUrl}
+          onChange={(e) => setIconUrl(e.target.value)}
+          placeholder="https://chatgpt.com"
+          hint="Gunakan URL HTTPS resmi provider."
+        />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">API Key (satu atau semua)</label>
+          <textarea
+            value={apiKeys}
+            onChange={(e) => setApiKeys(e.target.value)}
+            rows={7}
+            className="w-full rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs"
+            placeholder={"key-pertama\\nkey-kedua\\nkey-ketiga"}
+            spellCheck={false}
+          />
+          <p className="text-xs text-text-muted">Satu key per baris. Sistem tidak menyimpan key yang gagal validasi.</p>
+        </div>
+
+        {validation?.results?.length > 0 && (
+          <div className="rounded-lg border border-border bg-bg/50 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="font-medium">Hasil pemeriksaan</span>
+              <span className="text-text-muted">
+                {validation.validCount}/{validation.total} valid
+                {validation.detectedVersion ? " · " + validation.detectedVersion : ""}
+                {validation.detectedType ? " · " + (validation.detectedType === "anthropic-compatible" ? "Anthropic Messages" : "OpenAI-compatible") : ""}
+              </span>
+            </div>
+            <div className="flex max-h-44 flex-col gap-2 overflow-y-auto">
+              {validation.results.map((result, index) => (
+                <div key={result.keyPreview + "-" + index} className="flex items-center gap-2 text-xs">
+                  <span className={"material-symbols-outlined text-[17px] " + statusClass(result)}>{statusIcon(result)}</span>
+                  <span className="font-mono">{result.keyPreview}</span>
+                  <span className={result.valid ? "text-green-500" : "text-red-500"}>
+                    {result.valid ? "Valid" : "Tidak valid"}
+                  </span>
+                  {result.detectedVersion && <span className="text-text-muted">({result.detectedVersion})</span>}
+                  {result.error && <span className="truncate text-text-muted">{result.error}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {message && <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">{message}</div>}
+
         <div className="flex gap-2">
-          <Button fullWidth onClick={handleSubmit} disabled={saving}>{saving ? "Menambahkan..." : "Tambah Semua Key"}</Button>
-          <Button variant="ghost" fullWidth onClick={onClose}>Tutup</Button>
+          <Button
+            fullWidth
+            variant="secondary"
+            onClick={handleCheck}
+            disabled={checking || saving || !baseUrl.trim() || !keyLines().length}
+          >
+            {checking ? "Memeriksa..." : "Periksa API Key"}
+          </Button>
+          <Button
+            fullWidth
+            onClick={handleSave}
+            disabled={saving || checking || !validation?.validCount}
+          >
+            {saving ? "Menyimpan..." : "Simpan Key Valid"}
+          </Button>
         </div>
       </div>
     </Modal>
@@ -962,424 +1043,6 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
 }
 
 AddCompatibleModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onCreated: PropTypes.func.isRequired,
-};
-
-function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    prefix: "",
-    apiType: "chat",
-    baseUrl: "https://api.openai.com/v1",
-    iconUrl: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [checkKey, setCheckKey] = useState("");
-  const [checkModelId, setCheckModelId] = useState("");
-  const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
-
-  const apiTypeOptions = [
-    { value: "chat", label: "Chat Completions" },
-    { value: "responses", label: "Responses API" },
-  ];
-
-  useEffect(() => {
-    const defaultBaseUrl = "https://api.openai.com/v1";
-    setFormData((prev) => ({ ...prev, baseUrl: defaultBaseUrl }));
-  }, [formData.apiType]);
-
-  const handleSubmit = async () => {
-    if (
-      !formData.name.trim() ||
-      !formData.prefix.trim() ||
-      !formData.baseUrl.trim()
-    )
-      return;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/provider-nodes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          prefix: formData.prefix,
-          iconUrl: formData.iconUrl,
-          apiType: formData.apiType,
-          baseUrl: formData.baseUrl,
-          type: "openai-compatible",
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        onCreated(data.node);
-        setFormData({
-          name: "",
-          prefix: "",
-          apiType: "chat",
-          baseUrl: "https://api.openai.com/v1",
-          iconUrl: "",
-        });
-        setCheckKey("");
-        setValidationResult(null);
-      }
-    } catch (error) {
-      console.log("Error creating OpenAI Compatible node:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleValidate = async () => {
-    setValidating(true);
-    let settled = false;
-    const fallbackId = window.setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      setValidationResult({ valid: false, error: "Validation timeout (>15s)" });
-      setValidating(false);
-    }, VALIDATION_TIMEOUT_MS + 500);
-    try {
-      const data = await fetchProviderNodeValidation({
-        baseUrl: formData.baseUrl,
-        apiKey: checkKey.trim(),
-        type: "openai-compatible",
-        apiType: formData.apiType,
-        modelId: checkModelId.trim() || undefined,
-      });
-      if (settled) return;
-      settled = true;
-      setValidationResult(data);
-    } catch (error) {
-      if (settled) return;
-      settled = true;
-      setValidationResult({
-        valid: false,
-        error: error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error",
-      });
-    } finally {
-      window.clearTimeout(fallbackId);
-      if (settled) setValidating(false);
-    }
-  };
-
-  // Helper to render validation result
-  const renderValidationResult = () => {
-    if (!validationResult) return null;
-    const { valid, error, method } = validationResult;
-
-    if (valid) {
-      return (
-        <>
-          <Badge variant="success">Valid</Badge>
-          {(method === "chat" || method === "messages") && (
-            <span className="text-sm text-text-muted">
-              (via inference test)
-            </span>
-          )}
-        </>
-      );
-    }
-    return (
-      <div className="flex flex-col gap-1">
-        <Badge variant="error">Invalid</Badge>
-        {error && <span className="text-sm text-red-500">{error}</span>}
-      </div>
-    );
-  };
-
-  return (
-    <Modal isOpen={isOpen} title="Tambah Provider Kompatibel (OpenAI)" onClose={onClose}>
-      <div className="flex flex-col gap-4">
-        <Input
-          label="Name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="OpenAI Compatible (Prod)"
-          hint="Nama tampilan provider kompatibel."
-        />
-        <Input
-          label="Icon URL (opsional)"
-          value={formData.iconUrl || ""}
-          onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-          placeholder="https://contoh.com/logo.svg"
-          hint="URL HTTPS logo resmi provider. Jika kosong, ikon kompatibel bawaan digunakan."
-        />
-        <Input
-          label="Prefix"
-          value={formData.prefix}
-          onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
-          placeholder="oc-prod"
-          hint="Required. Used as the provider prefix for model IDs."
-        />
-        <Select
-          label="API Type"
-          options={apiTypeOptions}
-          value={formData.apiType}
-          onChange={(e) =>
-            setFormData({ ...formData, apiType: e.target.value })
-          }
-        />
-        <Input
-          label="Base URL"
-          value={formData.baseUrl}
-          onChange={(e) =>
-            setFormData({ ...formData, baseUrl: e.target.value })
-          }
-          placeholder="https://api.openai.com/v1"
-          hint="Use the base URL (ending in /v1) for your OpenAI-compatible API."
-        />
-        <Input
-          label="API Key (for Check)"
-          type="password"
-          value={checkKey}
-          onChange={(e) => setCheckKey(e.target.value)}
-        />
-        <Input
-          label="Model ID (optional)"
-          value={checkModelId}
-          onChange={(e) => setCheckModelId(e.target.value)}
-          placeholder="e.g. gpt-4, claude-3-opus"
-          hint="If provider lacks /models endpoint, enter a model ID to validate via chat/completions instead."
-        />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button
-            onClick={handleValidate}
-            disabled={!checkKey || validating || !formData.baseUrl.trim()}
-            variant="secondary"
-            className="w-full sm:w-auto"
-          >
-            {validating ? "Checking..." : "Check"}
-          </Button>
-          {renderValidationResult()}
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            onClick={handleSubmit}
-            fullWidth
-            disabled={
-              !formData.name.trim() ||
-              !formData.prefix.trim() ||
-              !formData.baseUrl.trim() ||
-              submitting
-            }
-          >
-            {submitting ? "Creating..." : "Create"}
-          </Button>
-          <Button onClick={onClose} variant="ghost" fullWidth>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-AddOpenAICompatibleModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onCreated: PropTypes.func.isRequired,
-};
-
-function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    prefix: "",
-    baseUrl: "https://api.anthropic.com/v1",
-    iconUrl: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [checkKey, setCheckKey] = useState("");
-  const [checkModelId, setCheckModelId] = useState("");
-  const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null); // { valid, error, method }
-
-  useEffect(() => {
-    if (isOpen) {
-      setValidationResult(null);
-      setCheckKey("");
-      setCheckModelId("");
-    }
-  }, [isOpen]);
-
-  const handleSubmit = async () => {
-    if (
-      !formData.name.trim() ||
-      !formData.prefix.trim() ||
-      !formData.baseUrl.trim()
-    )
-      return;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/provider-nodes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          prefix: formData.prefix,
-          iconUrl: formData.iconUrl,
-          baseUrl: formData.baseUrl,
-          type: "anthropic-compatible",
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        onCreated(data.node);
-        setFormData({
-          name: "",
-          prefix: "",
-          baseUrl: "https://api.anthropic.com/v1",
-          iconUrl: "",
-        });
-        setCheckKey("");
-        setValidationResult(null);
-      }
-    } catch (error) {
-      console.log("Error creating Anthropic Compatible node:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleValidate = async () => {
-    setValidating(true);
-    let settled = false;
-    const fallbackId = window.setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      setValidationResult({ valid: false, error: "Validation timeout (>15s)" });
-      setValidating(false);
-    }, VALIDATION_TIMEOUT_MS + 500);
-    try {
-      const data = await fetchProviderNodeValidation({
-        baseUrl: formData.baseUrl,
-        apiKey: checkKey.trim(),
-        type: "anthropic-compatible",
-        modelId: checkModelId.trim() || undefined,
-      });
-      if (settled) return;
-      settled = true;
-      setValidationResult(data);
-    } catch (error) {
-      if (settled) return;
-      settled = true;
-      setValidationResult({
-        valid: false,
-        error: error.name === "AbortError" ? "Validation timeout (>15s)" : "Network error",
-      });
-    } finally {
-      window.clearTimeout(fallbackId);
-      if (settled) setValidating(false);
-    }
-  };
-
-  // Helper to render validation result
-  const renderValidationResult = () => {
-    if (!validationResult) return null;
-    const { valid, error, method } = validationResult;
-
-    if (valid) {
-      return (
-        <>
-          <Badge variant="success">Valid</Badge>
-          {(method === "chat" || method === "messages") && (
-            <span className="text-sm text-text-muted">
-              (via inference test)
-            </span>
-          )}
-        </>
-      );
-    }
-    return (
-      <div className="flex flex-col gap-1">
-        <Badge variant="error">Invalid</Badge>
-        {error && <span className="text-sm text-red-500">{error}</span>}
-      </div>
-    );
-  };
-
-  return (
-    <Modal isOpen={isOpen} title="Tambah Provider Kompatibel (Messages)" onClose={onClose}>
-      <div className="flex flex-col gap-4">
-        <Input
-          label="Name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Anthropic Compatible (Prod)"
-          hint="Required. A friendly label for this node."
-        />
-        <Input
-          label="Icon URL (opsional)"
-          value={formData.iconUrl || ""}
-          onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-          placeholder="https://contoh.com/logo.svg"
-          hint="URL HTTPS logo resmi provider. Jika kosong, ikon kompatibel bawaan digunakan."
-        />
-        <Input
-          label="Prefix"
-          value={formData.prefix}
-          onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
-          placeholder="ac-prod"
-          hint="Required. Used as the provider prefix for model IDs."
-        />
-        <Input
-          label="Base URL"
-          value={formData.baseUrl}
-          onChange={(e) =>
-            setFormData({ ...formData, baseUrl: e.target.value })
-          }
-          placeholder="https://api.anthropic.com/v1"
-          hint="Use the base URL (ending in /v1) for your Anthropic-compatible API. The system will append /messages."
-        />
-        <Input
-          label="API Key (for Check)"
-          type="password"
-          value={checkKey}
-          onChange={(e) => setCheckKey(e.target.value)}
-        />
-        <Input
-          label="Model ID (optional)"
-          value={checkModelId}
-          onChange={(e) => setCheckModelId(e.target.value)}
-          placeholder="e.g. claude-3-opus"
-          hint="If provider lacks /models endpoint, enter a model ID to validate via chat/completions instead."
-        />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button
-            onClick={handleValidate}
-            disabled={!checkKey || validating || !formData.baseUrl.trim()}
-            variant="secondary"
-            className="w-full sm:w-auto"
-          >
-            {validating ? "Checking..." : "Check"}
-          </Button>
-          {renderValidationResult()}
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            onClick={handleSubmit}
-            fullWidth
-            disabled={
-              !formData.name.trim() ||
-              !formData.prefix.trim() ||
-              !formData.baseUrl.trim() ||
-              submitting
-            }
-          >
-            {submitting ? "Creating..." : "Create"}
-          </Button>
-          <Button onClick={onClose} variant="ghost" fullWidth>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-AddAnthropicCompatibleModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onCreated: PropTypes.func.isRequired,
