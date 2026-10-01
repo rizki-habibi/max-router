@@ -16,8 +16,6 @@ const ProxyPools      = lazy(() => import("./pages/proxy-pools/page"));
 const Combos          = lazy(() => import("./pages/combos/page"));
 const Endpoint        = lazy(() => import("./pages/endpoint/page"));
 const Translator      = lazy(() => import("./pages/translator/page"));
-const CliTools        = lazy(() => import("./pages/cli-tools/page"));
-const CliToolDetail   = lazy(() => import("./pages/cli-tools/[toolId]/page"));
 const Automation      = lazy(() => import("./pages/automation/page"));
 const BasicChat       = lazy(() => import("./pages/basic-chat/page"));
 const Mitm            = lazy(() => import("./pages/mitm/page"));
@@ -73,12 +71,9 @@ export default function App() {
             <Route path="combos"          element={<Combos />} />
             <Route path="endpoint"        element={<Endpoint />} />
             <Route path="translator"      element={<Translator />} />
-            <Route path="cli-tools"       element={<CliTools />} />
-            <Route path="cli-tools/:toolId" element={<CliToolDetail />} />
             <Route path="automation"      element={<Automation />} />
             <Route path="automation/ammail-tutorial" element={<AmmailTutorial />} />
             <Route path="basic-chat"      element={<BasicChat />} />
-            <Route path="mitm"            element={<Mitm />} />
             <Route path="profile"         element={<Profile />} />
             <Route path="docs"            element={<Docs />} />
             <Route path="skills"          element={<Skills />} />
