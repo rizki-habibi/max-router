@@ -58,6 +58,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
       const payload = {
         name: formData.name,
         prefix: formData.prefix,
+        iconUrl: formData.iconUrl || null,
         baseUrl: formData.baseUrl,
       };
       if (!isAnthropic) {
@@ -118,7 +119,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
           label="Icon URL (opsional)"
           value={formData.iconUrl || ""}
           onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-          placeholder={isAnthropic ? "ac-prod" : "oc-prod"}
+          placeholder="https://contoh.com/logo.svg"
           hint="URL HTTPS logo resmi provider."
         />
         {!isAnthropic && (
@@ -134,7 +135,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
           value={formData.baseUrl}
           onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
           placeholder={isAnthropic ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1"}
-          hint={`Use the base URL (ending in /v1) for your ${isAnthropic ? "Anthropic" : "OpenAI"}-compatible API.`}
+          hint="Base URL endpoint kompatibel. Untuk Messages, gunakan endpoint yang menerima /messages."
         />
         <div className="flex gap-2">
           <Input
@@ -188,6 +189,7 @@ EditCompatibleNodeModal.propTypes = {
     prefix: PropTypes.string,
     apiType: PropTypes.string,
     baseUrl: PropTypes.string,
+    iconUrl: PropTypes.string,
   }),
   onSave: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
