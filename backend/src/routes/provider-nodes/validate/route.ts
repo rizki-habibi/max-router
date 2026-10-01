@@ -184,7 +184,10 @@ export async function POST_handler(req, res) {
 
     const modelsUrl = `${normalizedBase}/models`;
     const upstreamRes = await fetchWithTimeout(modelsUrl, {
-      headers: { "Authorization": `Bearer ${normalizedApiKey}` },
+      headers: {
+        "Authorization": `Bearer ${normalizedApiKey}`,
+        "x-api-key": normalizedApiKey,
+      },
     });
 
     // /models may be public (as with xKiro), so a 200 here does not prove the API key.
@@ -199,6 +202,7 @@ export async function POST_handler(req, res) {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${normalizedApiKey}`,
+          "x-api-key": normalizedApiKey,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(inferenceBody),
