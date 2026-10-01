@@ -122,8 +122,9 @@ async function start() {
     apiRouter = await buildAutoRouter();
   } catch (err) {
     pushRuntimeError("startup", err);
-    console.error("[startup] Route graph failed; /api/health remains available.");
+    console.error("[startup] Route graph failed; shutting down so the deployment cannot report a false healthy state.");
     console.error(err);
+    server.close(() => process.exit(1));
     return server;
   }
   app.use("/api", (req, res, next) => {
