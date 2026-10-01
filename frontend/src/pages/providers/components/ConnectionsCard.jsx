@@ -105,6 +105,10 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
   const shortWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "short") : null;
   const longWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "long") : null;
   const modelUsage = usage?.local?.byModel || {};
+  const modelCatalog = Array.isArray(usage?.models) ? usage.models : [];
+  const modelCatalogMap = new Map(modelCatalog.map((m) => [m.id, m]));
+  const modelIdsUsed = Object.keys(modelUsage);
+  const visibleModelIds = Array.from(new Set([...(connection.defaultModel ? [connection.defaultModel] : []), ...modelIdsUsed])).slice(0, 8);
   const selectedModel = connection.defaultModel || Object.keys(modelUsage)[0] || null;
   const selectedModelUsage = selectedModel ? modelUsage[selectedModel] : null;
 
@@ -153,10 +157,13 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
           <p className="text-sm font-medium truncate">{displayName}</p>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <Badge variant={getStatusVariant()} size="sm" dot>
-              {connection.isActive === false ? "disabled" : (effectiveStatus || "Unknown")}
+              {connection.isActive === false ? "Nonaktif" : (effectiveStatus === "active" || effectiveStatus === "success" ? "Aktif" : (effectiveStatus || "Belum diuji"))}
             </Badge>
             {hasAnyProxy && <Badge variant={proxyBadgeVariant} size="sm">Proxy</Badge>}
             {isCooldown && connection.isActive !== false && <CooldownTimer until={modelLockUntil} />}
+            {connection.apiKey && !isOAuth && (
+              <span className="text-xs text-text-muted font-mono" title="API key disamarkan">Key ••••{String(connection.apiKey).slice(-4)}</span>
+            )}
             {connection.lastError && connection.isActive !== false && (
               <span className="text-xs text-red-500 truncate max-w-[300px]" title={connection.lastError}>{connection.lastError}</span>
             )}
@@ -176,13 +183,42 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
               </div>
               {selectedModelUsage && (
                 <div className="mt-2 border-t border-border pt-2">
-                  <div className="text-[10px] text-text-muted">Model</div>
+                  <div className="text-[10px] text-text-muted">Model utama yang dipakai key ini</div>
                   <div className="truncate text-xs font-mono">{selectedModel}</div>
                   <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-text-muted">
                     <span>Input {formatCount(selectedModelUsage.inputTokens)}</span>
                     <span>Output {formatCount(selectedModelUsage.outputTokens)}</span>
                     <span>Cache {formatCount(selectedModelUsage.cacheReadTokens)}</span>
+                    <span>Reasoning {formatCount(selectedModelUsage.reasoningTokens)}</span>
                     <span>Request {formatCount(selectedModelUsage.requests)}</span>
+                  </div>
+                </div>
+              )}
+              {visibleModelIds.length > 0 && (
+                <div className="mt-2 border-t border-border pt-2">
+                  <div className="mb-1 text-[10px] text-text-muted">Model yang digunakan / terdeteksi</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {visibleModelIds.map((modelId) => {
+                      const meta = modelCatalogMap.get(modelId);
+                      const usageRow = modelUsage[modelId];
+                      const tier = meta?.accessTier || "unknown";
+                      const tierLabel = tier === "free" ? "Gratis" : tier === "paid" ? "Berbayar" : tier === "premium" ? "Premium" : "Tidak diketahui";
+                      const capabilityNames = meta?.capabilities && typeof meta.capabilities === "object"
+                        ? Object.entries(meta.capabilities).filter(([, value]) => value === true).map(([key]) => key)
+                        : [];
+                      return (
+                        <div key={modelId} className="rounded-md border border-border bg-background px-2 py-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="max-w-[190px] truncate text-[10px] font-mono">{modelId}</span>
+                            <Badge size="sm" variant={tier === "free" ? "success" : tier === "premium" ? "error" : "default"}>{tierLabel}</Badge>
+                          </div>
+                          <div className="mt-0.5 text-[9px] text-text-muted">
+                            {usageRow ? "Req " + formatCount(usageRow.requests) + " · " + formatCount(usageRow.inputTokens) + " in · " + formatCount(usageRow.outputTokens) + " out" : "Belum ada pemakaian lokal"}
+                            {capabilityNames.length > 0 ? " · " + capabilityNames.join(", ") : ""}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
