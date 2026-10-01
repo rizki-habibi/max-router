@@ -703,7 +703,7 @@ export default function ProviderDetailPage() {
   };
 
   useEffect(() => {
-    const allowedIds = new Set(selectableConnections.map((conn) => conn.id));
+    const allowedIds = new Set((isCompatible ? connections.filter((conn) => !!conn.apiKey) : connections).map((conn) => conn.id));
     setSelectedConnectionIds((prev) => prev.filter((id) => allowedIds.has(id)));
   }, [connections, isCompatible]);
 
@@ -802,15 +802,22 @@ export default function ProviderDetailPage() {
     }
   };
 
+  const providerBaseHint = String(providerInfo?.baseUrl || "");
+  const isXkiroProvider = /xkiro/i.test(String(providerInfo?.name || "")) || /xkiro\.com/i.test(providerBaseHint) || providerId === "xkiro";
+  const isAtriaProvider = /atria/i.test(String(providerInfo?.name || "")) || /atria-asi\.ai/i.test(providerBaseHint) || providerId === "atria";
   const officialProviderWebsite =
-    /xkiro/i.test(String(providerInfo?.name || "")) || providerId === "xkiro"
+    isXkiroProvider
       ? "https://xkiro.com"
-      : providerInfo?.website || providerInfo?.notice?.signupUrl || "";
+      : isAtriaProvider
+        ? "https://api.atria-asi.ai/docs"
+        : providerInfo?.website || providerInfo?.notice?.signupUrl || "";
 
   const officialProviderBaseUrl =
-    /xkiro/i.test(String(providerInfo?.name || "")) || providerId === "xkiro"
+    isXkiroProvider
       ? (isAnthropicCompatible ? "https://api.xkiro.com" : "https://api.xkiro.com/v1")
-      : providerInfo?.baseUrl || "";
+      : isAtriaProvider
+        ? "https://api.atria-asi.ai/v1"
+        : providerInfo?.baseUrl || "";
 
   const providerMark = providerInfo?.textIcon || providerInfo?.textIcon === "" ? providerInfo.textIcon : "AI";
 
