@@ -148,6 +148,19 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
   const shortWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "short") : null;
   const longWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "long") : null;
   const maskedKey = connection.apiKey ? "••••" + String(connection.apiKey).slice(-4) : null;
+  const allowancePercent = (remaining, limit) => {
+    const r = Number(remaining), l = Number(limit);
+    if (!Number.isFinite(r) || !Number.isFinite(l) || l <= 0) return 0;
+    return Math.max(0, Math.min(100, (r / l) * 100));
+  };
+  const allowanceTone = (remaining, limit) => {
+    const pct = allowancePercent(remaining, limit);
+    if (pct <= 10) return "danger";
+    if (pct < 50) return "warning";
+    return "success";
+  };
+  const allowanceClass = (tone) => tone === "danger" ? "bg-red-500" : tone === "warning" ? "bg-amber-400" : "bg-emerald-500";
+  const cleanErrorMessage = (value) => String(value || "").replace(/^\\s*\\[?\\d{3}\\]?\\s*:\\s*/, "");
 
   const getOneByOneVariant = () => {
     if (!oneByOneStatus) return "default";
@@ -209,17 +222,17 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
             </Badge>
             {maskedKey && !isOAuthConnection && <span className="font-mono text-xs text-text-muted">Key {maskedKey}</span>}
             {usage && (
-            <div className="mt-2 rounded-lg border border-border bg-sidebar/30 p-2.5">
+            <div className="mt-2 w-full max-w-3xl rounded-md border border-border bg-sidebar/25 px-2.5 py-2">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold">Pemakaian & sisa key</span>
                 <span className="text-[10px] text-text-muted">{usageLoading ? "Memuat..." : "Diperbarui otomatis 1 menit"}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                <div><div className="text-[10px] text-text-muted">Paket</div><div className="text-xs font-medium">{usage.plan || "Tanpa paket"}</div></div>
-                <div><div className="text-[10px] text-text-muted">Token gratis sisa</div><div className="text-xs font-medium">{formatCount(freeTokens.remaining)}{freeTokens.limit_per_day ? " / " + formatCount(freeTokens.limit_per_day) : ""}</div></div>
-                <div><div className="text-[10px] text-text-muted">Request lokal</div><div className="text-xs font-medium">{formatCount(localUsage.requests)}</div></div>
-                <div><div className="text-[10px] text-text-muted">Token masuk/keluar</div><div className="text-xs font-medium">{formatCount(localUsage.inputTokens)} / {formatCount(localUsage.outputTokens)}</div></div>
-                <div><div className="text-[10px] text-text-muted">Saldo</div><div className="text-xs font-medium">{usage.wallet?.balance_usd != null ? "$" + usage.wallet.balance_usd : "—"}</div></div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-5">
+                <div className="min-w-0"><div className="text-[9px] text-text-muted">Paket</div><div className="truncate text-[11px] font-medium">{usage.plan || "Tanpa paket"}</div></div>
+                <div className="min-w-0"><div className="flex items-center justify-between text-[9px] text-text-muted"><span>Token gratis sisa</span><span>{allowancePercent(freeTokens.remaining, freeTokens.limit_per_day)}%</span></div><div className="mt-1 h-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10"><div className={allowanceClass(allowanceTone(freeTokens.remaining, freeTokens.limit_per_day))} style={{ width: allowancePercent(freeTokens.remaining, freeTokens.limit_per_day) + "%" }} /></div><div className="mt-0.5 text-[11px] font-medium">{formatCount(freeTokens.remaining)}{freeTokens.limit_per_day ? " / " + formatCount(freeTokens.limit_per_day) : ""}</div></div>
+                <div className="min-w-0"><div className="text-[9px] text-text-muted">Request lokal</div><div className="text-[11px] font-medium">{formatCount(localUsage.requests)}</div><div className="mt-1 h-1 rounded-full bg-blue-500/20"><div className="h-full w-full rounded-full bg-blue-500/55" /></div></div>
+                <div className="min-w-0"><div className="text-[9px] text-text-muted">Token masuk/keluar</div><div className="truncate text-[11px] font-medium">{formatCount(localUsage.inputTokens)} / {formatCount(localUsage.outputTokens)}</div><div className="mt-1 h-1 rounded-full bg-purple-500/20"><div className="h-full w-2/3 rounded-full bg-purple-500/55" /></div></div>
+                <div className="min-w-0"><div className="text-[9px] text-text-muted">Saldo</div><div className="text-[11px] font-medium">{usage.wallet?.balance_usd != null ? "$" + usage.wallet.balance_usd : "—"}</div><div className="mt-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"><div className={Number(usage.wallet?.balance_usd || 0) > 0 ? "h-full w-full rounded-full bg-emerald-500" : "h-full w-full rounded-full bg-red-500"} /></div></div>
               </div>
               {(shortWindow || longWindow) && (
                 <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-text-muted">
@@ -238,9 +251,9 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
                       const caps = meta?.capabilities && typeof meta.capabilities === "object" ? Object.entries(meta.capabilities).filter(([, value]) => value === true).map(([key]) => key) : [];
                       const row = modelUsage[modelId];
                       return (
-                        <div key={modelId} className="rounded-md border border-border bg-background px-2 py-1">
-                          <div className="flex items-center gap-1.5"><span className="max-w-[190px] truncate font-mono text-[10px]">{modelId}</span><Badge size="sm" variant={tier === "free" ? "success" : tier === "premium" ? "error" : "default"}>{tierLabel}</Badge></div>
-                          <div className="mt-0.5 text-[9px] text-text-muted">Req {formatCount(row.requests)} · In {formatCount(row.inputTokens)} · Out {formatCount(row.outputTokens)} · Cache {formatCount(row.cacheReadTokens)}{caps.length > 0 ? " · " + caps.join(", ") : ""}</div>
+                        <div key={modelId} className="max-w-full rounded border border-border bg-background px-1.5 py-1">
+                          <div className="flex items-center gap-1.5"><span className="max-w-[170px] truncate font-mono text-[9px] font-normal">{modelId}</span><span className="shrink-0 text-[9px] font-normal text-text-muted">[{tierLabel}]</span></div>
+                          <div className="mt-0.5 text-[8px] font-normal text-text-muted">Req {formatCount(row.requests)} · In {formatCount(row.inputTokens)} · Out {formatCount(row.outputTokens)} · Cache {formatCount(row.cacheReadTokens)}</div>
                         </div>
                       );
                     })}
@@ -257,9 +270,10 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
             )}
             {isCooldown && connection.isActive !== false && <CooldownTimer until={modelLockUntil} />}
             {connection.lastError && connection.isActive !== false && (
-              <span className="max-w-full truncate text-xs text-red-500 sm:max-w-[300px]" title={connection.lastError}>
-                {connection.lastError}
-              </span>
+              <div className="mt-2 flex min-w-0 items-start gap-1.5 rounded border border-red-500/25 bg-red-500/5 px-2 py-1.5 text-[10px] text-red-500">
+                <span className="material-symbols-outlined mt-px text-[14px]">error</span>
+                <span className="min-w-0 break-words" title={connection.lastError}>{cleanErrorMessage(connection.lastError)}</span>
+              </div>
             )}
             <span className="text-xs text-text-muted">#{connection.priority}</span>
             {connection.globalPriority && (
