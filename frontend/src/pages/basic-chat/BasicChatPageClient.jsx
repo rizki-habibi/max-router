@@ -606,6 +606,7 @@ export default function BasicChatPageClient() {
       content: "",
       createdAt: new Date().toISOString(),
       status: "streaming",
+      metrics: null,
     };
 
     const nextMessages = [...(session.messages || []), userMessage, assistantMessage];
@@ -669,6 +670,9 @@ export default function BasicChatPageClient() {
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantText = "";
+      const requestStartedAt = performance.now();
+      let firstTokenAt = null;
+      let usageTokens = null;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -688,7 +692,9 @@ export default function BasicChatPageClient() {
           try {
             const chunk = JSON.parse(payload);
             const text = readAssistantText(chunk);
+            if (chunk.usage?.completion_tokens != null) usageTokens = Number(chunk.usage.completion_tokens) || usageTokens;
             if (!text) continue;
+            if (firstTokenAt === null) firstTokenAt = performance.now();
 
             assistantText += text;
             setStreamingText(assistantText);
@@ -703,9 +709,17 @@ export default function BasicChatPageClient() {
         }
       }
 
+      const finishedAt = performance.now();
+      const durationMs = Math.max(0, finishedAt - requestStartedAt);
+      const ttftMs = firstTokenAt === null ? null : Math.max(0, firstTokenAt - requestStartedAt);
+      const outputChars = assistantText.length;
+      const charsPerSecond = durationMs > 0 ? outputChars / (durationMs / 1000) : null;
+      const tokensPerSecond = usageTokens && durationMs > 0 ? usageTokens / (durationMs / 1000) : null;
+      const metrics = { durationMs, ttftMs, outputChars, usageTokens, charsPerSecond, tokensPerSecond };
+
       updateSession(sessionId, (currentSession) => ({
         ...currentSession,
-        messages: currentSession.messages.map((message) => (message.id === assistantMessageId ? { ...message, content: assistantText || message.content, status: "done" } : message)),
+        messages: currentSession.messages.map((message) => (message.id === assistantMessageId ? { ...message, content: assistantText || message.content, status: "done", metrics } : message)),
         updatedAt: new Date().toISOString(),
       }));
       finalizeSessionTitle(sessionId, userText);
@@ -884,6 +898,13 @@ export default function BasicChatPageClient() {
                     <div className={`max-w-[min(88%,42rem)] ${isUser ? "rounded-3xl bg-[#2f2f2f] px-5 py-3.5 text-white" : "text-white/90"}`}>
                       <div className="mb-1 flex items-center justify-between gap-3">
                         <span className="text-xs font-semibold">{isUser ? "You" : activeModel?.name || "Assistant"}</span>
+                        {!isUser && message.status === "done" && message.metrics ? (
+                          <span className="text-[10px] text-white/40 font-mono">
+                            {message.metrics.durationMs != null ? `${(message.metrics.durationMs / 1000).toFixed(2)}s` : ""}
+                            {message.metrics.ttftMs != null ? ` · TTFT ${(message.metrics.ttftMs / 1000).toFixed(2)}s` : ""}
+                            {message.metrics.tokensPerSecond != null ? ` · ${message.metrics.tokensPerSecond.toFixed(1)} tok/s` : message.metrics.charsPerSecond != null ? ` · ${message.metrics.charsPerSecond.toFixed(0)} char/s` : ""}
+                          </span>
+                        ) : null}
                       </div>
 
                       {message.attachments?.length ? (
