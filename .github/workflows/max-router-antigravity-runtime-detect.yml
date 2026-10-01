@@ -72,20 +72,16 @@ jobs:
 
       - name: ESLint no-undef pada executor
         run: |
-          npx --yes eslint@9 open-sse/executors/antigravity.js \
-            --no-config \
+          # ESLint 9 no longer accepts the legacy --no-config CLI flag.
+          # Use ESLint 8 in isolated mode so this CI check remains deterministic.
+          npx --yes eslint@8 open-sse/executors/antigravity.js \
+            --no-eslintrc \
+            --env node \
+            --env es2022 \
             --rule 'no-undef:error' \
-            --global process \
-            --global console \
-            --global URL \
             --global Headers \
             --global Response \
-            --global AbortController \
-            --global TextEncoder \
-            --global TextDecoder \
-            --global Buffer \
-            --global fetch \
-            --global crypto
+            --global fetch
 
       - name: Syntax check seluruh executor JavaScript
         run: |
