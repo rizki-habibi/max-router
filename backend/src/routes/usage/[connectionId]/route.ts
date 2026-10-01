@@ -6,6 +6,7 @@ import { getUsageForProvider } from "../../../../open-sse/services/usage.js"; //
 import { getExecutor } from "../../../../open-sse/executors/index.js";
 import { resolveConnectionProxyConfig } from "../../../lib/network/connectionProxy.js";
 import { parseJson } from "../../../lib/db/helpers/jsonCol.js";
+import { getAdapter } from "../../../lib/db/driver.js";
 import { USAGE_APIKEY_PROVIDERS } from "../../../shared/constants/providers.js";
 
 
@@ -45,6 +46,40 @@ async function getXkiroUsage(connection) {
     return { error: error?.message || "Gagal membaca usage", source: "upstream", endpoint: url };
   }
 }
+async function getModelCatalog(connection) {
+  try {
+    const base = getCompatibleBaseUrl(connection);
+    if (!base) return [];
+    const parsed = new URL(base);
+    const url = parsed.origin + (parsed.pathname.replace(/\\/+$/, "") || "/v1") + "/models";
+    const response = await fetch(url, {
+      headers: {
+        Authorization: "Bearer " + connection.apiKey,
+        "x-api-key": connection.apiKey,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return [];
+    const raw = await response.text();
+    let data = null;
+    try { data = raw ? JSON.parse(raw) : null; } catch { return []; }
+    const rows = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.models) ? data.models : []));
+    return rows.map((model) => ({
+      id: model?.id || model?.name || null,
+      name: model?.display_name || model?.displayName || model?.name || model?.id || null,
+      accessTier: model?.access_tier || model?.accessTier || model?.tier || null,
+      pricing: model?.pricing || null,
+      contextLength: model?.context_length ?? model?.contextWindow ?? model?.context_window ?? null,
+      maxOutputTokens: model?.max_output_tokens ?? model?.maxOutput ?? model?.max_output ?? null,
+      capabilities: model?.capabilities || null,
+      reasoningEfforts: model?.reasoning_efforts || null,
+    })).filter((model) => model.id);
+  } catch {
+    return [];
+  }
+}
+
 async function getLocalTokenUsage(connectionId) {
   try {
     const db = await getAdapter();
@@ -207,7 +242,17 @@ export async function GET_handler(req, res, { params }) {
 
     const xkiroCompatible = isXkiroBaseUrl(connection);
     if (!isOAuth && !isCookie && !isApikeyEligible && !xkiroCompatible) {
-      return Response.json({ message: "Usage not available for this connection" });
+      const localTokenUsage = await getLocalTokenUsage(connection.id);
+      return Response.json({
+        provider: connection.provider,
+        plan: null,
+        windows: [],
+        free_tokens: {},
+        wallet: null,
+        local: { ...localTokenUsage, note: "Statistik lokal dihitung dari request yang melewati Max Router." },
+        models: [],
+        source: "local",
+      });
     }
 
     // Resolve connection proxy config; force strictProxy=false so quota/refresh fall back to direct on failure
@@ -236,7 +281,12 @@ export async function GET_handler(req, res, { params }) {
     // Usage mengikuti Base URL provider yang dikonfigurasi.
     let usage = isXkiroBaseUrl(connection) ? await getXkiroUsage(connection) : await getUsageForProvider(connection, proxyOptions);
     const localTokenUsage = await getLocalTokenUsage(connection.id);
-    if (usage && typeof usage === "object") usage.local = { ...localTokenUsage, note: "Token lokal dihitung dari request yang melewati Max Router." };
+    const models = xkiroCompatible ? await getModelCatalog(connection) : [];
+    if (usage && typeof usage === "object") {
+      usage.local = { ...localTokenUsage, note: "Statistik lokal dihitung dari request yang melewati Max Router." };
+      usage.models = models;
+      usage.modelCount = models.length;
+    }
 
     // If provider returned an auth-expired message instead of throwing,
     // force-refresh token and retry once (OAuth or cookie)
