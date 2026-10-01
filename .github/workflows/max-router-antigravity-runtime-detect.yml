@@ -94,17 +94,22 @@ jobs:
         run: |
           test -f dist/open-sse/executors/antigravity.js
 
-          if grep -nF '\\n          const errorInfo' dist/open-sse/executors/antigravity.js; then
-            echo 'FAIL: dist masih mengandung literal newline corruption pada errorInfo'
-            exit 1
-          fi
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
 
-          if grep -nF 'errorInfo is not defined' dist/open-sse/executors/antigravity.js; then
-            echo 'FAIL: pesan runtime error ditemukan di compiled executor'
-            exit 1
-          fi
+          const file = 'dist/open-sse/executors/antigravity.js';
+          const source = fs.readFileSync(file, 'utf8');
 
-          echo 'Compiled Antigravity audit: PASS'
+          if (source.includes('\\n          const errorInfo')) {
+            throw new Error('FAIL: dist masih mengandung literal newline corruption pada errorInfo');
+          }
+
+          if (source.includes('errorInfo is not defined')) {
+            throw new Error('FAIL: pesan runtime error ditemukan di compiled executor');
+          }
+
+          console.log('Compiled Antigravity audit: PASS');
+          NODE
 
       - name: Unit smoke test parser quota
         run: |
