@@ -292,7 +292,7 @@ async function getGeminiUsage(accessToken, providerSpecificData, proxyOptions = 
     let response;
     try {
       response = await proxyAwareFetch(
-        `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:retrieveUserQuota`,
+        ANTIGRAVITY_ENDPOINTS.retrieveUserQuota,
         {
           method: "POST",
           headers: {
