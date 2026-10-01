@@ -7,6 +7,7 @@ import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { authMiddleware } from "./middleware/auth.js";
 import { buildAutoRouter } from "./autoRouter.js";
+import { resumeModelTestJobs } from "./lib/modelTestWorker.js";
 
 const PORT = Number(process.env.PORT) || 3001;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5177";
@@ -133,6 +134,7 @@ async function start() {
 
   startupReady = true;
   console.log("[startup] Route graph ready.");
+  resumeModelTestJobs().catch((err) => console.error("[model-test-worker] startup resume gagal:", err));
   app.use("/api", (req, res, next) => {
     console.log("API request:", req.method, req.url, req.originalUrl);
     apiRouter(req, res, next);
