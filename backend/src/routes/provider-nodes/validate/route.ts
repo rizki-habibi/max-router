@@ -186,10 +186,8 @@ export async function POST_handler(req, res) {
       headers: { "Authorization": `Bearer ${apiKey}` },
     });
 
-    if (upstreamRes.ok) return res.json({ valid: true });
-
-    // A protected/missing /models endpoint does not prove the key is invalid.
-    // If a model ID is supplied, validate the actual inference endpoint.
+    // /models may be public (as with xKiro), so a 200 here does not prove the API key.
+    // If a model ID is supplied, always validate the credential against inference.
     if (modelId) {
       const inferencePath = apiType === "responses" ? "/responses" : "/chat/completions";
       const inferenceBody = apiType === "responses"
@@ -220,6 +218,14 @@ export async function POST_handler(req, res) {
         valid: false,
         error: getChatErrorMessage(inferenceRes.status),
         method: apiType === "responses" ? "responses" : "chat",
+      });
+    }
+
+    if (upstreamRes.ok) {
+      return res.json({
+        valid: true,
+        method: "models",
+        warning: "Model list is reachable; API key was not tested because no Model ID was supplied.",
       });
     }
 
