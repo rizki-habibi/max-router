@@ -274,6 +274,7 @@ export default function ProvidersPage() {
       name: node.name || "Provider Kompatibel",
       color: "#10A37F",
       textIcon: "OC",
+      iconUrl: node.iconUrl || node.providerSpecificData?.iconUrl,
       apiType: node.apiType,
     }))
     .filter((p) => matchSearch(p.name));
@@ -285,6 +286,7 @@ export default function ProvidersPage() {
       name: node.name || "Provider Kompatibel",
       color: "#D97757",
       textIcon: "AC",
+      iconUrl: node.iconUrl || node.providerSpecificData?.iconUrl,
     }))
     .filter((p) => matchSearch(p.name));
 
@@ -332,7 +334,7 @@ export default function ProvidersPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Custom Providers (OpenAI/Anthropic Compatible){" "}
+            Provider Kompatibel{" "}
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:flex sm:w-auto">
             <Button
@@ -588,7 +590,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
               }}
             >
               <ProviderIcon
-                src={provider.id === "codebuddy" || provider.id === "cb" ? "/providers/codebuddy.svg" : `/providers/${provider.id}.png`}
+                src={provider.iconUrl || (provider.id === "codebuddy" || provider.id === "cb" ? "/providers/codebuddy.svg" : `/providers/${provider.id}.png`)}
                 alt={provider.name}
                 size={30}
                 className="object-contain rounded-lg max-w-[32px] max-h-[32px]"
