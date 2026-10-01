@@ -1,5 +1,5 @@
 import { platform, arch } from "os";
-import { ANTIGRAVITY_BASE_URL } from "./../../src/lib/constants/antigravity.js";
+import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_ENDPOINTS, ANTIGRAVITY_LOAD_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
 
 // === OS/Arch helpers ===
 function mapStainlessOs() {
