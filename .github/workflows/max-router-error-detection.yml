@@ -327,6 +327,6 @@ jobs:
         run: |
           test -f src/pages/antigravity-terminal/page.tsx
           grep -q '/api/v1/chat/completions' src/pages/antigravity-terminal/page.tsx
-          grep -q 'antigravity/' src/pages/antigravity-terminal/page.tsx
+          grep -q 'MODEL = "claude-opus-4-6-thinking"' src/pages/antigravity-terminal/page.tsx
           grep -q '/dashboard/antigravity' src/App.tsx
           echo "Antigravity CLI page audit: OK"
