@@ -219,6 +219,14 @@ export default function BasicChatPageClient() {
       try {
         const providersRes = await fetch("/api/providers", { cache: "no-store" });
         const providersData = await providersRes.json().catch(() => ({}));
+
+        if (!providersRes.ok) {
+          const backendError = textValue(providersData?.error || providersData?.message);
+          throw new Error(
+            `Gagal membaca koneksi provider (HTTP ${providersRes.status})${backendError ? `: ${backendError}` : ""}`
+          );
+        }
+
         const connections = Array.isArray(providersData.connections)
           ? providersData.connections.filter((connection) => connection?.isActive !== false)
           : [];
@@ -226,7 +234,9 @@ export default function BasicChatPageClient() {
         if (connections.length === 0) {
           if (!cancelled) {
             setProviderGroups([]);
-            setLoadError("No providers connected yet.");
+            setLoadError(
+              "Belum ada provider aktif. Jika Antigravity sudah login, periksa DATABASE_URL/persistent storage di Railway karena data OAuth tidak boleh tersimpan di SQLite sementara."
+            );
           }
           return;
         }
@@ -268,11 +278,17 @@ export default function BasicChatPageClient() {
             try {
               const response = await fetch(`/api/providers/${connection.id}/models`, { cache: "no-store" });
               const data = await response.json().catch(() => ({}));
-              if (!response.ok) return { connection, models: [] };
+              if (!response.ok) {
+                return {
+                  connection,
+                  models: [],
+                  warning: textValue(data?.error || data?.message) || `HTTP ${response.status}`,
+                };
+              }
               const models = parseProviderModelsPayload(data)
                 .map((model) => normalizeLiveModel(model, connection))
                 .filter(Boolean);
-              return { connection, models };
+              return { connection, models, warning: data?.warning || "" };
             } catch {
               return { connection, models: [] };
             }
@@ -294,10 +310,20 @@ export default function BasicChatPageClient() {
           .filter((group) => group.models.length > 0)
           .sort((a, b) => a.providerName.localeCompare(b.providerName));
 
+        const modelWarnings = liveResults
+          .filter((result) => result.warning)
+          .map((result) => `${getProviderLabel(result.connection)}: ${result.warning}`);
+
         if (!cancelled) {
           setProviderGroups(normalized);
           if (normalized.length === 0) {
-            setLoadError("Providers connected but no models available.");
+            setLoadError(
+              modelWarnings.length > 0
+                ? `Provider terhubung, tetapi model gagal dimuat. ${modelWarnings.join(" | ")}`
+                : "Provider terhubung tetapi tidak ada model yang tersedia."
+            );
+          } else if (modelWarnings.length > 0) {
+            setLoadError(modelWarnings.join(" | "));
           }
         }
       } catch (error) {
