@@ -31,7 +31,20 @@ export async function PUT_handler(req, res, { params }) {
     }
 
     let sanitizedBaseUrl = baseUrl.trim();
-    
+
+    // xKiro's public website is not its API host. Normalize accidental
+    // xkiro.com/dashboard or xkiro.com values to the OpenAI-compatible API.
+    try {
+      const parsed = new URL(sanitizedBaseUrl);
+      if (parsed.hostname.toLowerCase() === "xkiro.com" || parsed.hostname.toLowerCase() === "www.xkiro.com") {
+        parsed.hostname = "api.xkiro.com";
+        parsed.pathname = "/v1";
+        parsed.search = "";
+        parsed.hash = "";
+        sanitizedBaseUrl = parsed.toString().replace(/\/$/, "");
+      }
+    } catch {}
+
     // Sanitize Base URL for Anthropic Compatible
     if (node.type === "anthropic-compatible") {
       sanitizedBaseUrl = sanitizedBaseUrl.replace(/\/$/, "");
