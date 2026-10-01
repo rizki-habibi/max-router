@@ -200,7 +200,7 @@ export function startCodexProxy(appPort) {
           if (!code) throw new Error("No authorization code received");
 
           // Lazy import to avoid circular deps
-          const { exchangeTokens } = await import("../providers.js");
+          const { exchangeAntigravityTokens } = await import("../antigravity-pkce.js");
           const { createProviderConnection } = await import("@/models");
 
           const tokenData = await exchangeTokens(
@@ -423,9 +423,10 @@ const ANTIGRAVITY_PROXY_TIMEOUT_MS = 300000; // 5 minutes
 const ANTIGRAVITY_PROXY_PORT = 51121;
 const antigravityPendingExchanges = new Map();
 
-export function registerAntigravitySession({ state, redirectUri }) {
-  if (!state || !redirectUri) return false;
+export function registerAntigravitySession({ state, codeVerifier, redirectUri }) {
+  if (!state || !codeVerifier || !redirectUri) return false;
   antigravityPendingExchanges.set(state, {
+    codeVerifier,
     redirectUri,
     status: "pending",
     createdAt: Date.now(),
@@ -472,12 +473,10 @@ export function startAntigravityProxy(appPort) {
           const { exchangeTokens } = await import("../providers.js");
           const { createProviderConnection } = await import("@/models");
 
-          const tokenData = await exchangeTokens(
-            "antigravity",
+          const tokenData = await exchangeAntigravityTokens(
             code,
             session.redirectUri,
-            undefined,
-            state
+            session.codeVerifier
           );
           const connection = await createProviderConnection({
             provider: "antigravity",
