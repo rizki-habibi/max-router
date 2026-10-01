@@ -385,10 +385,7 @@ async function onboardUser(accessToken, tierID, externalSignal) {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         if (externalSignal?.aborted) return null;
-        for (const baseUrl of [
-            ANTIGRAVITY_ENDPOINTS.dailyOnboardUser.replace(/\/v1internal:onboardUser$/, ""),
-            ...ANTIGRAVITY_LOAD_ENDPOINTS
-        ].filter((v, i, a) => a.indexOf(v) === i)) {
+        for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
             try {
                 const response = await fetch(`${baseUrl}/v1internal:onboardUser`, {
                     method: "POST",
