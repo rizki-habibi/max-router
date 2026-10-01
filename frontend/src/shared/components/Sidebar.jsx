@@ -120,7 +120,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               <span className="text-[10px] text-text-muted opacity-75 mt-0.5 leading-none">v{APP_CONFIG.version}</span>
             </div>
           </Link>
-          {updateInfo && (
+          {updateInfo && !collapsed && (
             <div className="flex flex-col gap-1.5 rounded p-1 -m-1">
               <span className="text-xs font-semibold text-green-600 dark:text-amber-500">
                 ↑ Versi baru tersedia: v{updateInfo.latestVersion}
@@ -214,7 +214,8 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                   to={item.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
+                    "flex items-center rounded-lg transition-all group",
+                    collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                     isActive(item.href)
                       ? "bg-primary/10 text-primary"
                       : "text-text-muted hover:bg-surface-2 hover:text-text-main"
@@ -228,7 +229,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                   >
                     {item.icon}
                   </span>
-                  <span className="text-[13px] font-medium">{item.label}</span>
+                  <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
                 </Link>
               ) : null;
             })}
@@ -253,7 +254,8 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               to="/dashboard/profile"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
+                "flex items-center rounded-lg transition-all group",
+                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                 isActive("/dashboard/profile")
                   ? "bg-primary/10 text-primary"
                   : "text-text-muted hover:bg-surface-2 hover:text-text-main"
