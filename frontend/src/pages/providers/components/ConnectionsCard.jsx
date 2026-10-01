@@ -162,6 +162,38 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
             )}
             <span className="text-xs text-text-muted">#{connection.priority}</span>
           </div>
+          {usage && (
+            <div className="mt-2 rounded-lg border border-border bg-sidebar/30 p-2.5">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold">Allowance & pemakaian</span>
+                <span className="text-[10px] text-text-muted">{usageLoading ? "Memuat..." : "Terhubung ke Base URL"}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div><div className="text-[10px] text-text-muted">Paket</div><div className="text-xs font-medium">{usage.plan || "Tanpa paket"}</div></div>
+                <div><div className="text-[10px] text-text-muted">Token gratis tersisa</div><div className="text-xs font-medium">{formatCount(free.remaining)}{free.limit_per_day ? " / " + formatCount(free.limit_per_day) : ""}</div></div>
+                <div><div className="text-[10px] text-text-muted">Reset jendela</div><div className="text-xs font-medium">{formatReset(shortWindow?.resets_in_sec)}</div></div>
+                <div><div className="text-[10px] text-text-muted">Saldo</div><div className="text-xs font-medium">{usage.wallet?.balance_usd != null ? "$" + usage.wallet.balance_usd : "—"}</div></div>
+              </div>
+              {selectedModelUsage && (
+                <div className="mt-2 border-t border-border pt-2">
+                  <div className="text-[10px] text-text-muted">Model</div>
+                  <div className="truncate text-xs font-mono">{selectedModel}</div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-text-muted">
+                    <span>Input {formatCount(selectedModelUsage.inputTokens)}</span>
+                    <span>Output {formatCount(selectedModelUsage.outputTokens)}</span>
+                    <span>Cache {formatCount(selectedModelUsage.cacheReadTokens)}</span>
+                    <span>Request {formatCount(selectedModelUsage.requests)}</span>
+                  </div>
+                </div>
+              )}
+              {(shortWindow || longWindow) && (
+                <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-text-muted">
+                  {shortWindow && <span>Jangka pendek: ${shortWindow.remaining_usd} tersisa · reset {formatReset(shortWindow.resets_in_sec)}</span>}
+                  {longWindow && <span>Jangka panjang: ${longWindow.remaining_usd} tersisa · reset {formatReset(longWindow.resets_in_sec)}</span>}
+                </div>
+              )}
+            </div>
+          )}
           {hasAnyProxy && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="text-[11px] text-text-muted truncate max-w-[420px]" title={proxyDisplayText}>{proxyDisplayText}</span>
