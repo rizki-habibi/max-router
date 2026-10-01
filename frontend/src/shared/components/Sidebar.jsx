@@ -272,25 +272,6 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Pengaturan</span>
             </Link>
           </div>
-        <div className={cn("mt-auto border-t border-black/5 dark:border-white/10 px-3 py-3", collapsed ? "flex justify-center" : "")}>
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className={cn(
-              "mr-comic-toggle relative flex items-center text-text-main",
-              collapsed ? "justify-center size-10" : "w-full gap-3 px-3 py-2.5"
-            )}
-            title={collapsed ? "Buka sidebar" : "Tutup sidebar"}
-            aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {collapsed ? "chevron_right" : "chevron_left"}
-            </span>
-            <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>
-              {collapsed ? "Buka" : "Tutup panel"}
-            </span>
-          </button>
-        </div>
         </nav>
 
       </aside>
