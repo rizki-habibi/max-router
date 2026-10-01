@@ -160,7 +160,6 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
     return "success";
   };
   const allowanceClass = (tone) => tone === "danger" ? "bg-red-500" : tone === "warning" ? "bg-amber-400" : "bg-emerald-500";
-  const cleanErrorMessage = (value) => String(value || "").replace(/^\\s*\\[?\\d{3}\\]?\\s*:\\s*/, "");
 
   const getOneByOneVariant = () => {
     if (!oneByOneStatus) return "default";
@@ -248,7 +247,6 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
                       const meta = modelMap.get(modelId);
                       const tier = meta?.accessTier || "unknown";
                       const tierLabel = tier === "free" ? "Gratis" : tier === "paid" ? "Berbayar" : tier === "premium" ? "Premium" : "Tidak diketahui";
-                      const caps = meta?.capabilities && typeof meta.capabilities === "object" ? Object.entries(meta.capabilities).filter(([, value]) => value === true).map(([key]) => key) : [];
                       const row = modelUsage[modelId];
                       return (
                         <div key={modelId} className="max-w-full rounded border border-border bg-background px-1.5 py-1">
@@ -272,7 +270,7 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
             {connection.lastError && connection.isActive !== false && (
               <div className="mt-2 flex min-w-0 items-start gap-1.5 rounded border border-red-500/25 bg-red-500/5 px-2 py-1.5 text-[10px] text-red-500">
                 <span className="material-symbols-outlined mt-px text-[14px]">error</span>
-                <span className="min-w-0 break-words" title={connection.lastError}>{cleanErrorMessage(connection.lastError)}</span>
+                <span className="min-w-0 break-words" title={connection.lastError}>{connection.lastError}</span>
               </div>
             )}
             <span className="text-xs text-text-muted">#{connection.priority}</span>
