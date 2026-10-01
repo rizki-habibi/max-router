@@ -138,7 +138,7 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
               </span>
             </button>
             <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-              {copied === `model-${modelId}` ? "Tersalin" : "Copy"}
+              {copied === `model-${modelId}` ? "Tersalin" : "Salin"}
             </span>
           </div>
           {onTest && (
@@ -153,7 +153,7 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
                 </span>
               </button>
               <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                {isTesting ? "Menguji..." : "Test"}
+                {isTesting ? "Menguji..." : "Tes"}
               </span>
             </div>
           )}
