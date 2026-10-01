@@ -111,7 +111,21 @@ app.use((req, res, next) => {
 
 // ─── Auto-mount all routes ────────────────────────────────────────────────────
 async function start() {
-  const apiRouter = await buildAutoRouter();
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log("\n[server] 9Router V3 Backend listening on 0.0.0.0:" + PORT);
+    console.log("   Frontend origin: " + FRONTEND_ORIGIN);
+    console.log("   Environment: " + (process.env.NODE_ENV || "development"));
+  });
+
+  let apiRouter;
+  try {
+    apiRouter = await buildAutoRouter();
+  } catch (err) {
+    pushRuntimeError("startup", err);
+    console.error("[startup] Route graph failed; /api/health remains available.");
+    console.error(err);
+    return server;
+  }
   app.use("/api", (req, res, next) => {
     console.log("API request:", req.method, req.url, req.originalUrl);
     apiRouter(req, res, next);
@@ -150,11 +164,6 @@ async function start() {
     if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
   });
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`\n🚀 9Router V3 Backend listening on 0.0.0.0:${PORT}`);
-    console.log(`   Frontend origin: ${FRONTEND_ORIGIN}`);
-    console.log(`   Environment: ${process.env.NODE_ENV || "development"}\n`);
-  });
 }
 
 start().catch((err) => {
