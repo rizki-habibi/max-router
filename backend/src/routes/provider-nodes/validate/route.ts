@@ -111,9 +111,16 @@ export async function POST_handler(req, res) {
           const values = [
             pricing.input, pricing.output, pricing.prompt, pricing.completion,
             pricing.input_token, pricing.output_token, pricing.prompt_token, pricing.completion_token,
+            pricing.input_cost, pricing.output_cost, pricing.prompt_cost, pricing.completion_cost,
           ].map(normalizePrice).filter((v) => v !== null);
           if (values.length) return values.every((v) => v === 0) ? "free" : "paid";
         }
+        const directPrices = [item?.price, item?.input_cost, item?.output_cost, item?.cost]
+          .map(normalizePrice).filter((v) => v !== null);
+        if (directPrices.length) return directPrices.every((v) => v === 0) ? "free" : "paid";
+        if (item?.isPaid === false || item?.paid === false) return "free";
+        if (item?.isPaid === true || item?.paid === true) return "paid";
+        if (/:free$/i.test(String(item?.id || item?.name || item?.model || "")) || /(^|[-_\s])free($|[-_\s])/i.test(String(item?.id || item?.name || item?.model || ""))) return "free";
         return "unknown";
       };
       const seen = new Set();
@@ -131,7 +138,7 @@ export async function POST_handler(req, res) {
           contextWindow: item?.context_window ?? item?.contextWindow ?? item?.context_length ?? null,
           maxOutput: item?.max_output ?? item?.maxOutput ?? item?.max_tokens ?? null,
           capabilities: Array.isArray(item?.capabilities) ? item.capabilities : null,
-          supportedParameters: item?.supported_parameters ?? item?.supportedParameters ?? null,
+          supportedParameters: item?.supported_parameters ?? item?.supportedParameters ?? item?.parameters ?? item?.metadata?.supported_parameters ?? null,
         };
       }).filter(Boolean);
     };
@@ -163,7 +170,7 @@ export async function POST_handler(req, res) {
           const models = classifyModels(data);
           const firstModel = Array.isArray(data?.data) ? data.data[0] : null;
           const looksAnthropic = firstModel?.type === "model" || Boolean(firstModel?.display_name);
-          return { valid: true, detectedVersion: candidate.version, detectedType: looksAnthropic ? "anthropic-compatible" : "openai-compatible", baseUrl: candidate.url, models, modelCount: models.length, method: "models" };
+          return { valid: true, detectedVersion: candidate.version, detectedType: looksAnthropic ? "anthropic-compatible" : "openai-compatible", baseUrl: candidate.url, models, modelCount: models.length, freeModelCount: models.filter((m) => m.priceClass === "free").length, paidModelCount: models.filter((m) => m.priceClass === "paid").length, unknownPricingModelCount: models.filter((m) => m.priceClass === "unknown").length, method: "models" };
         } catch (error) {
           lastFailure = { valid: false, error: getErrorMessage(error), version: candidate.version };
         }
@@ -246,7 +253,13 @@ export async function POST_handler(req, res) {
       valid: results.length === 1 ? results[0].valid : validResults.length > 0,
       total: results.length, validCount: validResults.length, invalidCount: results.length - validResults.length,
       detectedType: detected?.detectedType || null, detectedVersion: detected?.detectedVersion || null,
-      baseUrl: detected?.baseUrl || null, models: Array.from(new Set(validResults.flatMap((item) => item.models || []))), results,
+      baseUrl: detected?.baseUrl || null,
+      models: Array.from(new Map(validResults.flatMap((item) => item.models || []).map((model) => [model.id, model])).values()),
+      modelCount: validResults.reduce((sum, item) => sum + Number(item.modelCount || (item.models || []).length), 0),
+      freeModelCount: validResults.reduce((sum, item) => sum + Number(item.freeModelCount || (item.models || []).filter((m) => m.priceClass === "free").length), 0),
+      paidModelCount: validResults.reduce((sum, item) => sum + Number(item.paidModelCount || (item.models || []).filter((m) => m.priceClass === "paid").length), 0),
+      unknownPricingModelCount: validResults.reduce((sum, item) => sum + Number(item.unknownPricingModelCount || (item.models || []).filter((m) => m.priceClass === "unknown").length), 0),
+      supportedParameters: Array.from(new Set(validResults.flatMap((item) => (item.models || []).flatMap((m) => Array.isArray(m.supportedParameters) ? m.supportedParameters : [])))), results,
     });
   } catch (error) {
     const errorMessage = getErrorMessage(error);
