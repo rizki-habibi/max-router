@@ -7,7 +7,6 @@ import { Card, Button, Badge, Input, Modal, CardSkeleton, OAuthModal, KiroOAuthW
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, getProviderAlias, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, AI_PROVIDERS, THINKING_CONFIG } from "@/shared/constants/providers";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
-import { translate } from "@/i18n/runtime";
 import { fetchSuggestedModels } from "@/shared/utils/providerModelsFetcher";
 import ModelRow from "./ModelRow";
 import PassthroughModelsSection from "./PassthroughModelsSection";
@@ -417,7 +416,7 @@ export default function ProviderDetailPage() {
     if (importingQoderModels) return;
     const activeConnection = connections.find((conn) => conn.isActive !== false);
     if (!activeConnection) {
-      alert(translate("Please add an active Qoder connection first"));
+      alert("Tambahkan koneksi Qoder yang aktif terlebih dahulu");
       return;
     }
 
@@ -426,12 +425,12 @@ export default function ProviderDetailPage() {
       const res = await fetch(`/api/providers/${activeConnection.id}/models`);
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || translate("Failed to fetch models"));
+        alert(data.error || "Gagal mengambil model");
         return;
       }
       const models = data.models || [];
       if (models.length === 0) {
-        alert(translate("No models returned"));
+        alert("Tidak ada model yang dikembalikan");
         return;
       }
 
@@ -460,13 +459,13 @@ export default function ProviderDetailPage() {
       }
       
       if (importedCount === 0) {
-        alert(translate("All models already exist, no new models added"));
+        alert("Semua model sudah ada, tidak ada model baru yang ditambahkan");
       } else {
-        alert(translate("Successfully added") + ` ${importedCount} ` + translate("models"));
+        alert("Berhasil menambahkan" + ` ${importedCount} ` + "model");
       }
     } catch (error) {
       console.log("Error importing Qoder models:", error);
-      alert(translate("Error fetching models") + ": " + error.message);
+      alert("Gagal mengambil model" + ": " + error.message);
     } finally {
       setImportingQoderModels(false);
     }
@@ -1067,7 +1066,7 @@ export default function ProviderDetailPage() {
               <span className="material-symbols-outlined text-sm" style={importingQoderModels ? { animation: "spin 1s linear infinite" } : undefined}>
                 {importingQoderModels ? "progress_activity" : "download"}
               </span>
-              {importingQoderModels ? translate("Fetching...") : translate("Fetch Qoder Models")}
+              {importingQoderModels ? "Mengambil..." : "Ambil model Qoder"}
             </button>
           )}
         </div>
@@ -1606,7 +1605,7 @@ export default function ProviderDetailPage() {
       <Card>
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold">
-            {"Available Models"}
+            {"Model Tersedia"}
           </h2>
           {!isCompatible && (() => {
             const _providerServiceKinds = AI_PROVIDERS[providerId]?.serviceKinds || ["llm"];
