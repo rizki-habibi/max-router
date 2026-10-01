@@ -19,13 +19,10 @@ const Translator      = lazy(() => import("./pages/translator/page"));
 const Automation      = lazy(() => import("./pages/automation/page"));
 const AntigravityTerminal = lazy(() => import("./pages/antigravity-terminal/page"));
 const CompatibleChat = lazy(() => import("./pages/compatible-chat/page"));
+const ModelDetection = lazy(() => import("./pages/model-detection/page"));
 const Profile         = lazy(() => import("./pages/profile/page"));
 const Docs            = lazy(() => import("./pages/docs/page"));
 const ConsoleLog      = lazy(() => import("./pages/console-log/page"));
-const MediaProviders  = lazy(() => import("./pages/media-providers/web/page"));
-const MediaProviderKind  = lazy(() => import("./pages/media-providers/[kind]/page"));
-const MediaProviderKindId = lazy(() => import("./pages/media-providers/[kind]/[id]/page"));
-const MediaProviderComboDetail = lazy(() => import("./pages/media-providers/combo/[id]/page"));
 const WeavyPool          = lazy(() => import("./pages/providers/weavy/pool/page"));
 const AmmailTutorial     = lazy(() => import("./pages/automation/ammail-tutorial/page"));
 
@@ -73,14 +70,11 @@ export default function App() {
             <Route path="automation"      element={<Automation />} />
             <Route path="automation/ammail-tutorial" element={<AmmailTutorial />} />
             <Route path="chat" element={<CompatibleChat />} />
+            <Route path="model-detection" element={<ModelDetection />} />
             <Route path="antigravity" element={<AntigravityTerminal />} />
             <Route path="profile"         element={<Profile />} />
             <Route path="docs"            element={<Docs />} />
             <Route path="console-log"     element={<ConsoleLog />} />
-            <Route path="media-providers/web" element={<MediaProviders />} />
-            <Route path="media-providers/:kind" element={<MediaProviderKind />} />
-            <Route path="media-providers/:kind/:id" element={<MediaProviderKindId />} />
-            <Route path="media-providers/combo/:id" element={<MediaProviderComboDetail />} />
           </Route>
 
           {/* Fallback */}
