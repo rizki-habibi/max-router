@@ -140,14 +140,34 @@ export async function POST_handler(req, res) {
         const modelsRes = await fetchWithTimeout(modelsUrl, {
           headers: { "Authorization": `Bearer ${apiKey}` },
         });
+        const model = body.defaultModel || body.modelId || providerSpecificData?.defaultModel;
+        // /models can be public. When a model is supplied, verify the credential by inference.
+        if (model) {
+          const apiType = node.apiType === "responses" ? "responses" : "chat";
+          const endpoint = apiType === "responses" ? `${baseUrl}/responses` : `${baseUrl}/chat/completions`;
+          const bodyPayload = apiType === "responses"
+            ? { model, input: "ping", max_output_tokens: 1 }
+            : { model, max_tokens: 1, stream: false, messages: [{ role: "user", content: "ping" }] };
+          const inferenceRes = await fetchWithTimeout(endpoint, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify(bodyPayload),
+          });
+          const valid = inferenceRes.ok || isReachableInferenceStatus(inferenceRes.status);
+          return res.json({
+            valid,
+            error: valid ? null : (await readResponseError(inferenceRes)) || "Invalid API key or model",
+            method: apiType,
+          });
+        }
         if (modelsRes.ok) {
-          return res.json({ valid: true, error: null });
+          return res.json({ valid: true, error: null, warning: "Model list is reachable; API key was not tested because no Model ID was supplied." });
         }
         if (isAuthFailure(modelsRes.status)) {
           return res.json({ valid: false, error: "Invalid API key" });
         }
 
-        const model = body.defaultModel || body.modelId || providerSpecificData?.defaultModel || "test";
+        const model = "test";
         const chatRes = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
