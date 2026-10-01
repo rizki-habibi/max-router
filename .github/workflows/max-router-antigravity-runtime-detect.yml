@@ -43,8 +43,8 @@ jobs:
           const file = 'open-sse/executors/antigravity.js';
           const source = fs.readFileSync(file, 'utf8');
 
-          const declarations = [...source.matchAll(/\\b(?:const|let|var)\\s+errorInfo\\b/g)];
-          const references = [...source.matchAll(/\\berrorInfo\\b/g)];
+          const declarations = [...source.matchAll(/\b(?:const|let|var)\s+errorInfo\b/g)];
+          const references = [...source.matchAll(/\berrorInfo\b/g)];
 
           console.log('errorInfo declarations:', declarations.map(m => m.index));
           console.log('errorInfo references:', references.map(m => m.index));
@@ -55,7 +55,7 @@ jobs:
 
           // Detect the exact corruption that previously produced:
           // "errorInfo is not defined"
-          if (source.includes('\\\\n          const errorInfo')) {
+          if (source.includes('\\n          const errorInfo')) {
             throw new Error('FAIL: ditemukan literal \\n sebelum const errorInfo');
           }
 
