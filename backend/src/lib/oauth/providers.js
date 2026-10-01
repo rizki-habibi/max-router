@@ -498,7 +498,7 @@ const PROVIDERS = {
             const onboardRes = await fetch(ANTIGRAVITY_CONFIG.onboardUserEndpoint, {
               method: "POST",
               headers: loadHeaders,
-              body: JSON.stringify({ tierId, metadata }),
+              body: JSON.stringify({ tier_id: tierId, metadata }),
               signal: AbortSignal.timeout(15000),
             });
             if (onboardRes.ok) {
@@ -543,7 +543,7 @@ const PROVIDERS = {
           const quickRes = await fetch(ANTIGRAVITY_CONFIG.onboardUserEndpoint, {
             method: "POST",
             headers: loadHeaders,
-            body: JSON.stringify({ tierId, metadata }),
+            body: JSON.stringify({ tier_id: tierId, metadata }),
             signal: AbortSignal.timeout(8000),
           });
           if (quickRes.ok) {
@@ -570,7 +570,7 @@ const PROVIDERS = {
               const res = await fetch(ANTIGRAVITY_CONFIG.onboardUserEndpoint, {
                 method: "POST",
                 headers: loadHeaders,
-                body: JSON.stringify({ tierId, metadata }),
+                body: JSON.stringify({ tier_id: tierId, metadata }),
                 signal: AbortSignal.timeout(15000),
               });
               if (res.ok) {
