@@ -327,5 +327,5 @@ jobs:
         run: |
           test -f src/pages/basic-chat/BasicChatPageClient.jsx
           grep -q '/api/providers' src/pages/basic-chat/BasicChatPageClient.jsx
-          grep -q '/api/dashboard/chat/completions' src/pages/basic-chat/BasicChatPageClient.jsx
+          grep -q '/api/v1/chat/completions' src/pages/basic-chat/BasicChatPageClient.jsx
           echo "Uji Model page audit: OK"
