@@ -20,7 +20,6 @@ const Automation      = lazy(() => import("./pages/automation/page"));
 const BasicChat       = lazy(() => import("./pages/basic-chat/page"));
 const Profile         = lazy(() => import("./pages/profile/page"));
 const Docs            = lazy(() => import("./pages/docs/page"));
-const Skills          = lazy(() => import("./pages/skills/page"));
 const ConsoleLog      = lazy(() => import("./pages/console-log/page"));
 const MediaProviders  = lazy(() => import("./pages/media-providers/web/page"));
 const MediaProviderKind  = lazy(() => import("./pages/media-providers/[kind]/page"));
@@ -75,7 +74,6 @@ export default function App() {
             <Route path="basic-chat"      element={<BasicChat />} />
             <Route path="profile"         element={<Profile />} />
             <Route path="docs"            element={<Docs />} />
-            <Route path="skills"          element={<Skills />} />
             <Route path="console-log"     element={<ConsoleLog />} />
             <Route path="media-providers/web" element={<MediaProviders />} />
             <Route path="media-providers/:kind" element={<MediaProviderKind />} />
