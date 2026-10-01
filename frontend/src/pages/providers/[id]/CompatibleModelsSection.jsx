@@ -184,6 +184,8 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [bulkAction, setBulkAction] = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [disabledModelIds, setDisabledModelIds] = useState([]);
+  const [testJob, setTestJob] = useState(null);
+  const [testNotification, setTestNotification] = useState(null);
 
   const handleTestModel = async (modelId, fromAll = false) => {
     if (testingModelId || (testingAll && !fromAll)) return false;
@@ -213,10 +215,30 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   };
 
   const handleTestAll = async () => {
-    if (testingAll || testingModelId || activeModels.length === 0) return;
+    if (testingAll || activeModels.length === 0) return;
     setTestingAll(true);
-    for (const item of activeModels) await handleTestModel(item.modelId, true);
-    setTestingAll(false);
+    try {
+      const res = await fetch("/api/models/test-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerAlias: providerStorageAlias,
+          models: activeModels.map((item) => item.modelId),
+          kind: "llm",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.job) throw new Error(data.error || "Gagal memulai tes semua model.");
+      setTestJob(data.job);
+      setTestNotification({
+        type: "info",
+        title: "Tes semua model dimulai",
+        message: "Pekerjaan disimpan di server. Tes tetap berjalan meskipun halaman di-reload atau ditutup.",
+      });
+    } catch (error) {
+      setTestingAll(false);
+      setApiError({ status: 0, statusText: "", url: "/api/models/test-all", contentType: "", raw: "", isHtml: false, message: error?.message || "Gagal memulai tes semua model." });
+    }
   };
 
   const providerAliases = Object.entries(modelAliases).filter(
@@ -260,7 +282,51 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     } finally { setBulkBusy(false); }
   };
 
-  useEffect(() => { handleLoadDisabled(); }, [providerStorageAlias]);
+  useEffect(() => {
+    let stopped = false;
+    let timer = null;
+
+    const syncJob = async () => {
+      try {
+        const res = await fetch("/api/models/test-all?providerAlias=" + encodeURIComponent(providerStorageAlias), { cache: "no-store" });
+        const data = await res.json();
+        if (stopped || !data.job) return;
+
+        const job = data.job;
+        setTestJob(job);
+        const nextResults = {};
+        for (const [modelId, result] of Object.entries(job.results || {})) {
+          if (result?.status === "ok" || result?.status === "error") nextResults[modelId] = result.status;
+        }
+        setModelTestResults(nextResults);
+
+        if (job.status === "running") {
+          setTestingAll(true);
+          timer = window.setTimeout(syncJob, 1500);
+        } else {
+          setTestingAll(false);
+          await handleLoadDisabled();
+          if (job.status === "completed") {
+            setTestNotification({
+              type: job.failed > 0 ? "warning" : "success",
+              title: "Tes semua model selesai",
+              message: String(job.success || 0) + " berhasil, " + String(job.failed || 0) + " error. Model error otomatis masuk Nonaktif.",
+            });
+          }
+        }
+      } catch {
+        if (!stopped) timer = window.setTimeout(syncJob, 3000);
+      }
+    };
+
+    handleLoadDisabled();
+    syncJob();
+
+    return () => {
+      stopped = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [providerStorageAlias]);
 
   const generateDefaultAlias = (modelId) => {
     const parts = modelId.split("/");
@@ -393,6 +459,37 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           <h3 className="text-lg font-semibold">Model Tersedia</h3>
           <p className="mt-1 text-sm text-text-muted">Tambahkan model {isAnthropic ? "Anthropic" : "OpenAI"} secara manual atau ambil otomatis dari endpoint /models.</p>
         </div>
+        <div className="rounded-xl border border-border bg-background/60 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">hub</span>
+                <span className="text-sm font-semibold">Pusat layanan model</span>
+                {testJob?.status === "running" && <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-500">Sedang berjalan {testJob.progress ?? 0}%</span>}
+                {testJob?.status === "completed" && <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-500">Selesai</span>}
+              </div>
+              <p className="mt-1 text-xs text-text-muted">Tes disimpan di server dan tidak berhenti saat halaman di-reload atau ditutup.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-text-muted">notifications</span>
+              <span className="text-xs text-text-muted">{testNotification ? testNotification.title : "Notifikasi aktif"}</span>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-4">
+            {[
+              ["download", "Ambil /models", canImport ? "Siap" : "Koneksi belum aktif"],
+              ["science", "Tes semua", activeModels.length ? "Siap" : "Tidak ada model aktif"],
+              ["block", "Nonaktif otomatis", "Aktif"],
+              ["database", "Penyimpanan tes", "Persisten"],
+            ].map(([icon, title, status]) => (
+              <div key={title} className="rounded-lg border border-border px-3 py-2">
+                <div className="flex items-center gap-2 text-xs font-medium"><span className="material-symbols-outlined text-sm text-text-muted">{icon}</span>{title}</div>
+                <div className="mt-1 text-[10px] text-text-muted">{status}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-border px-2.5 py-1 text-xs">Aktif: {activeModels.length}</span>
           <span className="rounded-full border border-border px-2.5 py-1 text-xs">Error: {errorModels.length}</span>
@@ -422,7 +519,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           />
         </div>
         <Button size="sm" icon="add" onClick={handleAdd} disabled={!newModel.trim() || adding}>
-          {adding ? "Menambahkan..." : "Add"}
+          {adding ? "Menambahkan..." : "Tambah"}
         </Button>
         <Button size="sm" variant="secondary" icon="download" onClick={handleImport} disabled={!canImport || importing}>
           {importing ? "Mengambil..." : "Ambil model dari /models"}
@@ -436,7 +533,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
 
       {!canImport && (
         <p className="text-xs text-text-muted">
-          Add a connection to enable importing models.
+          Tambahkan koneksi aktif untuk mengaktifkan pengambilan model.
         </p>
       )}
       {usageInfo && (
@@ -471,21 +568,58 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         </div>
       )}
 
-      {allModels.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {activeModels.map(({ modelId, fullModel, alias }) => (
-            <CompatibleModelRow
-              key={fullModel}
-              modelId={modelId}
-              fullModel={`${providerDisplayAlias}/${modelId}`}
-              copied={copied}
-              onCopy={onCopy}
-              onDeleteAlias={() => setDeleteTarget({ alias, modelId, fullModel: `${providerDisplayAlias}/${modelId}` })}
-              onTest={connections.length > 0 ? () => handleTestModel(modelId) : undefined}
-              testStatus={modelTestResults[modelId]}
-              isTesting={testingModelId === modelId}
-            />
-          ))}
+
+      {activeModels.length > 0 && (
+        <div className="rounded-xl border border-border p-3">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <h4 className="text-sm font-semibold">Model Aktif</h4>
+              <p className="text-xs text-text-muted">Model yang dapat dipilih dan digunakan oleh layanan.</p>
+            </div>
+            <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-500">{activeModels.length} aktif</span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {activeModels.map(({ modelId, fullModel, alias }) => (
+              <CompatibleModelRow
+                key={fullModel}
+                modelId={modelId}
+                fullModel={providerDisplayAlias + "/" + modelId}
+                copied={copied}
+                onCopy={onCopy}
+                onDeleteAlias={() => setDeleteTarget({ alias, modelId, fullModel: providerDisplayAlias + "/" + modelId })}
+                onTest={connections.length > 0 ? () => handleTestModel(modelId) : undefined}
+                testStatus={modelTestResults[modelId]}
+                isTesting={testingModelId === modelId}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {disabledModels.length > 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <h4 className="text-sm font-semibold">Model Nonaktif</h4>
+              <p className="text-xs text-text-muted">Model error dipisahkan dan tidak masuk pemilihan aktif.</p>
+            </div>
+            <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs text-amber-500">{disabledModels.length} nonaktif</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {disabledModels.map(({ modelId, fullModel }) => (
+              <div key={fullModel} className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-background/60 p-3 opacity-75">
+                <span className="material-symbols-outlined text-base text-amber-500">block</span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{modelId}</div>
+                  <code className="text-xs text-text-muted">{providerDisplayAlias}/{modelId}</code>
+                </div>
+                <button type="button" className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-sidebar" onClick={async () => {
+                  const res = await fetch("/api/models/disabled?providerAlias=" + encodeURIComponent(providerStorageAlias) + "&id=" + encodeURIComponent(modelId), { method: "DELETE" });
+                  if (res.ok) setDisabledModelIds((prev) => prev.filter((id) => id !== modelId));
+                }}>Aktifkan</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
