@@ -1,3 +1,4 @@
+import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
 import crypto from "crypto";
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS } from "../config/providers.js";
@@ -24,10 +25,9 @@ export class AntigravityExecutor extends BaseExecutor {
   }
 
   buildUrl(model, stream, urlIndex = 0) {
-    const baseUrls = this.getBaseUrls();
-    const baseUrl = baseUrls[urlIndex] || baseUrls[0];
-    const action = stream ? "streamGenerateContent?alt=sse" : "generateContent";
-    return `${baseUrl}/v1internal:${action}`;
+    return stream
+      ? `${ANTIGRAVITY_ENDPOINTS.streamGenerateContent}?alt=sse`
+      : ANTIGRAVITY_ENDPOINTS.generateContent;
   }
 
   buildHeaders(credentials, stream = true, sessionId = null) {
