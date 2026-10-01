@@ -87,7 +87,34 @@ jobs:
             throw new Error('Antigravity masih memakai endpoint lama v1internal:models');
           }
 
-          console.log('Provider + database audit: OK');
+          // The canonical endpoint may only be declared in the centralized
+          // Antigravity constants module; this prevents URL drift between modules.
+          const constantsPath = path.resolve('./dist/src/lib/constants/antigravity.js');
+          if (!fs.existsSync(constantsPath)) {
+            throw new Error('Antigravity constants module tidak ditemukan: ' + constantsPath);
+          }
+          const constantsSource = fs.readFileSync(constantsPath, 'utf8');
+          if (!constantsSource.includes('https://cloudcode-pa.googleapis.com')) {
+            throw new Error('Canonical Antigravity Base URL tidak ditemukan di constants module');
+          }
+
+          const forbiddenLegacy = [
+            'https://daily-cloudcode-pa.googleapis.com',
+            'https://daily-cloudcode-pa.sandbox.googleapis.com',
+            'https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels',
+            'https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist',
+            'https://cloudcode-pa.googleapis.com/v1internal:onboardUser',
+            'https://cloudcode-pa.googleapis.com/v1internal:generateContent',
+            'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent'
+          ];
+          for (const needle of forbiddenLegacy) {
+            const hits = files.filter(f => f !== constantsPath && fs.readFileSync(f, 'utf8').includes(needle));
+            if (hits.length) {
+              throw new Error('Antigravity endpoint hardcoded di luar constants: ' + needle + ' -> ' + hits.join(', '));
+            }
+          }
+
+          console.log('Provider + database + Antigravity endpoint audit: OK');
           console.warn('INFO: Railway production wajib menyediakan DATABASE_URL atau persistent Volume agar koneksi OAuth tidak hilang saat redeploy.');
           NODE
 
