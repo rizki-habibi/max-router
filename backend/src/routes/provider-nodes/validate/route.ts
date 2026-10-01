@@ -91,7 +91,7 @@ export async function POST_handler(req, res) {
       const embedRes = await fetchWithTimeout(`${normalizedBase}/embeddings`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": `Bearer ${normalizedApiKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ model: modelId.trim(), input: "ping" })
@@ -125,7 +125,7 @@ export async function POST_handler(req, res) {
         headers: {
           "x-api-key": normalizedApiKey,
           "anthropic-version": "2023-06-01",
-          "Authorization": `Bearer ${apiKey}`
+          "Authorization": `Bearer ${normalizedApiKey}`
         }
       });
 
@@ -142,7 +142,7 @@ export async function POST_handler(req, res) {
           headers: {
             "x-api-key": normalizedApiKey,
             "anthropic-version": "2023-06-01",
-            "Authorization": `Bearer ${apiKey}`,
+            "Authorization": `Bearer ${normalizedApiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -184,7 +184,7 @@ export async function POST_handler(req, res) {
 
     const modelsUrl = `${normalizedBase}/models`;
     const upstreamRes = await fetchWithTimeout(modelsUrl, {
-      headers: { "Authorization": `Bearer ${apiKey}` },
+      headers: { "Authorization": `Bearer ${normalizedApiKey}` },
     });
 
     // /models may be public (as with xKiro), so a 200 here does not prove the API key.
@@ -198,7 +198,7 @@ export async function POST_handler(req, res) {
       const inferenceRes = await fetchWithTimeout(normalizedBase + inferencePath, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": `Bearer ${normalizedApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(inferenceBody),
