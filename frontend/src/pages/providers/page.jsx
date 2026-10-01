@@ -117,7 +117,7 @@ export default function ProvidersPage() {
   const [loading, setLoading] = useState(true);
   const [showAllApikey, setShowAllApikey] = useState(false);
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
-  const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] = useState(false);
+
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
   const notify = useNotificationStore();
@@ -339,19 +339,12 @@ export default function ProvidersPage() {
             <Button
               size="sm"
               icon="add"
-              onClick={() => setShowAddAnthropicCompatibleModal(true)}
+              onClick={() => setShowAddCompatibleModal(true)}
               className="w-full sm:w-auto"
             >
-              Tambah Kompatibel (Messages)
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              icon="add"
-              onClick={() => setShowAddCompatibleModal(true)}
               className="w-full !bg-white !text-black hover:!bg-gray-100 sm:w-auto"
             >
-              Tambah Kompatibel (OpenAI)
+              Tambah Kompatibel
             </Button>
           </div>
         </div>
@@ -807,6 +800,160 @@ ApiKeyProviderCard.propTypes = {
   }).isRequired,
   authType: PropTypes.string,
   onToggle: PropTypes.func,
+};
+
+function AddCompatibleModal({ isOpen, onClose, onCreated }) {
+  const [form, setForm] = useState({
+    type: "openai-compatible",
+    name: "",
+    prefix: "",
+    baseUrl: "https://api.openai.com/v1",
+    iconUrl: "",
+    apiType: "chat",
+    bulk: "",
+  });
+  const [nodes, setNodes] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch("/api/provider-nodes").then((r) => r.json()).then((data) => {
+      const list = Array.isArray(data?.nodes) ? data.nodes.filter((n) => n.type === "openai-compatible" || n.type === "anthropic-compatible") : [];
+      setNodes(list);
+      if (list[0]) {
+        setForm((prev) => ({
+          ...prev,
+          type: list[0].type,
+          name: list[0].name || "",
+          prefix: list[0].prefix || "",
+          baseUrl: list[0].baseUrl || prev.baseUrl,
+          iconUrl: list[0].iconUrl || "",
+          apiType: list[0].apiType || "chat",
+        }));
+      }
+    }).catch(() => {});
+  }, [isOpen]);
+
+  const selectNode = (nodeId) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+    setForm((prev) => ({
+      ...prev,
+      type: node.type,
+      name: node.name || "",
+      prefix: node.prefix || "",
+      baseUrl: node.baseUrl || prev.baseUrl,
+      iconUrl: node.iconUrl || "",
+      apiType: node.apiType || "chat",
+    }));
+  };
+
+  const parseBulk = (raw) => {
+    const lines = raw.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const keyLike = (s) => /^(sk-|sk_|key-|api[_-]?key|[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{8,})/i.test(s);
+    const keys = [];
+    const models = [];
+    for (const line of lines) {
+      if (keyLike(line)) keys.push(line);
+      else models.push(line);
+    }
+    return keys.map((apiKey, i) => ({
+      apiKey,
+      defaultModel: models[i] || models[0] || "",
+      name: `${form.name.trim() || "Provider Kompatibel"} #${i + 1}`,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    const batch = parseBulk(form.bulk);
+    if (!form.baseUrl.trim() || !form.prefix.trim() || !batch.length) {
+      setMessage("Isi Base URL, Prefix, dan minimal satu API key.");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    try {
+      const nodeRes = await fetch("/api/provider-nodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim() || "Provider Kompatibel",
+          prefix: form.prefix.trim(),
+          iconUrl: form.iconUrl.trim(),
+          apiType: form.apiType,
+          baseUrl: form.baseUrl.trim(),
+          type: form.type,
+        }),
+      });
+      const nodeData = await nodeRes.json();
+      let providerId = nodeData?.node?.id;
+      if (!nodeRes.ok && nodeData?.node?.id) providerId = nodeData.node.id;
+      if (!providerId) {
+        const existing = nodes.find((n) => n.type === form.type && n.prefix === form.prefix.trim() && n.baseUrl === form.baseUrl.trim());
+        providerId = existing?.id;
+      }
+      if (!providerId) {
+        setMessage(nodeData?.error || "Gagal membuat provider kompatibel.");
+        return;
+      }
+
+      const res = await fetch("/api/providers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: providerId, batch }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data?.error || "Gagal menyimpan API key.");
+        return;
+      }
+      setMessage(`${data.createdCount || batch.length} key berhasil ditambahkan.`);
+      setForm((prev) => ({ ...prev, bulk: "" }));
+      await onCreated();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Gagal menyimpan.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} title="Tambah Provider Kompatibel" onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        <Select
+          label="Jenis kompatibilitas"
+          value={nodes.find((n) => n.type === form.type)?.id || ""}
+          options={nodes.map((n) => ({ value: n.id, label: `${n.name || "Provider"} · ${n.type === "anthropic-compatible" ? "Messages" : "OpenAI"}` }))}
+          onChange={(e) => selectNode(e.target.value)}
+        />
+        <Input label="Nama otomatis" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Mercury" />
+        <Input label="Prefix" value={form.prefix} onChange={(e) => setForm({ ...form, prefix: e.target.value })} placeholder="mercury" />
+        <Input label="Base URL" value={form.baseUrl} onChange={(e) => setForm({ ...form, baseUrl: e.target.value })} placeholder="https://api.example.com/v1" />
+        <Input label="Icon URL resmi (opsional)" value={form.iconUrl} onChange={(e) => setForm({ ...form, iconUrl: e.target.value })} placeholder="https://example.com/logo.svg" />
+        <label className="text-sm font-medium">API Key + Model (bisa banyak)</label>
+        <textarea
+          value={form.bulk}
+          onChange={(e) => setForm({ ...form, bulk: e.target.value })}
+          rows={9}
+          className="w-full rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs"
+          placeholder={"Tempel berurutan, contoh:\nAPI_KEY_1\nmodel-1\nAPI_KEY_2\nmodel-2\nAPI_KEY_3\nmodel-3"}
+        />
+        <p className="text-xs text-text-muted">Sistem mendeteksi baris key dan model otomatis, lalu membuat #1, #2, #3 dan seterusnya. Base URL node yang dipilih dipakai untuk semua key.</p>
+        {message && <div className="rounded-lg bg-surface-2 px-3 py-2 text-sm">{message}</div>}
+        <div className="flex gap-2">
+          <Button fullWidth onClick={handleSubmit} disabled={saving}>{saving ? "Menambahkan..." : "Tambah Semua Key"}</Button>
+          <Button variant="ghost" fullWidth onClick={onClose}>Tutup</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+AddCompatibleModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onCreated: PropTypes.func.isRequired,
 };
 
 function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
