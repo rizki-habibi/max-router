@@ -86,7 +86,7 @@ jobs:
 
       - name: Syntax check seluruh executor JavaScript
         run: |
-          find open-sse src -type f -name '*.js' -print0 | while IFS= read -r -d '' file; do
+          find open-sse -type f -name '*.js' -print0 | while IFS= read -r -d '' file; do
             node --check "$file" || exit 1
           done
 
