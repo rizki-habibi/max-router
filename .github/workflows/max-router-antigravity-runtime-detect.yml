@@ -78,6 +78,7 @@ jobs:
             --no-eslintrc \
             --env node \
             --env es2022 \
+            --parser-options '{"sourceType":"module","ecmaVersion":2022}' \
             --rule 'no-undef:error' \
             --global Headers \
             --global Response \
