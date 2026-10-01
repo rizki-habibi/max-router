@@ -109,14 +109,14 @@ jobs:
             for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
               const full = path.join(dir, entry.name);
               if (entry.isDirectory()) walk(full);
-              else if (/\\.(js|mjs|ts|tsx)$/.test(entry.name)) files.push(full);
+              else if (/\.(js|mjs|ts|tsx)$/.test(entry.name)) files.push(full);
             }
           }
           walk(path.join(root, 'src'));
           walk(path.join(root, 'open-sse'));
 
           const failures = [];
-          const importPattern = /(?:from|import)\\s*["']([^"']*antigravity\\.js)["']/g;
+          const importPattern = /(?:from|import)\s*["']([^"']*antigravity\.js)["']/g;
 
           for (const file of files) {
             const source = fs.readFileSync(file, 'utf8');
