@@ -181,7 +181,6 @@ export async function POST_handler(req, res) {
       });
     }
 
-    const normalizedBase = trimBaseUrl(baseUrl);
     const modelsUrl = `${normalizedBase}/models`;
     const upstreamRes = await fetchWithTimeout(modelsUrl, {
       headers: { "Authorization": `Bearer ${apiKey}` },
