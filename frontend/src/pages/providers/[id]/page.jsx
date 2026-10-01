@@ -11,7 +11,7 @@ import { fetchSuggestedModels } from "@/shared/utils/providerModelsFetcher";
 import ModelRow from "./ModelRow";
 import PassthroughModelsSection from "./PassthroughModelsSection";
 import CompatibleModelsSection from "./CompatibleModelsSection";
-import ConnectionRow from "./ConnectionRow";
+import ProviderConnectionsTable from "./ProviderConnectionsTable";
 import AddApiKeyModal from "./AddApiKeyModal";
 import EditCompatibleNodeModal from "./EditCompatibleNodeModal";
 import AddCustomModelModal from "./AddCustomModelModal";
@@ -60,6 +60,7 @@ export default function ProviderDetailPage() {
   const [oneByOneStopping, setOneByOneStopping] = useState(false);
   const [oneByOneCurrentConnectionId, setOneByOneCurrentConnectionId] = useState(null);
   const [oneByOneResults, setOneByOneResults] = useState({});
+  const [testingConnectionIds, setTestingConnectionIds] = useState([]);
   const [oneByOneSummary, setOneByOneSummary] = useState(null);
   const stopOneByOneRef = useRef(false);
   const [importingQoderModels, setImportingQoderModels] = useState(false);
@@ -774,52 +775,67 @@ export default function ProviderDetailPage() {
 
   const isSelected = (connectionId) => selectedConnectionIds.includes(connectionId);
 
+  const handleTestConnection = async (id) => {
+    if (testingConnectionIds.includes(id)) return;
+    setTestingConnectionIds((prev) => [...prev, id]);
+    try {
+      const res = await fetch(`/api/providers/${id}/test`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      setConnections((prev) => prev.map((conn) => conn.id === id ? {
+        ...conn,
+        testStatus: data.valid ? "active" : "error",
+        lastError: data.valid ? null : (data.error || "Pengujian gagal"),
+        lastTested: new Date().toISOString(),
+      } : conn));
+      if (!data.valid) console.warn("Provider connection test failed:", data.error);
+    } catch (error) {
+      setConnections((prev) => prev.map((conn) => conn.id === id ? {
+        ...conn,
+        testStatus: "error",
+        lastError: error.message || "Pengujian gagal",
+        lastTested: new Date().toISOString(),
+      } : conn));
+    } finally {
+      setTestingConnectionIds((prev) => prev.filter((item) => item !== id));
+    }
+  };
+
+  const officialProviderWebsite =
+    /xkiro/i.test(String(providerInfo?.name || "")) || providerId === "xkiro"
+      ? "https://xkiro.com"
+      : providerInfo?.website || providerInfo?.notice?.signupUrl || "";
+
+  const officialProviderBaseUrl =
+    /xkiro/i.test(String(providerInfo?.name || "")) || providerId === "xkiro"
+      ? (isAnthropicCompatible ? "https://api.xkiro.com" : "https://api.xkiro.com/v1")
+      : providerInfo?.baseUrl || "";
+
+  const providerMark = providerInfo?.textIcon || providerInfo?.textIcon === "" ? providerInfo.textIcon : "AI";
+
   const connectionsList = (
-    <div className="flex min-w-0 flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-      {connections
-        .map((conn, index) => (
-          <div key={conn.id} className="flex min-w-0 items-stretch">
-            <div className="flex-1 min-w-0">
-              <ConnectionRow
-                connection={conn}
-                proxyPools={proxyPools}
-                isOAuth={isOAuth}
-                isFirst={index === 0}
-                isLast={index === connections.length - 1}
-                onMoveUp={() => handleSwapPriority(index, index - 1)}
-                onMoveDown={() => handleSwapPriority(index, index + 1)}
-                onToggleActive={(isActive) => handleUpdateConnectionStatus(conn.id, isActive)}
-                onUpdateProxy={async (proxyPoolId) => {
-                  try {
-                    const res = await fetch(`/api/providers/${conn.id}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ proxyPoolId: proxyPoolId || null }),
-                    });
-                    if (res.ok) {
-                      setConnections(prev => prev.map(c =>
-                        c.id === conn.id
-                          ? { ...c, providerSpecificData: { ...c.providerSpecificData, proxyPoolId: proxyPoolId || null } }
-                          : c
-                      ));
-                    }
-                  } catch (error) {
-                    console.log("Error updating proxy:", error);
-                  }
-                }}
-                onEdit={() => {
-                  setSelectedConnection(conn);
-                  setShowEditModal(true);
-                }}
-                onDelete={() => handleDelete(conn.id)}
-                oneByOneStatus={oneByOneResults[conn.id] || null}
-                isSelected={isSelected(conn.id)}
-                onSelect={() => toggleSelectConnection(conn.id)}
-              />
-            </div>
-          </div>
-        ))}
-    </div>
+    <ProviderConnectionsTable
+      connections={connections}
+      proxyPools={proxyPools}
+      selectedIds={selectedConnectionIds}
+      allSelected={allSelected}
+      onSelect={toggleSelectConnection}
+      onSelectAll={toggleSelectAllConnections}
+      onMoveUp={handleSwapPriority}
+      onMoveDown={handleSwapPriority}
+      onToggleActive={handleUpdateConnectionStatus}
+      onEdit={(connection) => {
+        setSelectedConnection(connection);
+        setShowEditModal(true);
+      }}
+      onDelete={handleDelete}
+      onTest={handleTestConnection}
+      testingIds={testingConnectionIds}
+      providerName={providerInfo?.name || providerId}
+      providerIcon={providerMark}
+      officialWebsite={officialProviderWebsite}
+      officialBaseUrl={officialProviderBaseUrl}
+      onAddKey={triggerAddConnection}
+    />
   );
 
   const activePools = proxyPools.filter((p) => p.isActive === true);
