@@ -142,6 +142,61 @@ async function syncSchema(client) {
   }
 }
 
+async function runVersionedMigrations(client) {
+  // PostgreSQL follows the same schema version contract as SQLite.
+  await client.query(`CREATE TABLE IF NOT EXISTS _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`);
+  const versionResult = await client.query("SELECT value FROM _meta WHERE key = 'schemaVersion' LIMIT 1");
+  let version = Number.parseInt(versionResult.rows[0]?.value || "0", 10) || 0;
+
+  if (version < 2) {
+    const constraints = await client.query(`
+      SELECT conname, pg_get_constraintdef(oid) AS definition
+      FROM pg_constraint
+      WHERE conrelid = 'codebuddyaccounts'::regclass AND contype = 'u'
+    `);
+    for (const row of constraints.rows) {
+      const def = String(row.definition || "").replace(/\s+/g, " ").toLowerCase();
+      if (def.includes("(email)") && !def.includes("(email, provider)")) {
+        await client.query("ALTER TABLE codebuddyAccounts DROP CONSTRAINT IF EXISTS \"" + row.conname + "\"");
+      }
+    }
+    const composite = await client.query(`
+      SELECT 1 FROM pg_constraint
+      WHERE conrelid = 'codebuddyaccounts'::regclass AND contype = 'u'
+        AND pg_get_constraintdef(oid) ILIKE '%(email, provider)%' LIMIT 1
+    `);
+    if (!composite.rowCount) {
+      await client.query("ALTER TABLE codebuddyAccounts ADD CONSTRAINT codebuddyaccounts_email_provider_key UNIQUE (email, provider)");
+    }
+    await client.query(`INSERT INTO _meta(key, value) VALUES ('schemaVersion', '2') ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`);
+    version = 2;
+    console.log("[DB][postgres-migrate] applied #2 composite-unique-codebuddy-accounts");
+  }
+
+  if (version < 3) {
+    const providers = [
+      "claude", "antigravity", "codex", "github", "cursor", "xai",
+      "kimi-coding", "kilocode", "cline", "kiro", "gemini-cli",
+      "codebuddy", "qoder", "opencode", "openrouter", "nvidia", "ollama",
+      "vertex", "gemini", "cloudflare-ai", "byteplus", "alicode",
+      "alibaba-intl", "anthropic", "azure", "blackbox", "cerebras",
+      "chutes", "cohere", "command-code", "deepseek", "fireworks", "glm",
+      "glm-cn", "groq", "hyperbolic", "kimi", "minimax", "minimax-cn",
+      "mistral", "nebius", "grok-web", "perplexity-web", "leonardo"
+    ];
+    const placeholders = providers.map((_, i) => "$" + (i + 1)).join(", ");
+    await client.query("DELETE FROM providerConnections WHERE provider IN (" + placeholders + ")", providers);
+    await client.query("DELETE FROM usageHistory WHERE provider IN (" + placeholders + ")", providers);
+    await client.query("DELETE FROM requestDetails WHERE provider IN (" + placeholders + ")", providers);
+    await client.query("DELETE FROM codebuddyAccounts WHERE provider = $1", ["codebuddy"]);
+    await client.query("DELETE FROM codebuddyJobs");
+    await client.query(`INSERT INTO _meta(key, value) VALUES ('schemaVersion', '3') ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`);
+    version = 3;
+    console.log("[DB][postgres-migrate] applied #3 remove-legacy-provider-services");
+  }
+  return version;
+}
+
 export async function createPostgresAdapter(connectionString) {
   const pool = new Pool({ connectionString });
   pool.on("error", (error) => console.error("[DB] PostgreSQL pool error:", error));
@@ -149,6 +204,7 @@ export async function createPostgresAdapter(connectionString) {
   const bootstrapClient = await pool.connect();
   try {
     await syncSchema(bootstrapClient);
+    await runVersionedMigrations(bootstrapClient);
   } finally {
     bootstrapClient.release();
   }
