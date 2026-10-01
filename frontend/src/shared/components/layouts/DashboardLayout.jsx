@@ -106,7 +106,7 @@ export default function DashboardLayout() {
         <div className="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true" />
         <Header key={pathname} onMenuClick={() => setSidebarOpen(true)} />
         <div className={`flex-1 overflow-y-auto custom-scrollbar ${pathname === "/dashboard/antigravity" || pathname === "/dashboard/docs" ? "" : "p-6 lg:p-10"} ${pathname === "/dashboard/antigravity" || pathname === "/dashboard/docs" ? "flex flex-col overflow-hidden" : ""}`}>
-          <div className={`${pathname === "/dashboard/antigravity" || pathname === "/dashboard/docs" ? "flex-1 w-full h-full flex flex-col" : "max-w-7xl mx-auto"}`}><Outlet /></div>
+          <div className={`${pathname === "/dashboard/antigravity" || pathname === "/dashboard/docs" ? "flex-1 w-full h-full flex flex-col" : sidebarCollapsed ? "w-full max-w-none mx-0" : "max-w-7xl mx-auto"}`}><Outlet /></div>
         </div>
       </main>
     </div>
