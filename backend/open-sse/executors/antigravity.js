@@ -366,9 +366,13 @@ export class AntigravityExecutor extends BaseExecutor {
           
           // Return immediately to allow account rotation in the outer loop (chat.js)
           return {
+            response,
             status: errorInfo.status,
             message: errorInfo.message,
-            resetsAtMs: errorInfo.resetsAtMs
+            resetsAtMs: errorInfo.resetsAtMs,
+            url,
+            headers,
+            transformedBody
           };
         }
 
@@ -387,6 +391,7 @@ export class AntigravityExecutor extends BaseExecutor {
         if (!response.ok) {
           lastStatus = response.status;
           lastError = await response.text();
+          log?.warn?.("UPSTREAM", `Antigravity HTTP ${response.status} from ${url}`);
           if (urlIndex + 1 < fallbackCount) continue;
         }
 
