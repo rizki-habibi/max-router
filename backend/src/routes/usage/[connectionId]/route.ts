@@ -7,6 +7,70 @@ import { getExecutor } from "../../../../open-sse/executors/index.js";
 import { resolveConnectionProxyConfig } from "../../../lib/network/connectionProxy.js";
 import { USAGE_APIKEY_PROVIDERS } from "../../../shared/constants/providers.js";
 
+
+function getCompatibleBaseUrl(connection) {
+  const raw = connection?.providerSpecificData?.baseUrl;
+  if (!raw) return "";
+  try {
+    const u = new URL(raw);
+    return u.origin + (u.pathname || "");
+  } catch { return String(raw).replace(/\/+$/, ""); }
+}
+function isXkiroBaseUrl(connection) {
+  try {
+    const u = new URL(getCompatibleBaseUrl(connection));
+    return /(^|\.)xkiro\.com$/i.test(u.hostname);
+  } catch { return false; }
+}
+async function getXkiroUsage(connection) {
+  const base = getCompatibleBaseUrl(connection);
+  if (!base) return null;
+  const origin = new URL(base).origin;
+  const url = origin + "/v1/usage";
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Authorization": "Bearer " + connection.apiKey, "x-api-key": connection.apiKey, "Accept": "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    const raw = await response.text();
+    let data = null;
+    try { data = raw ? JSON.parse(raw) : null; } catch {}
+    if (!response.ok) return { error: "HTTP " + response.status + ": " + raw.slice(0, 300), source: "upstream", endpoint: url };
+    return data && typeof data === "object"
+      ? { ...data, source: "upstream", endpoint: url, fetchedAt: new Date().toISOString() }
+      : { error: "Respons usage bukan JSON.", source: "upstream", endpoint: url };
+  } catch (error) {
+    return { error: error?.message || "Gagal membaca usage", source: "upstream", endpoint: url };
+  }
+}
+async function getLocalTokenUsage(connectionId) {
+  try {
+    const db = await getAdapter();
+    const rows = await db.all("SELECT model, tokens, promptTokens, completionTokens, status, timestamp FROM usageHistory WHERE connectionId = ? ORDER BY id DESC LIMIT 500", [connectionId]);
+    const totals = { requests: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, reasoningTokens: 0 };
+    const byModel = {};
+    for (const row of rows) {
+      const t = parseJson(row.tokens, {}) || {};
+      const input = Number(t.prompt_tokens ?? t.input_tokens ?? row.promptTokens ?? 0) || 0;
+      const output = Number(t.completion_tokens ?? t.output_tokens ?? row.completionTokens ?? 0) || 0;
+      const cacheRead = Number(t.cached_tokens ?? t.cache_read_input_tokens ?? 0) || 0;
+      const cacheCreation = Number(t.cache_creation_input_tokens ?? 0) || 0;
+      const reasoning = Number(t.reasoning_tokens ?? 0) || 0;
+      totals.requests++; totals.inputTokens += input; totals.outputTokens += output;
+      totals.cacheReadTokens += cacheRead; totals.cacheCreationTokens += cacheCreation; totals.reasoningTokens += reasoning;
+      const model = row.model || "unknown";
+      if (!byModel[model]) byModel[model] = { requests: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, reasoningTokens: 0, lastUsed: row.timestamp };
+      byModel[model].requests++; byModel[model].inputTokens += input; byModel[model].outputTokens += output;
+      byModel[model].cacheReadTokens += cacheRead; byModel[model].cacheCreationTokens += cacheCreation; byModel[model].reasoningTokens += reasoning;
+      if (row.timestamp && new Date(row.timestamp) > new Date(byModel[model].lastUsed || 0)) byModel[model].lastUsed = row.timestamp;
+    }
+    return { ...totals, byModel };
+  } catch {
+    return { requests: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, reasoningTokens: 0, byModel: {} };
+  }
+}
+
 // Detect auth-expired messages returned by usage providers instead of throwing
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
 function isAuthExpiredMessage(usage) {
@@ -140,7 +204,8 @@ export async function GET_handler(req, res, { params }) {
       connection.authType === "apikey" &&
       USAGE_APIKEY_PROVIDERS.includes(connection.provider);
 
-    if (!isOAuth && !isCookie && !isApikeyEligible) {
+    const xkiroCompatible = isXkiroBaseUrl(connection);
+    if (!isOAuth && !isCookie && !isApikeyEligible && !xkiroCompatible) {
       return Response.json({ message: "Usage not available for this connection" });
     }
 
@@ -167,8 +232,10 @@ export async function GET_handler(req, res, { params }) {
       }
     }
 
-    // Fetch usage from provider API
-    let usage = await getUsageForProvider(connection, proxyOptions);
+    // Usage mengikuti Base URL provider yang dikonfigurasi.
+    let usage = isXkiroBaseUrl(connection) ? await getXkiroUsage(connection) : await getUsageForProvider(connection, proxyOptions);
+    const localTokenUsage = await getLocalTokenUsage(connection.id);
+    if (usage && typeof usage === "object") usage.local = { ...localTokenUsage, note: "Token lokal dihitung dari request yang melewati Max Router." };
 
     // If provider returned an auth-expired message instead of throwing,
     // force-refresh token and retry once (OAuth or cookie)
