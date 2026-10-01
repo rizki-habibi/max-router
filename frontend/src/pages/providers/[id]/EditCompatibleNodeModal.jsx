@@ -82,6 +82,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
         baseUrl: formData.baseUrl,
         apiKey: checkKey,
         type: isAnthropic ? "anthropic-compatible" : "openai-compatible",
+        apiType: formData.apiType,
         modelId: checkModelId.trim() || undefined
       });
       if (settled) return;
