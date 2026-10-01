@@ -19,6 +19,7 @@ const app = express();
 // API keys, or other credentials here. These entries are intentionally bounded.
 type RuntimeError = { timestamp: string; type: string; message: string; stack?: string };
 const runtimeErrors: RuntimeError[] = [];
+let startupReady = false;
 const pushRuntimeError = (type: string, error: unknown) => {
   const err = error instanceof Error ? error : new Error(String(error));
   runtimeErrors.push({
