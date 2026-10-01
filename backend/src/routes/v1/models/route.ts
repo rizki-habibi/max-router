@@ -157,7 +157,7 @@ export async function buildModelsList(kindFilter) {
   let connections = [];
   try {
     connections = await getProviderConnections();
-    connections = connections.filter(c => c.isActive !== false);
+    connections = connections.filter(c => c.isActive !== false && (isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider)));
   } catch (e) {
     console.log("Could not fetch providers, returning all models");
   }
@@ -215,39 +215,15 @@ export async function buildModelsList(kindFilter) {
   }
 
   if (connections.length === 0) {
-    // DB unavailable -> return static models, filtered by per-model kind
-    const aliasToProviderId = Object.fromEntries(
-      Object.entries(PROVIDER_ID_TO_ALIAS).map(([id, alias]) => [alias, id])
-    );
-    for (const [alias, providerModels] of Object.entries(PROVIDER_MODELS)) {
-      const providerId = aliasToProviderId[alias] || alias;
-      if (!providerMatchesKinds(providerId, kindFilter)) continue;
-      for (const model of providerModels) {
-        if (!kindFilter.includes(modelKind(model))) continue;
-        if (isDisabled(alias, model.id)) continue;
-        models.push({
-          id: `${alias}/${model.id}`,
-          object: "model",
-          owned_by: alias,
-        });
-      }
-    }
-
+    // Compatible-only mode: never fall back to built-in provider catalogs.
+    // The endpoint stays empty until a compatible provider is connected.
     for (const customModel of customModels) {
       if (!customModel?.id || (customModel.type && customModel.type !== "llm")) continue;
-      // Custom models without active connection are LLM-only by current schema
-      if (!kindFilter.includes(LLM_KIND)) continue;
-      const providerAlias = customModel.providerAlias;
-      if (!providerAlias) continue;
-
+      const providerAlias = String(customModel.providerAlias || "");
+      if (!isOpenAICompatibleProvider(providerAlias) && !isAnthropicCompatibleProvider(providerAlias)) continue;
       const modelId = String(customModel.id).trim();
-      if (!modelId) continue;
-
-      models.push({
-        id: `${providerAlias}/${modelId}`,
-        object: "model",
-        owned_by: providerAlias,
-      });
+      if (!modelId || !kindFilter.includes(LLM_KIND)) continue;
+      models.push({ id: providerAlias + "/" + modelId, object: "model", owned_by: providerAlias });
     }
   } else {
     for (const [providerId, conn] of activeConnectionByProvider.entries()) {
