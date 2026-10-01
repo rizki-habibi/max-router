@@ -937,6 +937,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
         baseUrl: formData.baseUrl,
         apiKey: checkKey,
         type: "openai-compatible",
+        apiType: formData.apiType,
         modelId: checkModelId.trim() || undefined,
       });
       if (settled) return;
