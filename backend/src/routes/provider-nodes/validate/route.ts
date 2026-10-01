@@ -66,186 +66,85 @@ const isReachableInferenceStatus = (status) => status === 429 || (status >= 200 
 
 const trimBaseUrl = (baseUrl) => baseUrl.trim().replace(/\/$/, "");
 
-// POST /api/provider-nodes/validate - Validate API key against base URL
+// POST /api/provider-nodes/validate - Auto-detect compatible API version/type and validate one or many keys
 export async function POST_handler(req, res) {
   try {
-    const body = req.body;
-    const { baseUrl, type, modelId, apiType = "chat" } = body;
-    const normalizedApiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+    const body = req.body || {};
+    const baseUrlInput = typeof body.baseUrl === "string" ? body.baseUrl.trim() : "";
+    const apiKeys = Array.isArray(body.apiKeys)
+      ? body.apiKeys.map((key) => typeof key === "string" ? key.trim() : "").filter(Boolean)
+      : (typeof body.apiKey === "string" && body.apiKey.trim() ? [body.apiKey.trim()] : []);
+    if (!baseUrlInput || !apiKeys.length) return res.status(400).json({ error: "Base URL dan minimal satu API key diperlukan" });
+    if (!isValidUrl(baseUrlInput)) return res.status(400).json({ error: "Base URL tidak valid" });
 
-    if (!baseUrl || !normalizedApiKey) {
-      return res.status(400).json({ error: "Base URL and API key required" });
+    const normalizeCandidate = (value) => value.replace(/\/+$/, "");
+    const root = normalizeCandidate(baseUrlInput);
+    const candidates = [];
+    const addCandidate = (url, version) => {
+      const normalized = normalizeCandidate(url);
+      if (!candidates.some((item) => item.url === normalized)) candidates.push({ url: normalized, version });
+    };
+    const versionMatch = root.match(/\/(v[0-9]+)$/i);
+    if (versionMatch) {
+      addCandidate(root, versionMatch[1].toLowerCase());
+      addCandidate(root.replace(/\/(v[0-9]+)$/i, ""), "root");
+    } else {
+      addCandidate(root, "root");
+      addCandidate(root + "/v1", "v1");
+      addCandidate(root + "/v2", "v2");
     }
 
-    // Validate URL format
-    if (!isValidUrl(baseUrl)) {
-      return res.status(400).json({ error: "Invalid URL format" });
-    }
+    const classifyModels = (data) => {
+      const models = Array.isArray(data) ? data : (data?.data || data?.models || data?.results || []);
+      return Array.from(new Set(models.map((item) => item?.id || item?.name || item?.model).filter((id) => typeof id === "string" && id.trim()).map((id) => id.trim())));
+    };
 
-    // Custom Embedding Validation - test POST /embeddings directly
-    if (type === "custom-embedding") {
-      const normalizedBase = baseUrl.trim().replace(/\/$/, "");
-      if (!modelId?.trim()) {
-        return res.json({ valid: false, error: "Model ID required for embedding validation" });
-      }
-      const embedRes = await fetchWithTimeout(`${normalizedBase}/embeddings`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${normalizedApiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ model: modelId.trim(), input: "ping" })
-      });
-      if (embedRes.ok) {
-        const data = await embedRes.json().catch(() => null);
-        const dims = Array.isArray(data?.data?.[0]?.embedding) ? data.data[0].embedding.length : null;
-        return res.json({ valid: true, method: "embeddings", dimensions: dims });
-      }
-      if (embedRes.status === 401 || embedRes.status === 403) {
-        return res.json({ valid: false, error: "API key unauthorized" });
-      }
-      const errBody = await embedRes.text().catch(() => "");
-      return res.json({
-        valid: false,
-        error: `Embeddings request failed (${embedRes.status})${errBody ? `: ${errBody.slice(0, 200)}` : ""}`,
-        method: "embeddings"
-      });
-    }
-
-    // Anthropic Compatible Validation
-    if (type === "anthropic-compatible") {
-      let normalizedBase = trimBaseUrl(baseUrl);
-      if (normalizedBase.endsWith("/messages")) {
-        normalizedBase = normalizedBase.slice(0, -9);
-      }
-
-      const modelsUrl = `${normalizedBase}/models`;
-      const upstreamRes = await fetchWithTimeout(modelsUrl, {
-        method: "GET",
-        headers: {
-          "x-api-key": normalizedApiKey,
-          "anthropic-version": "2023-06-01",
-          "Authorization": `Bearer ${normalizedApiKey}`
+    const testKey = async (apiKey) => {
+      let lastFailure = { valid: false, error: "Endpoint /models tidak ditemukan" };
+      for (const candidate of candidates) {
+        try {
+          const response = await fetchWithTimeout(candidate.url + "/models", {
+            method: "GET",
+            headers: { Authorization: "Bearer " + apiKey, "x-api-key": apiKey, "anthropic-version": "2023-06-01", Accept: "application/json" },
+          }, 8000);
+          if (response.status === 401 || response.status === 403) {
+            lastFailure = { valid: false, error: "API key tidak valid / tidak berwenang", status: response.status, version: candidate.version };
+            continue;
+          }
+          if (response.status === 429) {
+            return { valid: true, status: 429, warning: "API key dikenali, tetapi endpoint sedang rate limit.", detectedVersion: candidate.version, detectedType: "openai-compatible", baseUrl: candidate.url, models: [] };
+          }
+          if (!response.ok) {
+            lastFailure = { valid: false, error: "Endpoint mengembalikan HTTP " + response.status, status: response.status, version: candidate.version };
+            continue;
+          }
+          const data = await response.json().catch(() => null);
+          const models = classifyModels(data);
+          const looksAnthropic = Array.isArray(data?.data) && data.data.some((item) => item?.type === "model") && /anthropic/i.test(JSON.stringify(data).slice(0, 5000));
+          return { valid: true, detectedVersion: candidate.version, detectedType: looksAnthropic ? "anthropic-compatible" : "openai-compatible", baseUrl: candidate.url, models, modelCount: models.length, method: "models" };
+        } catch (error) {
+          lastFailure = { valid: false, error: getErrorMessage(error), version: candidate.version };
         }
-      });
-
-      if (upstreamRes.ok) return res.json({ valid: true });
-
-      if (isAuthFailure(upstreamRes.status)) {
-        return res.json({ valid: false, error: "API key unauthorized" });
       }
+      return lastFailure;
+    };
 
-      // Fallback: Anthropic-compatible services usually expose /messages, not /models.
-      if (modelId) {
-        const messagesRes = await fetchWithTimeout(`${normalizedBase}/messages`, {
-          method: "POST",
-          headers: {
-            "x-api-key": normalizedApiKey,
-            "anthropic-version": "2023-06-01",
-            "Authorization": `Bearer ${normalizedApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: modelId,
-            max_tokens: 1,
-            messages: [{ role: "user", content: "ping" }],
-          })
-        });
-        if (messagesRes.ok || isReachableInferenceStatus(messagesRes.status)) {
-          const errorText = messagesRes.ok ? "" : await readErrorBody(messagesRes);
-          return res.json({
-            valid: true,
-            method: "messages",
-            warning: errorText ? String(errorText).slice(0, 200) : undefined,
-          });
-        }
-        if (isAuthFailure(messagesRes.status)) {
-          return res.json({ valid: false, error: "API key unauthorized", method: "messages" });
-        }
-        return res.json({
-          valid: false,
-          error: getChatErrorMessage(messagesRes.status),
-          method: "messages"
-        });
-      }
-
-      return res.json({ valid: false, error: getModelsErrorMessage(upstreamRes.status) });
+    const results = [];
+    for (const apiKey of apiKeys) {
+      const result = await testKey(apiKey);
+      results.push({ ...result, keyPreview: apiKey.length > 8 ? apiKey.slice(0, 4) + "…" + apiKey.slice(-4) : "••••" });
     }
-
-    // OpenAI Compatible Validation (Default)
-    // OpenAI-compatible Base URL must point to the API root ending in /v1.
-    const normalizedBase = trimBaseUrl(baseUrl);
-    if (!/\/v1$/i.test(normalizedBase)) {
-      return res.status(400).json({
-        valid: false,
-        error: "Use the base URL ending in /v1 for your OpenAI-compatible API.",
-      });
-    }
-
-    const modelsUrl = `${normalizedBase}/models`;
-    const upstreamRes = await fetchWithTimeout(modelsUrl, {
-      headers: {
-        "Authorization": `Bearer ${normalizedApiKey}`,
-        "x-api-key": normalizedApiKey,
-      },
+    const validResults = results.filter((item) => item.valid);
+    const detected = validResults[0] || null;
+    return res.json({
+      valid: results.length === 1 ? results[0].valid : validResults.length > 0,
+      total: results.length, validCount: validResults.length, invalidCount: results.length - validResults.length,
+      detectedType: detected?.detectedType || null, detectedVersion: detected?.detectedVersion || null,
+      baseUrl: detected?.baseUrl || null, models: Array.from(new Set(validResults.flatMap((item) => item.models || []))), results,
     });
-
-    // /models may be public (as with xKiro), so a 200 here does not prove the API key.
-    // If a model ID is supplied, always validate the credential against inference.
-    if (modelId) {
-      const inferencePath = apiType === "responses" ? "/responses" : "/chat/completions";
-      const inferenceBody = apiType === "responses"
-        ? { model: modelId, input: "ping", max_output_tokens: 1 }
-        : { model: modelId, messages: [{ role: "user", content: "ping" }], max_tokens: 1, stream: false };
-
-      const inferenceRes = await fetchWithTimeout(normalizedBase + inferencePath, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${normalizedApiKey}`,
-          "x-api-key": normalizedApiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(inferenceBody),
-      });
-
-      if (inferenceRes.ok || isReachableInferenceStatus(inferenceRes.status)) {
-        const errorText = inferenceRes.ok ? "" : await readErrorBody(inferenceRes);
-        return res.json({
-          valid: true,
-          method: apiType === "responses" ? "responses" : "chat",
-          warning: errorText ? String(errorText).slice(0, 200) : undefined,
-        });
-      }
-      if (isAuthFailure(inferenceRes.status)) {
-        return res.json({ valid: false, error: "API key unauthorized", method: apiType === "responses" ? "responses" : "chat" });
-      }
-      return res.json({
-        valid: false,
-        error: getChatErrorMessage(inferenceRes.status),
-        method: apiType === "responses" ? "responses" : "chat",
-      });
-    }
-
-    if (upstreamRes.ok) {
-      return res.json({
-        valid: true,
-        method: "models",
-        warning: "Model list is reachable; API key was not tested because no Model ID was supplied.",
-      });
-    }
-
-    return res.json({ valid: false, error: getModelsErrorMessage(upstreamRes.status) });
   } catch (error) {
     const errorMessage = getErrorMessage(error);
-    console.error("Error validating provider node:", {
-      message: error.message,
-      cause: error.cause,
-      code: error.cause?.code,
-      userMessage: errorMessage
-    });
-    return res.status(500).json({
-      valid: false,
-      error: errorMessage
-    });
+    console.error("Error validating provider node:", { message: error.message, cause: error.cause, code: error.cause?.code });
+    return res.status(500).json({ valid: false, error: errorMessage });
   }
 }
