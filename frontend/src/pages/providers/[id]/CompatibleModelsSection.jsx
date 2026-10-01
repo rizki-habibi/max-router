@@ -80,8 +80,8 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [testingAll, setTestingAll] = useState(false);
   const [autoDisableFailed, setAutoDisableFailed] = useState(true);
 
-  const handleTestModel = async (modelId) => {
-    if (testingModelId || testingAll) return false;
+  const handleTestModel = async (modelId, fromAll = false) => {
+    if (testingModelId || (testingAll && !fromAll)) return false;
     setTestingModelId(modelId);
     try {
       const res = await fetch("/api/models/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: providerStorageAlias + "/" + modelId }) });
@@ -100,7 +100,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const handleTestAll = async () => {
     if (testingAll || testingModelId || allModels.length === 0) return;
     setTestingAll(true);
-    for (const item of allModels) await handleTestModel(item.modelId);
+    for (const item of allModels) await handleTestModel(item.modelId, true);
     setTestingAll(false);
   };
 
