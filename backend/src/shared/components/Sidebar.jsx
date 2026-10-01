@@ -17,7 +17,7 @@ const navItems = [
   // { href: "/dashboard/basic-chat", label: "Basic Chat", icon: "chat" }, // Hidden
   { href: "/dashboard/combos", label: "Combos", icon: "layers" },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
-  { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
+  { href: "/dashboard/parameters", label: "Parameter", icon: "tune" },
   { href: "/dashboard/model-detection", label: "Deteksi Model", icon: "manage_search" },
 ];
 
