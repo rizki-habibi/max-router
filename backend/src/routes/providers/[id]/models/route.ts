@@ -1,6 +1,6 @@
 import { ANTIGRAVITY_ENDPOINTS } from "./../../../../lib/constants/antigravity.js";
 
-import { getProviderConnectionById } from "../../../../models/index.js";
+import { getProviderConnectionById, updateProviderConnection } from "../../../../models/index.js";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "../../../../shared/constants/providers.js";
 import { GEMINI_CONFIG } from "../../../../lib/oauth/constants/oauth.js";
 import { refreshGoogleToken, updateProviderCredentials } from "../../../../sse/services/tokenRefresh.js";
@@ -39,6 +39,41 @@ const normalizeModelMetadata = (model) => {
 };
 
 const normalizeModels = (models) => (Array.isArray(models) ? models.map(normalizeModelMetadata) : []);
+
+const getCachedModelCatalog = (connection) => {
+  const cached = connection?.providerSpecificData?.modelCatalog;
+  if (!cached || typeof cached !== "object") return null;
+  const models = normalizeModels(cached.models || []);
+  if (!models.length) return null;
+  return {
+    models,
+    usage: cached.usage || null,
+    endpoint: cached.endpoint || null,
+    detectedAt: cached.detectedAt || null,
+    source: "database-cache",
+  };
+};
+
+const persistModelCatalog = async (connection, models, usage, endpoint) => {
+  if (!connection?.id || !Array.isArray(models) || models.length === 0) return;
+  try {
+    await updateProviderConnection(connection.id, {
+      providerSpecificData: {
+        ...(connection.providerSpecificData || {}),
+        modelCatalog: {
+          version: 1,
+          models,
+          usage: usage || null,
+          endpoint: endpoint || null,
+          modelCount: models.length,
+          detectedAt: new Date().toISOString(),
+        },
+      },
+    });
+  } catch (error) {
+    console.log("Model catalog cache save skipped:", error.message);
+  }
+};
 
 const parseOpenAIStyleModels = (data) => {
   if (Array.isArray(data)) return data;
@@ -538,9 +573,29 @@ export async function GET_handler(req, res, { params }) {
       }
 
       if (!response) {
+        const cached = getCachedModelCatalog(connection);
+        if (cached) {
+          return res.json({
+            provider: connection.provider,
+            connectionId: connection.id,
+            models: cached.models,
+            usage: cached.usage,
+            endpoint: cached.endpoint,
+            source: cached.source,
+            stale: true,
+            detectedAt: cached.detectedAt,
+            warning: "Upstream /models gagal; daftar model terakhir dari database ditampilkan.",
+            upstreamError: lastError || "Endpoint /models tidak tersedia",
+            modelCount: cached.models.length,
+            freeModelCount: cached.models.filter((m) => String(m.accessTier || "").toLowerCase() === "free").length,
+            paidModelCount: cached.models.filter((m) => ["paid", "premium"].includes(String(m.accessTier || "").toLowerCase())).length,
+            supportedParameters: Array.from(new Set(cached.models.flatMap((m) => m.supportedParameters || []))),
+          });
+        }
         return res.status(502).json({
           error: "Gagal mengambil daftar model. " + (lastError || "Endpoint /models tidak tersedia"),
           candidates,
+          source: "upstream",
         });
       }
 
@@ -565,6 +620,8 @@ export async function GET_handler(req, res, { params }) {
         console.log("Usage detection skipped:", usageError.message);
       }
 
+      await persistModelCatalog(connection, models, usage, usedUrl);
+
       return res.json({
         provider: connection.provider,
         connectionId: connection.id,
@@ -575,6 +632,9 @@ export async function GET_handler(req, res, { params }) {
         freeModelCount: models.filter((m) => ["free"].includes(String(m.accessTier || "").toLowerCase()) || (m.pricing && Number(m.pricing.input ?? -1) === 0 && Number(m.pricing.output ?? -1) === 0)).length,
         paidModelCount: models.filter((m) => ["paid", "premium"].includes(String(m.accessTier || "").toLowerCase()) || (m.pricing && (Number(m.pricing.input ?? 0) > 0 || Number(m.pricing.output ?? 0) > 0))).length,
         supportedParameters: Array.from(new Set(models.flatMap((m) => m.supportedParameters || []))),
+        source: "upstream",
+        stale: false,
+        detectedAt: new Date().toISOString(),
       });
     }
 
@@ -614,20 +674,41 @@ export async function GET_handler(req, res, { params }) {
       }
 
       if (!response) {
+        const cached = getCachedModelCatalog(connection);
+        if (cached) {
+          return res.json({
+            provider: connection.provider,
+            connectionId: connection.id,
+            models: cached.models,
+            endpoint: cached.endpoint,
+            source: cached.source,
+            stale: true,
+            detectedAt: cached.detectedAt,
+            warning: "Upstream /models gagal; daftar model terakhir dari database ditampilkan.",
+            upstreamError: lastError || "Endpoint /models tidak tersedia",
+            modelCount: cached.models.length,
+            supportedParameters: Array.from(new Set(cached.models.flatMap((m) => m.supportedParameters || []))),
+          });
+        }
         return res.status(502).json({
           error: "Gagal mengambil daftar model Anthropic. " + (lastError || "Endpoint /models tidak tersedia"),
           candidates,
+          source: "upstream",
         });
       }
 
       const data = await response.json();
       const models = normalizeModels(data.data || data.models || data.results || []);
+      await persistModelCatalog(connection, models, null, candidates.find((url) => url && response.url === url) || baseUrl);
       return res.json({
         provider: connection.provider,
         connectionId: connection.id,
         models,
         modelCount: models.length,
         supportedParameters: Array.from(new Set(models.flatMap((m) => m.supportedParameters || []))),
+        source: "upstream",
+        stale: false,
+        detectedAt: new Date().toISOString(),
       });
     }
 
@@ -703,6 +784,9 @@ export async function GET_handler(req, res, { params }) {
     });
   } catch (error) {
     console.log("Error fetching provider models:", error);
-    return res.status(500).json({ error: "Failed to fetch models" });
+    return res.status(500).json({
+      error: "Gagal mengambil model: " + (error?.message || "Kesalahan server"),
+      source: "server",
+    });
   }
 }
