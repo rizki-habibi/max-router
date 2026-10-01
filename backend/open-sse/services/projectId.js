@@ -228,7 +228,7 @@ async function onboardUser(accessToken, tierID, externalSignal) {
         try {
             const response = await fetch(ANTIGRAVITY_ENDPOINTS.dailyOnboardUser, {
                 method: "POST",
-                headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}` },
+                headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}`, "Accept": "*/*" },
                 body: JSON.stringify(reqBody),
                 signal: localCtrl.signal
             });
