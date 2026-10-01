@@ -154,13 +154,95 @@ const PROVIDER_MODELS_CONFIG = {
     parseResponse: parseCodexModels
   },
   antigravity: {
-    url: "https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:models",
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    authHeader: "Authorization",
-    authPrefix: "Bearer ",
-    body: {},
-    parseResponse: (data) => data.models || []
+    customResolver: async (connection) => {
+      const endpoints = [
+        "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
+        "https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:fetchAvailableModels",
+        "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
+      ];
+      const parseModels = (data) => {
+        if (Array.isArray(data?.models)) return data.models;
+        if (data?.models && typeof data.models === "object") {
+          return Object.entries(data.models)
+            .filter(([, info]) => !info?.isInternal && (info?.displayName || info?.name || info?.model))
+            .map(([id, info]) => ({
+              id: info?.model || id,
+              name: info?.displayName || info?.name || info?.model || id,
+              quotaInfo: info?.quotaInfo,
+            }));
+        }
+        return parseOpenAIStyleModels(data);
+      };
+
+      let token = connection.accessToken;
+      if (!token) return { error: "Antigravity OAuth token tidak tersedia", status: 401 };
+
+      let lastError = "";
+      for (const url of endpoints) {
+        try {
+          let response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+              "User-Agent": "antigravity",
+            },
+            body: JSON.stringify(
+              connection.projectId || connection.providerSpecificData?.projectId
+                ? { project: connection.projectId || connection.providerSpecificData.projectId }
+                : {}
+            ),
+          });
+
+          if ((response.status === 401 || response.status === 403) && connection.refreshToken) {
+            try {
+              const refreshed = await refreshGoogleToken(
+                connection.refreshToken,
+                GEMINI_CONFIG.clientId,
+                GEMINI_CONFIG.clientSecret
+              );
+              if (refreshed?.accessToken) {
+                await updateProviderCredentials(connection.id, {
+                  accessToken: refreshed.accessToken,
+                  refreshToken: refreshed.refreshToken || connection.refreshToken,
+                  expiresIn: refreshed.expiresIn,
+                });
+                token = refreshed.accessToken;
+                response = await fetch(url, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                    "User-Agent": "antigravity",
+                  },
+                  body: JSON.stringify(
+                    connection.projectId || connection.providerSpecificData?.projectId
+                      ? { project: connection.projectId || connection.providerSpecificData.projectId }
+                      : {}
+                  ),
+                });
+              }
+            } catch (refreshError) {
+              lastError = `OAuth refresh gagal: ${refreshError.message}`;
+            }
+          }
+
+          if (response.ok) {
+            const data = await response.json();
+            const models = parseModels(data);
+            if (models.length > 0) return { models };
+            lastError = "Antigravity terhubung tetapi API mengembalikan 0 model";
+          } else {
+            const body = await response.text();
+            lastError = `Antigravity API ${response.status}: ${body.slice(0, 300)}`;
+          }
+        } catch (error) {
+          lastError = error.message;
+        }
+      }
+
+      return { models: [], warning: lastError || "Gagal mengambil model Antigravity" };
+    }
   },
   github: {
     url: "https://api.githubcopilot.com/models",
