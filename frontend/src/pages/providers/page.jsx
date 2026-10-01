@@ -342,8 +342,6 @@ export default function ProvidersPage() {
               onClick={() => setShowAddCompatibleModal(true)}
               className="w-full sm:w-auto"
             >
-              className="w-full !bg-white !text-black hover:!bg-gray-100 sm:w-auto"
-            >
               Tambah Kompatibel
             </Button>
           </div>
