@@ -1,5 +1,5 @@
 
-import { useState, lazy, Suspense } from "react";
+import { useState, useRef, lazy, Suspense } from "react";
 import { Card, Button } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
@@ -18,6 +18,10 @@ const STEPS = [
 
 const EDITOR_OPTIONS = {
   minimap: { enabled: false },
+  smoothScrolling: true,
+  padding: { top: 8, bottom: 8 },
+  tabSize: 2,
+  insertSpaces: true,
   fontSize: 12,
   lineNumbers: "on",
   scrollBeyondLastLine: false,
@@ -31,6 +35,7 @@ export default function TranslatorPage() {
   const [loading, setLoading] = useState({});
   // Detected from step 1: { provider, model, sourceFormat, targetFormat }
   const [meta, setMeta] = useState(null);
+  const detectTimer = useRef(null);
 
   const setLoad = (key, val) => setLoading(prev => ({ ...prev, [key]: val }));
   const setContent = (id, val) => setContents(prev => ({ ...prev, [id]: val }));
@@ -62,8 +67,11 @@ export default function TranslatorPage() {
     setLoad(`load-${stepId}`, false);
   };
 
-  // Step 1: detect provider/format from model field
-  const detectMeta = async (rawContent) => {
+  // Step 1: detect provider/format from model field.
+  // Debounce this: Monaco fires onChange for every keystroke.
+  const detectMeta = (rawContent) => {
+    if (detectTimer.current) clearTimeout(detectTimer.current);
+    detectTimer.current = setTimeout(async () => {
     try {
       const body = typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent;
       const res = await fetch("/api/translator/translate", {
@@ -74,6 +82,7 @@ export default function TranslatorPage() {
       const data = await res.json();
       if (data.success) setMeta(data.result);
     } catch { /* ignore */ }
+    }, 350);
   };
 
   const save = (file, content) => fetch("/api/translator/save", {
@@ -258,6 +267,7 @@ export default function TranslatorPage() {
               {isExpanded && (
                 <>
                   <div className="border border-border rounded-lg overflow-hidden">
+                    <Suspense fallback={<div className="h-[400px] flex items-center justify-center text-sm text-text-muted">Memuat editor…</div>}>
                     <Editor
                       height="400px"
                       defaultLanguage={step.lang === "text" ? "plaintext" : "json"}
@@ -269,6 +279,7 @@ export default function TranslatorPage() {
                       theme="vs-dark"
                       options={EDITOR_OPTIONS}
                     />
+                    </Suspense>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <Button size="sm" variant="outline" icon="folder_open" loading={loading[`load-${step.id}`]} onClick={() => handleLoad(step.id)}>Load</Button>
