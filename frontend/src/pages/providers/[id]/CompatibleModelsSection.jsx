@@ -525,10 +525,6 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           {importing ? "Mengambil..." : "Ambil model dari /models"}
         </Button>
         <Button size="sm" variant="secondary" icon="science" onClick={handleTestAll} disabled={testingAll || !!testingModelId || activeModels.length === 0}>{testingAll ? "Menguji semua..." : "Tes Semua Model"}</Button>
-        {errorModels.length > 0 && <>
-          <Button size="sm" variant="secondary" icon="block" onClick={() => setBulkAction("disable")}>Nonaktifkan Error ({errorModels.length})</Button>
-          <Button size="sm" variant="secondary" icon="delete_sweep" onClick={() => setBulkAction("delete")}>Hapus Error ({errorModels.length})</Button>
-        </>}
       </div>
 
       {!canImport && (
