@@ -2,6 +2,7 @@
  * OAuth Configuration Constants
  */
 import { platform, arch } from "os";
+import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_API_VERSION, ANTIGRAVITY_ENDPOINTS } from "../../constants/antigravity.js";
 
 /**
  * Get the platform enum value based on the current OS.
@@ -107,10 +108,10 @@ export const ANTIGRAVITY_CONFIG = {
     "https://www.googleapis.com/auth/experimentsandconfigs",
   ],
   // Antigravity specific
-  apiEndpoint: "https://cloudcode-pa.googleapis.com",
-  apiVersion: "v1internal",
-  loadCodeAssistEndpoint: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
-  onboardUserEndpoint: "https://cloudcode-pa.googleapis.com/v1internal:onboardUser",
+  apiEndpoint: ANTIGRAVITY_BASE_URL,
+  apiVersion: ANTIGRAVITY_API_VERSION,
+  loadCodeAssistEndpoint: ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
+  onboardUserEndpoint: ANTIGRAVITY_ENDPOINTS.onboardUser,
   loadCodeAssistUserAgent: "google-api-nodejs-client/9.15.1",
   loadCodeAssistApiClient: "google-cloud-sdk vscode_cloudshelleditor/0.1",
   // Numeric enums matching Antigravity binary ClientMetadata (see getOAuthClientMetadata below)
