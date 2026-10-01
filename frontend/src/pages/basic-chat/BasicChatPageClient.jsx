@@ -198,6 +198,8 @@ export default function BasicChatPageClient() {
   const [streamingText, setStreamingText] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [selectedMenuProviderId, setSelectedMenuProviderId] = useState("");
+  const [modelSearch, setModelSearch] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const fileInputRef = useRef(null);
   const abortRef = useRef(null);
@@ -553,6 +555,7 @@ export default function BasicChatPageClient() {
 
     setActiveProviderId(model.providerId);
     setActiveModelId(model.id);
+    setSelectedMenuProviderId(model.providerId);
     setModelMenuOpen(false);
   };
 
@@ -662,7 +665,7 @@ export default function BasicChatPageClient() {
       }));
 
     try {
-      const response = await fetch("/api/dashboard/chat/completions", {
+      const response = await fetch("/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -784,7 +787,16 @@ export default function BasicChatPageClient() {
           <div ref={modelMenuRef} className="relative">
             <button
               type="button"
-              onClick={() => setModelMenuOpen((value) => !value)}
+              onClick={() => {
+                setModelMenuOpen((value) => {
+                  const next = !value;
+                  if (next) {
+                    setSelectedMenuProviderId(activeProviderId || "");
+                    setModelSearch("");
+                  }
+                  return next;
+                });
+              }}
               className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/8"
             >
               <div className="min-w-0">
@@ -797,42 +809,107 @@ export default function BasicChatPageClient() {
             </button>
 
             {modelMenuOpen ? (
-              <div className="absolute left-0 top-[calc(100%+10px)] z-30 w-[min(520px,calc(100vw-2rem))] overflow-hidden rounded-[20px] border border-white/10 bg-[#262626] shadow-2xl shadow-black/50">
-                <div className="border-b border-white/10 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/45">Models</p>
-                  <p className="text-sm text-white/75">Only from connected providers</p>
-                </div>
-                <div className="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
-                  {providerGroups.map((group) => (
-                    <div key={group.providerId} className="mb-2 rounded-[16px] border border-white/10 bg-black/20 p-2">
-                      <div className="flex items-center justify-between px-2 py-2">
-                        <p className="text-sm font-semibold text-white">{group.providerName}</p>
-                        <Badge size="sm" variant="default">{group.models.length}</Badge>
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {group.models.map((model) => {
-                          const isActive = model.id === activeModelId;
-                          return (
-                            <button
-                              key={model.id}
-                              type="button"
-                              onClick={() => handleSelectModel(model.id)}
-                              className={`rounded-[14px] border px-3 py-3 text-left transition ${isActive ? "border-blue-400/40 bg-blue-500/15" : "border-white/10 bg-white/5 hover:bg-white/8"}`}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-medium text-white">{model.name}</p>
-                                  <p className="truncate text-[11px] text-white/45">{model.requestModel}</p>
-                                </div>
-                                {isActive ? <span className="material-symbols-outlined text-[18px] text-blue-300">check_circle</span> : null}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+              <div className="absolute left-0 top-[calc(100%+10px)] z-30 w-[min(460px,calc(100vw-2rem))] overflow-hidden rounded-[20px] border border-white/10 bg-[#262626] shadow-2xl shadow-black/50">
+                {!selectedMenuProviderId ? (
+                  <>
+                    <div className="border-b border-white/10 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.22em] text-white/45">Provider</p>
+                      <p className="mt-1 text-sm text-white/75">Pilih provider terlebih dahulu</p>
                     </div>
-                  ))}
-                </div>
+                    <div className="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
+                      {providerGroups.map((group) => {
+                        const isActiveProvider = group.providerId === activeProviderId;
+                        return (
+                          <button
+                            key={group.providerId}
+                            type="button"
+                            onClick={() => {
+                              setSelectedMenuProviderId(group.providerId);
+                              setModelSearch("");
+                            }}
+                            className={`mb-2 flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left transition ${isActiveProvider ? "border-blue-400/40 bg-blue-500/15" : "border-white/10 bg-white/5 hover:bg-white/8"}`}
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-white">{group.providerName}</p>
+                              <p className="mt-1 text-[11px] text-white/45">{group.models.length} model tersedia</p>
+                            </div>
+                            <span className="material-symbols-outlined text-[20px] text-white/55">chevron_right</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (() => {
+                  const group = providerGroups.find((item) => item.providerId === selectedMenuProviderId);
+                  if (!group) return null;
+                  const normalizedSearch = modelSearch.trim().toLowerCase();
+                  const filteredModels = group.models.filter((model) =>
+                    !normalizedSearch ||
+                    model.name.toLowerCase().includes(normalizedSearch) ||
+                    model.requestModel.toLowerCase().includes(normalizedSearch)
+                  );
+                  return (
+                    <>
+                      <div className="border-b border-white/10 px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMenuProviderId("");
+                            setModelSearch("");
+                          }}
+                          className="mb-2 flex items-center gap-1 text-xs text-white/55 hover:text-white"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                          Semua provider
+                        </button>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-white">{group.providerName}</p>
+                            <p className="text-xs text-white/45">{group.models.length} model</p>
+                          </div>
+                          <Badge size="sm" variant="default">{filteredModels.length}</Badge>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                          <span className="material-symbols-outlined text-[18px] text-white/40">search</span>
+                          <input
+                            value={modelSearch}
+                            onChange={(event) => setModelSearch(event.target.value)}
+                            placeholder="Filter model..."
+                            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-[52vh] overflow-y-auto p-2 custom-scrollbar">
+                        {filteredModels.length === 0 ? (
+                          <div className="rounded-[16px] border border-dashed border-white/10 bg-white/5 p-4 text-sm text-white/50">
+                            Model tidak ditemukan.
+                          </div>
+                        ) : (
+                          filteredModels.map((model) => {
+                            const isActive = model.id === activeModelId;
+                            return (
+                              <button
+                                key={model.id}
+                                type="button"
+                                onClick={() => handleSelectModel(model.id)}
+                                className={`mb-2 w-full rounded-[14px] border px-3 py-3 text-left transition ${isActive ? "border-blue-400/40 bg-blue-500/15" : "border-white/10 bg-white/5 hover:bg-white/8"}`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-white">{model.name}</p>
+                                    <p className="truncate text-[11px] text-white/45">{model.requestModel}</p>
+                                  </div>
+                                  {isActive ? <span className="material-symbols-outlined text-[18px] text-blue-300">check_circle</span> : null}
+                                </div>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             ) : null}
           </div>
