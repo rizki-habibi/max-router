@@ -151,7 +151,38 @@ export class AntigravityExecutor extends BaseExecutor {
         })
       }, proxyOptions);
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorCode = null;
+        try {
+          const parsed = JSON.parse(errorText);
+          errorCode = parsed?.error || parsed?.error_description || null;
+        } catch {}
+
+        const oauthError = String(errorCode || "").toLowerCase();
+        const reconnectRequired =
+          response.status === HTTP_STATUS.UNAUTHORIZED ||
+          oauthError === "unauthorized_client" ||
+          oauthError === "invalid_grant" ||
+          oauthError === "invalid_client";
+
+        log?.warn?.(
+          "TOKEN",
+          reconnectRequired
+            ? "Antigravity OAuth refresh ditolak Google; reconnect diperlukan"
+            : `Antigravity OAuth refresh gagal (HTTP ${response.status})`
+        );
+
+        return {
+          accessToken: null,
+          refreshToken: credentials.refreshToken,
+          projectId: credentials.projectId,
+          oauthRefreshFailed: true,
+          reconnectRequired,
+          status: response.status,
+          errorCode: oauthError || null
+        };
+      }
 
       const tokens = await response.json();
       log?.info?.("TOKEN", "Antigravity refreshed");
@@ -276,6 +307,20 @@ export class AntigravityExecutor extends BaseExecutor {
         // Antigravity clients reactively refresh on 401, then retry the request once.
         if (response.status === HTTP_STATUS.UNAUTHORIZED && credentials?.refreshToken) {
           const refreshed = await this.refreshCredentials(credentials, log, proxyOptions);
+
+          if (refreshed?.reconnectRequired) {
+            return {
+              status: HTTP_STATUS.UNAUTHORIZED,
+              message: "Antigravity OAuth perlu dihubungkan ulang. Sesi Google sudah tidak dapat diperbarui; klik Reconnect pada akun Antigravity.",
+              authError: "ANTIGRAVITY_OAUTH_RECONNECT_REQUIRED",
+              oauthError: refreshed.errorCode || "unauthorized_client",
+              response,
+              url,
+              headers,
+              transformedBody
+            };
+          }
+
           if (refreshed?.accessToken) {
             credentials.accessToken = refreshed.accessToken;
             credentials.refreshToken = refreshed.refreshToken || credentials.refreshToken;
