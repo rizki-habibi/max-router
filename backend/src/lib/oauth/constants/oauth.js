@@ -112,7 +112,7 @@ export const ANTIGRAVITY_CONFIG = {
   apiVersion: ANTIGRAVITY_API_VERSION,
   loadCodeAssistEndpoint: ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
   onboardUserEndpoint: ANTIGRAVITY_ENDPOINTS.onboardUser,
-  loadCodeAssistUserAgent: "google-api-nodejs-client/9.15.1",
+  loadCodeAssistUserAgent: "google-api-nodejs-client/10.3.0",
   loadCodeAssistApiClient: "google-cloud-sdk vscode_cloudshelleditor/0.1",
   // Numeric enums matching Antigravity binary ClientMetadata (see getOAuthClientMetadata below)
   loadCodeAssistClientMetadata: JSON.stringify({ ideType: 9, platform: getOAuthPlatformEnum(), pluginType: 2 }),
