@@ -119,7 +119,7 @@ export async function POST_handler(req, res) {
       }
 
       const modelsUrl = `${normalizedBase}/models`;
-      const res = await fetchWithTimeout(modelsUrl, {
+      const upstreamRes = await fetchWithTimeout(modelsUrl, {
         method: "GET",
         headers: {
           "x-api-key": apiKey,
@@ -128,9 +128,9 @@ export async function POST_handler(req, res) {
         }
       });
 
-      if (res.ok) return res.json({ valid: true });
+      if (upstreamRes.ok) return res.json({ valid: true });
 
-      if (isAuthFailure(res.status)) {
+      if (isAuthFailure(upstreamRes.status)) {
         return res.json({ valid: false, error: "API key unauthorized" });
       }
 
@@ -168,17 +168,26 @@ export async function POST_handler(req, res) {
         });
       }
 
-      return res.json({ valid: false, error: getModelsErrorMessage(res.status) });
+      return res.json({ valid: false, error: getModelsErrorMessage(upstreamRes.status) });
     }
 
     // OpenAI Compatible Validation (Default)
+    // OpenAI-compatible Base URL must point to the API root ending in /v1.
+    const normalizedBase = trimBaseUrl(baseUrl);
+    if (!/\/v1$/i.test(normalizedBase)) {
+      return res.status(400).json({
+        valid: false,
+        error: "Use the base URL ending in /v1 for your OpenAI-compatible API.",
+      });
+    }
+
     const normalizedBase = trimBaseUrl(baseUrl);
     const modelsUrl = `${normalizedBase}/models`;
-    const res = await fetchWithTimeout(modelsUrl, {
+    const upstreamRes = await fetchWithTimeout(modelsUrl, {
       headers: { "Authorization": `Bearer ${apiKey}` },
     });
 
-    if (res.ok) return res.json({ valid: true });
+    if (upstreamRes.ok) return res.json({ valid: true });
 
     // A protected/missing /models endpoint does not prove the key is invalid.
     // If a model ID is supplied, validate the actual inference endpoint.
@@ -215,7 +224,7 @@ export async function POST_handler(req, res) {
       });
     }
 
-    return res.json({ valid: false, error: getModelsErrorMessage(res.status) });
+    return res.json({ valid: false, error: getModelsErrorMessage(upstreamRes.status) });
   } catch (error) {
     const errorMessage = getErrorMessage(error);
     console.error("Error validating provider node:", {
