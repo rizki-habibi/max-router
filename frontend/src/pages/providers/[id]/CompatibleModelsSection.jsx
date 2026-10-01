@@ -75,23 +75,33 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [importing, setImporting] = useState(false);
   const [testingModelId, setTestingModelId] = useState(null);
   const [modelTestResults, setModelTestResults] = useState({});
+  const [importedModels, setImportedModels] = useState([]);
+  const [usageInfo, setUsageInfo] = useState(null);
+  const [testingAll, setTestingAll] = useState(false);
+  const [autoDisableFailed, setAutoDisableFailed] = useState(true);
 
   const handleTestModel = async (modelId) => {
-    if (testingModelId) return;
+    if (testingModelId || testingAll) return false;
     setTestingModelId(modelId);
     try {
-      const res = await fetch("/api/models/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
-      });
+      const res = await fetch("/api/models/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: providerStorageAlias + "/" + modelId }) });
       const data = await res.json();
-      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+      const ok = !!data.ok;
+      setModelTestResults((prev) => ({ ...prev, [modelId]: ok ? "ok" : "error" }));
+      if (!ok && autoDisableFailed) await fetch("/api/models/disabled", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerAlias: providerStorageAlias, ids: [modelId] }) }).catch(() => {});
+      return ok;
     } catch {
       setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
-    } finally {
-      setTestingModelId(null);
-    }
+      if (autoDisableFailed) await fetch("/api/models/disabled", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerAlias: providerStorageAlias, ids: [modelId] }) }).catch(() => {});
+      return false;
+    } finally { setTestingModelId(null); }
+  };
+
+  const handleTestAll = async () => {
+    if (testingAll || testingModelId || allModels.length === 0) return;
+    setTestingAll(true);
+    for (const item of allModels) await handleTestModel(item.modelId);
+    setTestingAll(false);
   };
 
   const providerAliases = Object.entries(modelAliases).filter(
@@ -154,6 +164,8 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         return;
       }
       const models = data.models || [];
+      setImportedModels(models);
+      setUsageInfo(data.usage || null);
       if (models.length === 0) {
         alert("No models returned from /models.");
         return;
@@ -204,12 +216,42 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         <Button size="sm" variant="secondary" icon="download" onClick={handleImport} disabled={!canImport || importing}>
           {importing ? "Importing..." : "Import from /models"}
         </Button>
+        <Button size="sm" variant="secondary" icon="science" onClick={handleTestAll} disabled={testingAll || !!testingModelId || allModels.length === 0}>{testingAll ? "Menguji semua..." : "Tes Semua Model"}</Button>
       </div>
 
       {!canImport && (
         <p className="text-xs text-text-muted">
           Add a connection to enable importing models.
         </p>
+      )}
+      {usageInfo && (
+        <div className="rounded-lg border border-border bg-surface-2/50 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium">Penggunaan & Batas</span>{usageInfo.plan && <span className="text-xs text-text-muted">Paket: {usageInfo.plan}</span>}</div>
+          {usageInfo.free_tokens && <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="rounded-lg bg-emerald-500/10 px-3 py-2"><div className="text-[11px] text-text-muted">Token gratis terpakai</div><div className="font-semibold">{Number(usageInfo.free_tokens.used_today || 0).toLocaleString("id-ID")}</div></div>
+            <div className="rounded-lg bg-sky-500/10 px-3 py-2"><div className="text-[11px] text-text-muted">Batas token gratis</div><div className="font-semibold">{usageInfo.free_tokens.limit_per_day == null ? "Tidak terbatas" : Number(usageInfo.free_tokens.limit_per_day).toLocaleString("id-ID")}</div></div>
+            <div className="rounded-lg bg-primary/10 px-3 py-2"><div className="text-[11px] text-text-muted">Sisa token gratis</div><div className="font-semibold text-primary">{usageInfo.free_tokens.remaining == null ? "—" : Number(usageInfo.free_tokens.remaining).toLocaleString("id-ID")}</div></div>
+          </div>}
+          {Array.isArray(usageInfo.windows) && usageInfo.windows.length > 0 && <div className="grid gap-2 sm:grid-cols-2">{usageInfo.windows.map((item, index) => <div key={item.kind || item.window_sec || index} className="rounded-lg border border-border px-3 py-2 text-xs"><div className="font-medium">{item.kind || "Batas"}</div><div className="text-text-muted">Terpakai: ${item.spent_usd ?? "0"} · Sisa: ${item.remaining_usd ?? "—"}</div>{item.resets_in_sec != null && <div className="text-text-muted">Reset sekitar {Math.ceil(Number(item.resets_in_sec) / 3600)} jam</div>}</div>)}</div>}
+          {usageInfo.wallet && <div className="mt-2 text-xs text-text-muted">Saldo: ${usageInfo.wallet.balance_usd ?? "—"}</div>}
+        </div>
+      )}
+      <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs"><div><div className="font-medium">Nonaktifkan otomatis jika tes gagal</div><div className="text-text-muted">Model gagal akan dinonaktifkan.</div></div><input type="checkbox" checked={autoDisableFailed} onChange={(e) => setAutoDisableFailed(e.target.checked)} /></div>
+
+
+      {importedModels.length > 0 && (
+        <div className="rounded-lg border border-border bg-bg/50 p-3">
+          <div className="mb-2 text-xs font-medium text-text-muted">Deteksi Model & Parameter</div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {importedModels.map((model) => (
+              <div key={model.id || model.name} className="rounded-lg border border-border px-3 py-2 text-xs">
+                <div className="flex items-center justify-between gap-2"><span className="truncate font-mono">{model.id || model.name}</span><span className={model.accessTier === "free" ? "text-emerald-500" : model.accessTier === "paid" || model.accessTier === "premium" ? "text-amber-500" : "text-text-muted"}>{model.accessTier || "Harga tidak diketahui"}</span></div>
+                <div className="mt-1 text-text-muted">{model.contextWindow ? "Konteks: " + Number(model.contextWindow).toLocaleString("id-ID") : ""}{model.maxOutput ? " · Output: " + Number(model.maxOutput).toLocaleString("id-ID") : ""}</div>
+                {Array.isArray(model.supportedParameters) && model.supportedParameters.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{model.supportedParameters.map((p) => <span key={p} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{p}</span>)}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {allModels.length > 0 && (
