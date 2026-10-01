@@ -1,5 +1,6 @@
 import BasicChatPageClient from "./BasicChatPageClient";
+import ChatWorkspaceShell from "./ChatWorkspaceShell";
 
 export default function BasicChatPage() {
-  return <BasicChatPageClient />;
+  return <ChatWorkspaceShell><BasicChatPageClient /></ChatWorkspaceShell>;
 }
