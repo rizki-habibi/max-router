@@ -1,10 +1,9 @@
 import { getAdapter } from "../driver.js";
-import { parseJson, stringifyJson } from "../helpers/jsonCol.js";
+import { stringifyJson }/ from "../helpers/jsonCol.js";
 import { makeKv } from "../helpers/kvStore.js";
 
 const aliasKv = makeKv("modelAliases");
 const customKv = makeKv("customModels");
-const mitmKv = makeKv("mitmAlias");
 
 // modelAliases: key=alias, value=modelString
 export async function getModelAliases() {
@@ -48,15 +47,3 @@ export async function deleteCustomModel({ providerAlias, id, type = "llm" }) {
   await customKv.remove(customKey(providerAlias, id, type));
 }
 
-// mitmAlias: key=toolName, value=mappings object
-export async function getMitmAlias(toolName) {
-  if (toolName) {
-    const v = await mitmKv.get(toolName);
-    return v || {};
-  }
-  return await mitmKv.getAll();
-}
-
-export async function setMitmAliasAll(toolName, mappings) {
-  await mitmKv.set(toolName, mappings || {});
-}
