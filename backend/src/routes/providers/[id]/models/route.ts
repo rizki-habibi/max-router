@@ -8,8 +8,6 @@ import { resolveOllamaLocalHost } from "../../../../../open-sse/config/providers
 import { resolveKiroModels } from "../../../../../open-sse/services/kiroModels.js";
 import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels.js";
 
-const GEMINI_CLI_MODELS_URL = ANTIGRAVITY_ENDPOINTS.fetchAvailableModels;
-
 const readJsonResponse = async (response) => {
   const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
@@ -241,100 +239,6 @@ const PROVIDER_MODELS_CONFIG = {
     authHeader: "Authorization",
     authPrefix: "Bearer ",
     parseResponse: parseCodexModels
-  },
-  antigravity: {
-    customResolver: async (connection) => {
-      const endpoints = [
-        ANTIGRAVITY_ENDPOINTS.fetchAvailableModels,
-      ];
-      const parseModels = (data) => {
-        if (Array.isArray(data?.models)) return data.models;
-        if (data?.models && typeof data.models === "object") {
-          return Object.entries(data.models)
-            .filter(([, info]) => !info?.isInternal && (info?.displayName || info?.name || info?.model))
-            .map(([id, info]) => ({
-              id: info?.model || id,
-              name: info?.displayName || info?.name || info?.model || id,
-              quotaInfo: info?.quotaInfo,
-            }));
-        }
-        return parseOpenAIStyleModels(data);
-      };
-
-      let token = connection.accessToken;
-      if (!token) return { error: "Antigravity OAuth token tidak tersedia", status: 401 };
-
-      let lastError = "";
-      for (const url of endpoints) {
-        try {
-          let response = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-              "User-Agent": "antigravity",
-            },
-            body: JSON.stringify(
-              connection.projectId || connection.providerSpecificData?.projectId
-                ? { project: connection.projectId || connection.providerSpecificData.projectId }
-                : {}
-            ),
-          });
-
-          if ((response.status === 401 || response.status === 403) && connection.refreshToken) {
-            try {
-              const refreshed = await refreshGoogleToken(
-                connection.refreshToken,
-                GEMINI_CONFIG.clientId,
-                GEMINI_CONFIG.clientSecret
-              );
-              if (refreshed?.accessToken) {
-                await updateProviderCredentials(connection.id, {
-                  accessToken: refreshed.accessToken,
-                  refreshToken: refreshed.refreshToken || connection.refreshToken,
-                  expiresIn: refreshed.expiresIn,
-                });
-                token = refreshed.accessToken;
-                response = await fetch(url, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                    "User-Agent": "antigravity",
-                  },
-                  body: JSON.stringify(
-                    connection.projectId || connection.providerSpecificData?.projectId
-                      ? { project: connection.projectId || connection.providerSpecificData.projectId }
-                      : {}
-                  ),
-                });
-              }
-            } catch (refreshError) {
-              lastError = `OAuth refresh gagal: ${refreshError.message}`;
-            }
-          }
-
-          if (response.ok) {
-            try {
-              const { data } = await readJsonResponse(response);
-              const models = parseModels(data);
-              if (models.length > 0) return { models };
-              lastError = "Antigravity terhubung tetapi API mengembalikan 0 model";
-            } catch (parseError) {
-              lastError = `Antigravity API ${response.status}: ${parseError.message}${parseError.contentType ? ` [${parseError.contentType}]` : ""}`;
-              if (parseError.rawPreview) lastError += ` — ${parseError.rawPreview}`;
-            }
-          } else {
-            const body = await response.text();
-            lastError = `Antigravity API ${response.status}: ${body.slice(0, 500)}`;
-          }
-        } catch (error) {
-          lastError = error.message;
-        }
-      }
-
-      return { models: [], warning: lastError || "Gagal mengambil model Antigravity" };
-    }
   },
   github: {
     url: "https://api.githubcopilot.com/models",
