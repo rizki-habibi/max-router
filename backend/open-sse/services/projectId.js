@@ -8,6 +8,7 @@
  */
 
 import { CLOUD_CODE_API, LOAD_CODE_ASSIST_HEADERS, LOAD_CODE_ASSIST_METADATA } from "../config/appConstants.js";
+import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 // connectionId -> { projectId: string, fetchedAt: number }
@@ -158,7 +159,7 @@ export function removeConnection(connectionId) {
 async function fetchProjectId(accessToken, signal) {
     const response = await fetch(CLOUD_CODE_API.loadCodeAssist, {
         method: "POST",
-        headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}` },
+        headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}`, "Accept": "*/*" },
         body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA }),
         signal
     });
@@ -199,7 +200,19 @@ async function fetchProjectId(accessToken, signal) {
 async function onboardUser(accessToken, tierID, externalSignal) {
     console.log(`[ProjectId] Onboarding user with tier: ${tierID}`);
 
-    const reqBody = { tierId: tierID, metadata: LOAD_CODE_ASSIST_METADATA };
+    const reqBody = {
+        tier_id: tierID,
+        metadata: {
+            ide_type: "ANTIGRAVITY",
+            ide_version: "1.107.0",
+            plugin_version: "",
+            platform: 0,
+            update_channel: "",
+            duet_project: "",
+            plugin_type: 0,
+            ide_name: "antigravity"
+        }
+    };
     const MAX_ATTEMPTS = 5;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -213,7 +226,7 @@ async function onboardUser(accessToken, tierID, externalSignal) {
         externalSignal?.addEventListener("abort", forwardAbort);
 
         try {
-            const response = await fetch(CLOUD_CODE_API.onboardUser, {
+            const response = await fetch(ANTIGRAVITY_ENDPOINTS.dailyOnboardUser, {
                 method: "POST",
                 headers: { ...LOAD_CODE_ASSIST_HEADERS, "Authorization": `Bearer ${accessToken}` },
                 body: JSON.stringify(reqBody),
