@@ -272,6 +272,46 @@ export class AntigravityExecutor extends BaseExecutor {
           signal
         }, proxyOptions);
 
+        // Google can revoke/expire an access token before our local expiresAt.
+        // Antigravity clients reactively refresh on 401, then retry the request once.
+        if (response.status === HTTP_STATUS.UNAUTHORIZED && credentials?.refreshToken) {
+          const refreshed = await this.refreshCredentials(credentials, log, proxyOptions);
+          if (refreshed?.accessToken) {
+            credentials.accessToken = refreshed.accessToken;
+            credentials.refreshToken = refreshed.refreshToken || credentials.refreshToken;
+            if (refreshed.expiresIn) credentials.expiresIn = refreshed.expiresIn;
+            log?.info?.("TOKEN", "Antigravity access token refreshed after upstream 401");
+
+            const retryHeaders = this.buildHeaders(credentials, stream, sessionId);
+            const retryResponse = await proxyAwareFetch(url, {
+              method: "POST",
+              headers: retryHeaders,
+              body: JSON.stringify(transformedBody),
+              signal
+            }, proxyOptions);
+
+            if (retryResponse.status !== HTTP_STATUS.UNAUTHORIZED) {
+              return {
+                response: retryResponse,
+                url,
+                headers: retryHeaders,
+                transformedBody
+              };
+            }
+            lastStatus = retryResponse.status;
+            lastError = await retryResponse.text();
+            // A second 401 means the refresh credential itself is no longer accepted.
+            return {
+              status: 401,
+              message: "Antigravity OAuth access token ditolak Google setelah refresh. Silakan hubungkan ulang akun Google.",
+              response: retryResponse,
+              url,
+              headers: retryHeaders,
+              transformedBody
+            };
+          }
+        }
+
         const isForbiddenQuota = response.status === HTTP_STATUS.FORBIDDEN;
         const isRateLimited = response.status === HTTP_STATUS.RATE_LIMITED;
 
