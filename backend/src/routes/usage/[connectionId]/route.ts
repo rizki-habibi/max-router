@@ -24,6 +24,68 @@ function isXkiroBaseUrl(connection) {
     return /(^|\.)xkiro\.com$/i.test(u.hostname);
   } catch { return false; }
 }
+
+function isAtriaBaseUrl(connection) {
+  try {
+    const u = new URL(getCompatibleBaseUrl(connection));
+    return /(^|\.)atria-asi\.ai$/i.test(u.hostname);
+  } catch { return false; }
+}
+
+async function getAtriaUsage(connection) {
+  const base = getCompatibleBaseUrl(connection);
+  if (!base) return null;
+  let origin;
+  try { origin = new URL(base).origin; } catch { return null; }
+  const url = origin + "/v1/models";
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer " + connection.apiKey,
+        "Accept": "application/json",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const raw = await response.text().catch(() => "");
+    const limit = Number(response.headers.get("x-rpm-limit"));
+    const remaining = Number(response.headers.get("x-rpm-remaining"));
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const hasRateLimit = Number.isFinite(limit) && Number.isFinite(remaining);
+    const resetInSec = Number.isFinite(retryAfter) && retryAfter >= 0
+      ? retryAfter
+      : Math.max(0, 60 - Math.floor((Date.now() / 1000) % 60));
+    let data = null;
+    try { data = raw ? JSON.parse(raw) : null; } catch {}
+    if (!response.ok) {
+      return {
+        error: "HTTP " + response.status + ": " + raw.slice(0, 300),
+        source: "upstream",
+        endpoint: url,
+        rate_limit: hasRateLimit ? { limit, remaining } : null,
+        windows: hasRateLimit ? [{ kind: "RPM", resets_in_sec: resetInSec }] : [],
+        fetchedAt: new Date().toISOString(),
+      };
+    }
+    return {
+      provider: "atria",
+      plan: "Preview / gratis",
+      token_quota: {
+        remaining: null,
+        note: "Atria tidak menyediakan endpoint resmi untuk sisa token gratis; penggunaan token hanya tersedia pada respons request."
+      },
+      rate_limit: hasRateLimit ? { limit, remaining } : null,
+      windows: hasRateLimit ? [{ kind: "RPM", resets_in_sec: resetInSec }] : [],
+      wallet: null,
+      models: Array.isArray(data?.data) ? data.data : [],
+      source: "upstream",
+      endpoint: url,
+      fetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return { error: error?.message || "Gagal membaca usage Atria", source: "upstream", endpoint: url };
+  }
+}
 async function getXkiroUsage(connection) {
   const base = getCompatibleBaseUrl(connection);
   if (!base) return null;
@@ -241,7 +303,8 @@ export async function GET_handler(req, res, { params }) {
       USAGE_APIKEY_PROVIDERS.includes(connection.provider);
 
     const xkiroCompatible = isXkiroBaseUrl(connection);
-    if (!isOAuth && !isCookie && !isApikeyEligible && !xkiroCompatible) {
+    const atriaCompatible = isAtriaBaseUrl(connection);
+    if (!isOAuth && !isCookie && !isApikeyEligible && !xkiroCompatible && !atriaCompatible) {
       const localTokenUsage = await getLocalTokenUsage(connection.id);
       return Response.json({
         provider: connection.provider,
@@ -279,7 +342,11 @@ export async function GET_handler(req, res, { params }) {
     }
 
     // Usage mengikuti Base URL provider yang dikonfigurasi.
-    let usage = isXkiroBaseUrl(connection) ? await getXkiroUsage(connection) : await getUsageForProvider(connection, proxyOptions);
+    let usage = xkiroCompatible
+      ? await getXkiroUsage(connection)
+      : atriaCompatible
+        ? await getAtriaUsage(connection)
+        : await getUsageForProvider(connection, proxyOptions);
     const localTokenUsage = await getLocalTokenUsage(connection.id);
     const models = xkiroCompatible ? await getModelCatalog(connection) : [];
     if (usage && typeof usage === "object") {
