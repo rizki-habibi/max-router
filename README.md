@@ -48,7 +48,6 @@ V3 does not claim authorship of the routing engine or provider integrations. Tho
 - **Password and OIDC authentication** for dashboard access.
 - **SQLite or PostgreSQL persistence**, selected automatically through `DATABASE_URL`.
 - **Cloudflare Workers AI automation** with Playwright, CAPTCHA providers, and temporary email.
-- **Agent Skills** for Claude, Gemini, Codex, and other coding agents.
 - **Portable deployment** for local machines, Docker, Railway, Heroku, and Linux VPS hosts.
 
 ---
@@ -65,7 +64,6 @@ V3 does not claim authorship of the routing engine or provider integrations. Tho
 ├── frontend/
 │   ├── public/branding/  # V3 logo and favicon
 │   └── src/              # Vite + React dashboard
-├── skills/               # Agent SKILL.md files
 ├── Dockerfile
 ├── Procfile
 └── railway.toml
@@ -214,23 +212,9 @@ Railway builds the included Dockerfile. It supplies `RAILWAY_PUBLIC_DOMAIN`, `RA
 
 ---
 
-## Agent Skills
-
-Start with the entry skill:
-
-```text
-https://raw.githubusercontent.com/codestorm-official/9router-v2/refs/heads/master/skills/9router/SKILL.md
-```
-
-Additional skills are available in [`skills/`](./skills/).
 
 ---
 
-## Donate
-
-If this fork helps your work, you can support it through:
-
-[PayPal — paypal.me/selaris](https://www.paypal.com/paypalme/selaris)
 
 ---
 
