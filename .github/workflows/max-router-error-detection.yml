@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit-backend:
@@ -30,6 +30,66 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Auto repair deterministic Antigravity imports
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { execSync } from 'node:child_process';
+
+          const root = path.resolve('.');
+          const canonical = path.resolve('src/lib/constants/antigravity.js');
+          if (!fs.existsSync(canonical)) {
+            throw new Error('Canonical Antigravity constants tidak ditemukan: ' + canonical);
+          }
+
+          const files = [];
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (/\.(js|mjs|ts|tsx)$/.test(entry.name)) files.push(full);
+            }
+          }
+          walk(path.resolve('src'));
+          walk(path.resolve('open-sse'));
+
+          let changed = false;
+          for (const file of files) {
+            let source = fs.readFileSync(file, 'utf8');
+            if (!source.includes('antigravity.js')) continue;
+
+            const relative = './' + path.relative(path.dirname(file), canonical).replaceAll(path.sep, '/');
+
+            const fixed = source.replace(
+              /((?:from|import)\s*["'])([^"']*antigravity\.js)(["'])/g,
+              (full, open, specifier, close) => {
+                if (!specifier.startsWith('.')) return full;
+                return open + relative + close;
+              }
+            );
+
+            if (fixed !== source) {
+              fs.writeFileSync(file, fixed);
+              changed = true;
+              console.log('AUTO_REPAIRED:', path.relative(root, file), '->', relative);
+            }
+          }
+
+          if (!changed) {
+            console.log('AUTO_REPAIR: no deterministic changes needed');
+            process.exit(0);
+          }
+
+          execSync('git config user.name "github-actions[bot]"');
+          execSync('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
+          execSync('git add src open-sse');
+          execSync('git diff --cached --quiet || git commit -m "fix: auto-repair deterministic Antigravity imports [skip ci]"');
+          execSync('git push origin HEAD:$GITHUB_REF_NAME');
+          console.log('AUTO_REPAIR: pushed deterministic repair; current run will continue against repaired workspace');
+          NODE
 
       - name: Typecheck
         run: npm run typecheck
