@@ -89,7 +89,7 @@ jobs:
 
           // The canonical endpoint may only be declared in the centralized
           // Antigravity constants module; this prevents URL drift between modules.
-          const constantsPath = path.resolve('./dist/src/lib/constants/antigravity.js');
+          const constantsPath = path.resolve('./dist/lib/constants/antigravity.js');
           if (!fs.existsSync(constantsPath)) {
             throw new Error('Antigravity constants module tidak ditemukan: ' + constantsPath);
           }
