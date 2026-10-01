@@ -470,9 +470,12 @@ export async function GET_handler(req, res, { params }) {
       if (!baseUrl) return res.status(400).json({ error: "No base URL configured for OpenAI compatible provider" });
 
       const rootBase = baseUrl.replace(/\/$/, "");
+      // Prefer the standard OpenAI-compatible endpoint. Some providers serve
+      // /models as an HTML dashboard, so a 2xx response is accepted only after
+      // successful JSON parsing.
       const candidates = Array.from(new Set([
-        rootBase + "/models",
         rootBase.endsWith("/v1") ? rootBase + "/models" : rootBase + "/v1/models",
+        rootBase + "/models",
         rootBase.replace(/\/v[0-9]+$/i, "") + "/v1/models",
       ]));
 
@@ -492,13 +495,28 @@ export async function GET_handler(req, res, { params }) {
             },
             signal: AbortSignal.timeout(12000),
           });
+
+          const contentType = candidate.headers.get("content-type") || "";
+          const raw = await candidate.text().catch(() => "");
+
           if (candidate.ok) {
-            response = candidate;
-            usedUrl = url;
-            break;
+            try {
+              const parsed = raw ? JSON.parse(raw) : null;
+              if (parsed && typeof parsed === "object") {
+                response = { ...candidate, text: async () => raw };
+                response.__parsedData = parsed;
+                usedUrl = url;
+                break;
+              }
+              lastError = "HTTP " + candidate.status + ": respons kosong/tidak berbentuk JSON";
+            } catch {
+              lastError = "HTTP " + candidate.status + ": respons bukan JSON (" + contentType + "): " + raw.replace(/\s+/g, " ").slice(0, 240);
+            }
+            continue;
           }
-          lastError = "HTTP " + candidate.status + ": " + (await candidate.text().catch(() => "")).slice(0, 240);
-          if (![404, 405].includes(candidate.status)) break;
+
+          lastError = "HTTP " + candidate.status + ": " + raw.slice(0, 240);
+          continue;
         } catch (error) {
           lastError = error.message;
         }
@@ -533,7 +551,7 @@ export async function GET_handler(req, res, { params }) {
 
       let data;
       try {
-        ({ data } = await readJsonResponse(response));
+        data = response.__parsedData ?? (await readJsonResponse(response)).data;
       } catch (parseError) {
         return res.status(502).json({
           error: "Upstream /models mengembalikan respons yang bukan JSON.",
