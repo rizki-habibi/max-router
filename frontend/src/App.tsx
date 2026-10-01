@@ -21,7 +21,6 @@ const AntigravityTerminal = lazy(() => import("./pages/antigravity-terminal/page
 const CompatibleChat = lazy(() => import("./pages/compatible-chat/page"));
 const ModelDetection = lazy(() => import("./pages/model-detection/page"));
 const Profile         = lazy(() => import("./pages/profile/page"));
-const Docs            = lazy(() => import("./pages/docs/page"));
 const ConsoleLog      = lazy(() => import("./pages/console-log/page"));
 const WeavyPool          = lazy(() => import("./pages/providers/weavy/pool/page"));
 const AmmailTutorial     = lazy(() => import("./pages/automation/ammail-tutorial/page"));
@@ -73,7 +72,6 @@ export default function App() {
             <Route path="model-detection" element={<ModelDetection />} />
             <Route path="antigravity" element={<AntigravityTerminal />} />
             <Route path="profile"         element={<Profile />} />
-            <Route path="docs"            element={<Docs />} />
             <Route path="console-log"     element={<ConsoleLog />} />
           </Route>
 
