@@ -120,7 +120,8 @@ export async function POST_handler(req, res) {
           }
           const data = await response.json().catch(() => null);
           const models = classifyModels(data);
-          const looksAnthropic = Array.isArray(data?.data) && data.data.some((item) => item?.type === "model") && /anthropic/i.test(JSON.stringify(data).slice(0, 5000));
+          const firstModel = Array.isArray(data?.data) ? data.data[0] : null;
+          const looksAnthropic = firstModel?.type === "model" || Boolean(firstModel?.display_name);
           return { valid: true, detectedVersion: candidate.version, detectedType: looksAnthropic ? "anthropic-compatible" : "openai-compatible", baseUrl: candidate.url, models, modelCount: models.length, method: "models" };
         } catch (error) {
           lastFailure = { valid: false, error: getErrorMessage(error), version: candidate.version };
@@ -130,9 +131,10 @@ export async function POST_handler(req, res) {
     };
 
     const results = [];
-    for (const apiKey of apiKeys) {
+    for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
+      const apiKey = apiKeys[keyIndex];
       const result = await testKey(apiKey);
-      results.push({ ...result, keyPreview: apiKey.length > 8 ? apiKey.slice(0, 4) + "…" + apiKey.slice(-4) : "••••" });
+      results.push({ keyIndex, ...result, keyPreview: apiKey.length > 8 ? apiKey.slice(0, 4) + "…" + apiKey.slice(-4) : "••••" });
     }
     const validResults = results.filter((item) => item.valid);
     const detected = validResults[0] || null;
