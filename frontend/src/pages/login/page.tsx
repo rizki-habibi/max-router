@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { SignInPage } from "@/components/ui/sign-in";
-import { GITHUB_CONFIG } from "@/shared/constants/config";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -132,8 +131,6 @@ export default function LoginPage() {
             ? "Password login is not configured on this instance"
             : "Enter your dashboard password to continue"
       }
-      donateUrl={GITHUB_CONFIG.donateUrl}
-      donateQrSrc="/images/paypal-donate-qr.svg"
       password={password}
       setPassword={setPassword}
       onSignIn={handleLogin}
