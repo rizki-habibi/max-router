@@ -70,7 +70,7 @@ const trimBaseUrl = (baseUrl) => baseUrl.trim().replace(/\/$/, "");
 export async function POST_handler(req, res) {
   try {
     const body = req.body;
-    const { baseUrl, apiKey, type, modelId } = body;
+    const { baseUrl, apiKey, type, modelId, apiType = "chat" } = body;
 
     if (!baseUrl || !apiKey) {
       return res.status(400).json({ error: "Base URL and API key required" });
@@ -180,39 +180,38 @@ export async function POST_handler(req, res) {
 
     if (res.ok) return res.json({ valid: true });
 
-    if (isAuthFailure(res.status)) {
-      return res.json({ valid: false, error: "API key unauthorized" });
-    }
-
-    // Fallback: try chat/completions if modelId provided
+    // A protected/missing /models endpoint does not prove the key is invalid.
+    // If a model ID is supplied, validate the actual inference endpoint.
     if (modelId) {
-      const chatRes = await fetchWithTimeout(`${normalizedBase}/chat/completions`, {
+      const inferencePath = apiType === "responses" ? "/responses" : "/chat/completions";
+      const inferenceBody = apiType === "responses"
+        ? { model: modelId, input: "ping", max_output_tokens: 1 }
+        : { model: modelId, messages: [{ role: "user", content: "ping" }], max_tokens: 1, stream: false };
+
+      const inferenceRes = await fetchWithTimeout(normalizedBase + inferencePath, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: modelId,
-          messages: [{ role: "user", content: "ping" }],
-          max_tokens: 1
-        })
+        body: JSON.stringify(inferenceBody),
       });
-      if (chatRes.ok || isReachableInferenceStatus(chatRes.status)) {
-        const errorText = chatRes.ok ? "" : await readErrorBody(chatRes);
+
+      if (inferenceRes.ok || isReachableInferenceStatus(inferenceRes.status)) {
+        const errorText = inferenceRes.ok ? "" : await readErrorBody(inferenceRes);
         return res.json({
           valid: true,
-          method: "chat",
+          method: apiType === "responses" ? "responses" : "chat",
           warning: errorText ? String(errorText).slice(0, 200) : undefined,
         });
       }
-      if (isAuthFailure(chatRes.status)) {
-        return res.json({ valid: false, error: "API key unauthorized", method: "chat" });
+      if (isAuthFailure(inferenceRes.status)) {
+        return res.json({ valid: false, error: "API key unauthorized", method: apiType === "responses" ? "responses" : "chat" });
       }
       return res.json({
         valid: false,
-        error: getChatErrorMessage(chatRes.status),
-        method: "chat"
+        error: getChatErrorMessage(inferenceRes.status),
+        method: apiType === "responses" ? "responses" : "chat",
       });
     }
 
