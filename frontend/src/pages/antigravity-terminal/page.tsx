@@ -1,12 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
 
-const MODEL = "claude-opus-4-6-thinking";
+const MODEL = "ag/claude-opus-4-6-thinking";
 
 export default function AntigravityTerminalPage() {
   const [input, setInput] = useState("");
   const [lines, setLines] = useState([
     { type: "system", text: "Max Router Antigravity CLI" },
-    { type: "system", text: "Ketik pesan lalu tekan Enter. Model: " + MODEL },
+    { type: "system", text: "Ketik pesan lalu tekan Enter. Provider: Antigravity · Model: " + MODEL.replace("ag/", "") },
   ]);
   const [busy, setBusy] = useState(false);
 
