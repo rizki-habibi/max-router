@@ -123,7 +123,7 @@ export default function ProvidersPage() {
   const unregisterSearch = useHeaderSearchStore((s) => s.unregister);
 
   useEffect(() => {
-    registerSearch("Search providers...");
+    registerSearch("Cari provider...");
     return () => unregisterSearch();
   }, [registerSearch, unregisterSearch]);
 
@@ -252,8 +252,8 @@ export default function ProvidersPage() {
       setTestResults(data);
       if (data.summary) {
         const { passed, failed, total } = data.summary;
-        if (failed === 0) notify.success(`All ${total} tests passed`);
-        else notify.warning(`${passed}/${total} passed, ${failed} failed`);
+        if (failed === 0) notify.success(`Semua ${total} pengujian berhasil`);
+        else notify.warning(`${passed}/${total} berhasil, ${failed} gagal`);
       }
     } catch (error) {
       setTestResults({ error: "Test request failed" });
@@ -322,7 +322,7 @@ export default function ProvidersPage() {
           <span className="material-symbols-outlined text-[32px] text-text-muted mb-2">
             search_off
           </span>
-          <p className="text-text-muted text-sm">No providers match your search</p>
+          <p className="text-text-muted text-sm">Tidak ada provider yang cocok dengan pencarian</p>
         </div>
       )}
 
@@ -508,7 +508,7 @@ export default function ProvidersPage() {
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary/5"
           >
             <span className="material-symbols-outlined text-[16px]">expand_more</span>
-            Show all {apikeyEntries.length} providers
+            Tampilkan semua {apikeyEntries.length} provider
           </button>
         )}
       </div>
@@ -527,7 +527,7 @@ export default function ProvidersPage() {
         }}
       />
 
-      {/* Test Results Modal */}
+      {/* Hasil Pengujian Modal */}
       {testResults && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center px-3 pt-[6vh] sm:pt-[10vh]"
@@ -543,7 +543,7 @@ export default function ProvidersPage() {
               <button
                 onClick={() => setTestResults(null)}
                 className="p-1 rounded-lg hover:bg-bg text-text-muted hover:text-text-main transition-colors"
-                aria-label="Close test results"
+                aria-label="Tutup hasil pengujian"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
@@ -834,7 +834,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
   }, [isOpen]);
 
   const keyLines = () => Array.from(new Set(
-    apiKeys.split(/\\r?\\n/).map((value) => value.trim()).filter(Boolean)
+    apiKeys.split(/\r?\n/).map((value) => value.trim()).filter(Boolean)
   ));
 
   const handleCheck = async () => {
@@ -982,6 +982,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
           <textarea
             value={apiKeys}
             onChange={(e) => setApiKeys(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
             rows={7}
             className="w-full rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs"
             placeholder={"key-pertama\\nkey-kedua\\nkey-ketiga"}
@@ -1018,7 +1019,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
                 <div className="text-lg font-semibold text-text-main">{validation.unknownPricingModelCount ?? 0}</div>
               </div>
             </div>
-            {validation.models?.length > 0 && (
+            {(validation.supportedParameters?.length > 0 || validation.models?.some((model) => Array.isArray(model.supportedParameters) && model.supportedParameters.length > 0)) && (\n              <div className="mb-3 rounded-lg border border-border bg-surface-2/50 p-2">\n                <div className="mb-2 text-xs font-medium text-text-muted">Parameter yang terdeteksi</div>\n                <div className="flex flex-wrap gap-1.5">\n                  {(validation.supportedParameters || Array.from(new Set(validation.models.flatMap((model) => Array.isArray(model.supportedParameters) ? model.supportedParameters : [])))).map((parameter) => (\n                    <span key={parameter} className="rounded bg-primary/10 px-2 py-1 text-[11px] text-primary">{parameter}</span>\n                  ))}\n                </div>\n              </div>\n            )}\n            {validation.models?.length > 0 && (
               <div className="mb-3 max-h-40 overflow-y-auto rounded-lg border border-border bg-surface-2/50 p-2">
                 <div className="mb-2 text-xs font-medium text-text-muted">Model yang terdeteksi</div>
                 <div className="grid gap-1 sm:grid-cols-2">
