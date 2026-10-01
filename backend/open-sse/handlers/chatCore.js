@@ -213,10 +213,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   let providerResponse, providerUrl, providerHeaders, finalBody;
   try {
     const result = await executor.execute({ model, body: translatedBody, stream, credentials, signal: streamController.signal, log, proxyOptions });
+    if (!result || !result.response || typeof result.response.status !== "number") {
+      const detail = !result ? "Executor returned no result" : !result.response ? "Executor returned no response" : "Executor returned an invalid response object";
+      throw new Error(`${detail} for ${provider}/${model}`);
+    }
     providerResponse = result.response;
-    providerUrl = result.url;
-    providerHeaders = result.headers;
-    finalBody = result.transformedBody;
+    providerUrl = result.url || "";
+    providerHeaders = result.headers || {};
+    finalBody = result.transformedBody || translatedBody;
     reqLogger.logTargetRequest(providerUrl, providerHeaders, finalBody);
   } catch (error) {
     trackPendingRequest(model, provider, connectionId, false, true);
@@ -252,7 +256,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
         }
         try {
           const retryResult = await executor.execute({ model, body: translatedBody, stream, credentials, signal: streamController.signal, log, proxyOptions });
-          if (retryResult.response.ok) { providerResponse = retryResult.response; providerUrl = retryResult.url; }
+          if (retryResult?.response && typeof retryResult.response.status === "number" && retryResult.response.ok) { providerResponse = retryResult.response; providerUrl = retryResult.url || providerUrl; providerHeaders = retryResult.headers || providerHeaders; finalBody = retryResult.transformedBody || finalBody; }
         } catch { log?.warn?.("TOKEN", `${provider.toUpperCase()} | retry after refresh failed`); }
       } else {
         log?.warn?.("TOKEN", `${provider.toUpperCase()} | refresh failed`);
