@@ -6,8 +6,7 @@ import {
   getProviderNodes,
   getProxyPoolById,
 } from "../../models/index.js";
-import { APIKEY_PROVIDERS } from "../../shared/constants/config.js";
-import { AI_PROVIDERS, FREE_TIER_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isCustomEmbeddingProvider } from "../../shared/constants/providers.js";
+import { AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "../../shared/constants/providers.js";
 import { normalizeProviderId, normalizeProviderSpecificData } from "../../lib/providerNormalization.js";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +48,7 @@ async function normalizeProxyPoolId(proxyPoolId) {
 // GET /api/providers - List all connections
 export async function GET(req, res) {
   try {
-    const connections = await getProviderConnections();
+    const connections = (await getProviderConnections()).filter((c) => isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider));
 
     // Build nodeNameMap for compatible providers (id → name)
     let nodeNameMap = {};
@@ -101,17 +100,14 @@ export async function POST_handler(req, res) {
     const proxyPoolId = proxyPoolResult.proxyPoolId;
 
     // Validation: only configured API-key and compatible provider nodes are supported.
-    const isValidProvider = APIKEY_PROVIDERS[provider] ||
-      FREE_TIER_PROVIDERS[provider] ||
+    const isValidProvider =
       isOpenAICompatibleProvider(provider) ||
-      isAnthropicCompatibleProvider(provider) ||
-      isCustomEmbeddingProvider(provider) ||
-      provider === "codebuddy";
+      isAnthropicCompatibleProvider(provider);
 
     if (!provider || !isValidProvider) {
       return res.status(400).json({ error: "Invalid provider" });
     }
-    if (!apiKey && provider !== "ollama-local") {
+    if (!apiKey) {
       return res.status(400).json({ error: "API Key is required" });
     }
     const connectionName = name || displayName || AI_PROVIDERS[provider]?.name;
@@ -147,20 +143,6 @@ export async function POST_handler(req, res) {
       const existingConnections = await getProviderConnections({ provider });
       if (existingConnections.length > 0) {
         return res.status(400).json({ error: "Only one connection is allowed for this Anthropic Compatible node" });
-      }
-      providerSpecificData = {
-        prefix: node.prefix,
-        baseUrl: node.baseUrl,
-        nodeName: node.name,
-      };
-    } else if (isCustomEmbeddingProvider(provider)) {
-      const node = await getProviderNodeById(provider);
-      if (!node) {
-        return res.status(404).json({ error: "Custom Embedding node not found" });
-      }
-      const existingConnections = await getProviderConnections({ provider });
-      if (existingConnections.length > 0) {
-        return res.status(400).json({ error: "Only one connection is allowed for this Custom Embedding node" });
       }
       providerSpecificData = {
         prefix: node.prefix,
