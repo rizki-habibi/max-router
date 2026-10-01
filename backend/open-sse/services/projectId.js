@@ -168,7 +168,7 @@ async function fetchProjectId(accessToken, signal) {
         try {
             const response = await fetch(url, {
                 method: "POST",
-                headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*" },
+                headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*", "x-request-source": "local" },
                 body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA, mode: 1 }),
                 signal
             });
@@ -214,8 +214,8 @@ async function reloadProjectId(accessToken, signal) {
         try {
             const response = await fetch(`${baseUrl}/v1internal:loadCodeAssist`, {
                 method: "POST",
-                headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*" },
-                body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA }),
+                headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*", "x-request-source": "local" },
+                body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA, mode: 1 }),
                 signal
             });
             if (!response.ok) continue;
