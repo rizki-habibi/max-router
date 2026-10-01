@@ -5,6 +5,7 @@ import { getProviderConnectionById, updateProviderConnection } from "../../../li
 import { getUsageForProvider } from "../../../../open-sse/services/usage.js"; // Watcher trigger comment
 import { getExecutor } from "../../../../open-sse/executors/index.js";
 import { resolveConnectionProxyConfig } from "../../../lib/network/connectionProxy.js";
+import { parseJson } from "../../../lib/db/helpers/jsonCol.js";
 import { USAGE_APIKEY_PROVIDERS } from "../../../shared/constants/providers.js";
 
 
