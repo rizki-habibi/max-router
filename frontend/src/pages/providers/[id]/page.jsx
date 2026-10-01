@@ -677,7 +677,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const selectableConnections = isCompatible ? connections.filter((conn) => !!conn.apiKey) : connections;
+  const selectableConnections = isCompatible ? connections.filter((conn) => conn.hasApiKey || conn.apiKey) : connections;
   const selectedConnections = connections.filter((conn) => selectedConnectionIds.includes(conn.id));
   const allSelected = selectableConnections.length > 0 && selectableConnections.every((conn) => selectedConnectionIds.includes(conn.id));
 
