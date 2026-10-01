@@ -322,10 +322,11 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Verify Uji Model page
+      - name: Verify Antigravity CLI page
         working-directory: frontend
         run: |
-          test -f src/pages/basic-chat/BasicChatPageClient.jsx
-          grep -q '/api/providers' src/pages/basic-chat/BasicChatPageClient.jsx
-          grep -q '/api/v1/chat/completions' src/pages/basic-chat/BasicChatPageClient.jsx
-          echo "Uji Model page audit: OK"
+          test -f src/pages/antigravity-terminal/page.tsx
+          grep -q '/api/v1/chat/completions' src/pages/antigravity-terminal/page.tsx
+          grep -q 'antigravity/' src/pages/antigravity-terminal/page.tsx
+          grep -q '/dashboard/antigravity' src/App.tsx
+          echo "Antigravity CLI page audit: OK"
