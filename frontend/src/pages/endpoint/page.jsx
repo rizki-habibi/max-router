@@ -22,7 +22,7 @@ export default function EndpointPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-text-muted text-sm py-12 text-center">Loading...</div>;
+    return <div className="text-text-muted text-sm py-12 text-center">Memuat...</div>;
   }
 
   return <EndpointPageClient machineId={machineId} />;
