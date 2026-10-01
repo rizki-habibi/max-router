@@ -4,10 +4,36 @@ import os from "os";
 import crypto from "crypto";
 import { execSync, exec, spawn } from "child_process";
 import { promisify } from "util";
-import { execWithPassword } from "../../../mitm/dns/dnsConfig.js";
+import * as dnsConfig from "../../../mitm/dns/dnsConfig.js";
 import { DATA_DIR } from "../../../lib/dataDir.js";
 
 const execAsync = promisify(exec);
+
+async function execWithPassword(command, password = null) {
+  if (typeof dnsConfig.execWithPassword === "function") {
+    return dnsConfig.execWithPassword(command, password);
+  }
+  if (process.platform === "win32" || !password) {
+    return execAsync(command);
+  }
+  if (String(password).includes("\n")) throw new Error("Invalid sudo password");
+  return new Promise((resolve, reject) => {
+    const child = spawn("sudo", ["-S", "-p", "", "sh", "-c", command], {
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+    });
+    let stdout = "", stderr = "";
+    child.stdout.on("data", d => { stdout += d.toString(); });
+    child.stderr.on("data", d => { stderr += d.toString(); });
+    child.on("error", reject);
+    child.on("close", code => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error(stderr || `sudo command failed with exit code ${code}`));
+    });
+    child.stdin.write(String(password) + "\n");
+    child.stdin.end();
+  });
+}
 
 const BIN_DIR = path.join(DATA_DIR, "bin");
 const IS_MAC = os.platform() === "darwin";
