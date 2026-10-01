@@ -361,8 +361,7 @@ export class AntigravityExecutor extends BaseExecutor {
         const isRateLimited = response.status === HTTP_STATUS.RATE_LIMITED;
 
         if (isRateLimited || isForbiddenQuota) {
-          const bodyText = await response.text();
-          const errorInfo = this.parseError(response, bodyText);
+          // Read a clone so chatCore can still consume the original Response body for provider-specific parsing.\n          const bodyText = await response.clone().text();\n          const errorInfo = this.parseError(response, bodyText);
           
           // Return immediately to allow account rotation in the outer loop (chat.js)
           return {
