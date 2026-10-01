@@ -51,7 +51,7 @@ async function getModelCatalog(connection) {
     const base = getCompatibleBaseUrl(connection);
     if (!base) return [];
     const parsed = new URL(base);
-    const url = parsed.origin + (parsed.pathname.replace(/\\/+$/, "") || "/v1") + "/models";
+    const url = parsed.origin + (parsed.pathname.replace(/\/+$/, "") || "/v1") + "/models";
     const response = await fetch(url, {
       headers: {
         Authorization: "Bearer " + connection.apiKey,
