@@ -154,7 +154,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               to={item.href}
               onClick={onClose}
               className={cn(
-                "flex items-center rounded-lg transition-all group",
+                "mr-comic-nav-item flex items-center rounded-xl transition-all group",
                 collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                 isActive(item.href)
                   ? "bg-primary/10 text-primary"
@@ -186,7 +186,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 to={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center rounded-lg transition-all group",
+                  "mr-comic-nav-item flex items-center rounded-xl transition-all group",
                   collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                   isActive(item.href)
                     ? "bg-primary/10 text-primary"
@@ -214,7 +214,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                   to={item.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center rounded-lg transition-all group",
+                    "mr-comic-nav-item flex items-center rounded-xl transition-all group",
                     collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                     isActive(item.href)
                       ? "bg-primary/10 text-primary"
@@ -238,7 +238,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
             <button
               onClick={() => setShowRemoteModal(true)}
               className={cn(
-                "flex items-center rounded-lg transition-all group w-full",
+                "mr-comic-nav-item flex items-center rounded-xl transition-all group w-full",
                 collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                 "text-text-muted hover:bg-surface-2 hover:text-text-main"
               )}
@@ -254,7 +254,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               to="/dashboard/profile"
               onClick={onClose}
               className={cn(
-                "flex items-center rounded-lg transition-all group",
+                "mr-comic-nav-item flex items-center rounded-xl transition-all group",
                 collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                 isActive("/dashboard/profile")
                   ? "bg-primary/10 text-primary"
@@ -277,11 +277,11 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
             type="button"
             onClick={onToggleCollapse}
             className={cn(
-              "flex items-center rounded-lg text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
-              collapsed ? "justify-center size-9" : "w-full gap-3 px-3 py-2"
+              "mr-comic-toggle relative flex items-center text-text-main",
+              collapsed ? "justify-center size-10" : "w-full gap-3 px-3 py-2.5"
             )}
-            title={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
-            aria-label={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
+            title={collapsed ? "Buka sidebar" : "Tutup sidebar"}
+            aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}
           >
             <span className="material-symbols-outlined text-[18px]">
               {collapsed ? "chevron_right" : "chevron_left"}
