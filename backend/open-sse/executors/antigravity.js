@@ -263,7 +263,7 @@ export class AntigravityExecutor extends BaseExecutor {
 
     if (retryMs) {
       return {
-        status: HTTP_STATUS.RATE_LIMITED, // Convert 403 quota resets to 429
+        status: response.status,
         message: messageStr,
         resetsAtMs: Date.now() + retryMs
       };
