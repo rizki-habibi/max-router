@@ -470,7 +470,7 @@ const PROVIDERS = {
         const loadRes = await fetch(ANTIGRAVITY_CONFIG.loadCodeAssistEndpoint, {
           method: "POST",
           headers: loadHeaders,
-          body: JSON.stringify({ metadata }),
+          body: JSON.stringify({ metadata, mode: 1 }),
           signal: AbortSignal.timeout(15000),
         });
         if (loadRes.ok) {
@@ -514,7 +514,7 @@ const PROVIDERS = {
                 const reloadRes = await fetch(ANTIGRAVITY_CONFIG.loadCodeAssistEndpoint, {
                   method: "POST",
                   headers: loadHeaders,
-                  body: JSON.stringify({ metadata }),
+                  body: JSON.stringify({ metadata, mode: 1 }),
                 });
                 if (reloadRes.ok) {
                   const reloadData = await reloadRes.json();
