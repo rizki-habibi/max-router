@@ -25,6 +25,7 @@ const enrich = (model) => {
     releaseDate: meta?.release_date ?? meta?.releaseDate ?? null,
     input: meta?.input ?? meta?.modalities?.input ?? null,
     pricing: meta?.pricing ?? null,
+    priceClass: meta?.priceClass ?? (meta?.free === true ? "free" : meta?.paid === true ? "paid" : "unknown"),
     capabilities: Array.isArray(meta?.capabilities) ? meta.capabilities : inferCapabilities(model),
     parameters: meta?.supported_parameters ?? meta?.supportedParameters ?? [],
     description: meta?.description || meta?.description_text || "",
@@ -71,7 +72,7 @@ export default function ModelDetectionPage() {
       {filtered.map((model) => <Card key={model.id} className="p-5">
         <button className="w-full text-left" onClick={() => setSelected(selected?.id === model.id ? null : model)}>
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><h2 className="font-semibold">{model.id}</h2><p className="mt-1 text-xs text-text-muted">{model.owned_by || "provider kompatibel"}</p></div>
+            <div><h2 className="font-semibold">{model.id}</h2><div className="mt-1 flex flex-wrap gap-1.5 text-xs text-text-muted"><span>{model.owned_by || "provider kompatibel"}</span>{model.priceClass && <span className="rounded bg-surface-2 px-1.5 py-0.5">{model.priceClass === "free" ? "Gratis" : model.priceClass === "paid" ? "Berbayar" : "Harga tidak diketahui"}</span>}</div></div>
             <div className="flex flex-wrap gap-1.5">{model.capabilities.map((cap) => <Badge key={cap} size="sm" variant="success">{cap}</Badge>)}</div>
           </div>
         </button>
@@ -81,9 +82,9 @@ export default function ModelDetectionPage() {
           <Info label="Keluaran maksimum" value={model.maxOutput ?? "Tidak diberikan provider"} />
           <Info label="Tanggal rilis" value={model.releaseDate || "Tidak diberikan provider"} />
           <Info label="Masukan" value={Array.isArray(model.input) ? model.input.join(", ") : model.input || "Tidak diberikan provider"} />
-          <Info label="Harga" value={format(model.pricing) || "Tidak diberikan provider"} />
+          <Info label="Harga" value={model.priceClass === "free" ? "Gratis" : model.priceClass === "paid" ? "Berbayar" : format(model.pricing) || "Tidak diberikan provider"} />
           <Info label="Kemampuan" value={model.capabilities.join(", ") || "Belum dapat dideteksi"} wide />
-          <Info label="Parameter yang didukung" value={Array.isArray(model.parameters) ? model.parameters.join(" · ") : format(model.parameters) || "Tidak diberikan provider"} wide />
+          <Info label="Parameter yang didukung" value={Array.isArray(model.parameters) && model.parameters.length ? model.parameters.join(" · ") : "Tidak diberikan provider"} wide />
         </div>}
       </Card>)}
     </div>
