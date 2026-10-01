@@ -28,8 +28,6 @@ interface SignInPageProps {
   description?: React.ReactNode;
   heroImageSrc?: string;
   testimonials?: Testimonial[];
-  donateUrl?: string;
-  donateQrSrc?: string;
   password?: string;
   setPassword?: (val: string) => void;
   onSignIn?: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -97,8 +95,6 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   description = "Enter your credentials to access the dashboard",
   heroImageSrc,
   testimonials = [],
-  donateUrl,
-  donateQrSrc,
   password = "",
   setPassword,
   onSignIn,
