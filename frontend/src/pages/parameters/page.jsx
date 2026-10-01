@@ -74,7 +74,7 @@ export default function ParametersPage() {
         <section className="min-h-0 overflow-auto rounded-xl border border-border bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold">Parameter terdeteksi</h2>
           {parameters.length === 0 ? (
-            <p className="text-sm text-text-muted">Provider belum memberikan supported parameters.</p>
+            <p className="text-sm text-text-muted">Provider belum memberikan parameter yang didukung.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {parameters.map(([name, count]) => (
@@ -91,7 +91,7 @@ export default function ParametersPage() {
             <h2 className="text-sm font-semibold">Parameter per model</h2>
             <div className="flex gap-2">
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari model..." className="rounded-lg border border-border bg-bg px-3 py-2 text-xs outline-none" />
-              <button onClick={load} className="rounded-lg border border-border px-3 py-2 text-xs hover:bg-surface-2">Refresh</button>
+              <button onClick={load} className="rounded-lg border border-border px-3 py-2 text-xs hover:bg-surface-2">Perbarui</button>
             </div>
           </div>
           {filtered.length === 0 ? (
