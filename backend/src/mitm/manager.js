@@ -30,10 +30,10 @@ function decryptPassword(stored) {
   }
 }
 
-export function getCachedPassword() {
+const getCachedPassword = () => {
   const password = globalThis.__mitmSudoPassword;
   return typeof password === "string" && password.length > 0 ? password : null;
-}
+};
 
 export function setCachedPassword(password) {
   if (password) globalThis.__mitmSudoPassword = password;
@@ -44,6 +44,8 @@ export function initDbHooks(getSettingsFn, updateSettingsFn) {
   _getSettings = getSettingsFn;
   _updateSettings = updateSettingsFn;
 }
+
+export { getCachedPassword };
 
 export async function loadEncryptedPassword() {
   if (!_getSettings) return null;
