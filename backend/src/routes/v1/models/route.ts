@@ -7,6 +7,7 @@ import {
 } from "../../../shared/constants/providers.js";
 import { getProviderConnections, getCombos, getCustomModels, getModelAliases } from "../../../lib/localDb.js";
 import { getDisabledModels } from "../../../lib/disabledModelsDb.js";
+import { getPricingForModel } from "../../../shared/constants/pricing.js";
 import { resolveKiroModels } from "../../../../open-sse/services/kiroModels.js";
 import { resolveQoderModels } from "../../../../open-sse/services/qoderModels.js";
 
@@ -347,6 +348,8 @@ export async function buildModelsList(kindFilter) {
         if (isDisabled(outputAlias, modelId) || isDisabled(staticAlias, modelId)) continue;
 
         const metadata = liveCompatibleMetadata.get(modelId);
+        const canonicalPricing = getPricingForModel(outputAlias, modelId) || getPricingForModel(staticAlias, modelId);
+        const resolvedPricing = metadata?.pricing || canonicalPricing || null;
         models.push({
           id: outputAlias + "/" + modelId,
           object: "model",
@@ -359,7 +362,8 @@ export async function buildModelsList(kindFilter) {
             max_output: metadata.maxOutput || undefined,
             release_date: metadata.releaseDate || undefined,
             input: metadata.input || undefined,
-            pricing: metadata.pricing || undefined,
+            pricing: resolvedPricing || undefined,
+            pricing_source: metadata?.pricing ? "provider" : canonicalPricing ? "router" : undefined,
             supported_parameters: metadata.supportedParameters || undefined,
           } : {}),
         });
