@@ -169,7 +169,7 @@ async function fetchProjectId(accessToken, signal) {
             const response = await fetch(url, {
                 method: "POST",
                 headers: { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*" },
-                body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA }),
+                body: JSON.stringify({ metadata: LOAD_CODE_ASSIST_METADATA, mode: 1 }),
                 signal
             });
             const text = await response.text().catch(() => "");
@@ -232,7 +232,7 @@ async function reloadProjectId(accessToken, signal) {
 async function onboardUser(accessToken, tierID, externalSignal) {
     console.log(`[ProjectId] Onboarding Antigravity account with tier: ${tierID}`);
     const reqBody = {
-        tier_id: tierID,
+        tierId: tierID,
         metadata: {
             ide_type: "ANTIGRAVITY",
             ide_version: "1.107.0",
