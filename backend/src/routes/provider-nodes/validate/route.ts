@@ -151,6 +151,10 @@ export async function POST_handler(req, res) {
           if (response.status === 429) {
             return { valid: true, status: 429, warning: "API key dikenali, tetapi endpoint sedang rate limit.", detectedVersion: candidate.version, detectedType: "openai-compatible", baseUrl: candidate.url, models: [] };
           }
+          if (response.status === 404) {
+            lastFailure = { valid: false, error: "Endpoint /models tidak ditemukan", status: response.status, version: candidate.version };
+            continue;
+          }
           if (!response.ok) {
             lastFailure = { valid: false, error: "Endpoint mengembalikan HTTP " + response.status, status: response.status, version: candidate.version };
             continue;
@@ -164,6 +168,69 @@ export async function POST_handler(req, res) {
           lastFailure = { valid: false, error: getErrorMessage(error), version: candidate.version };
         }
       }
+
+      // Anthropic Messages-compatible APIs often do not expose GET /models.
+      // Probe /messages so a valid key is not rejected only because model listing is unavailable.
+      for (const candidate of candidates) {
+        try {
+          const response = await fetchWithTimeout(candidate.url + "/messages", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-api-key": apiKey,
+              Authorization: "Bearer " + apiKey,
+              "anthropic-version": "2023-06-01",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              model: "model-detection-probe",
+              max_tokens: 1,
+              messages: [{ role: "user", content: "ping" }],
+            }),
+          }, 8000);
+          if (response.status === 401 || response.status === 403) {
+            lastFailure = { valid: false, error: "API key tidak valid / tidak berwenang", status: response.status, version: candidate.version };
+            continue;
+          }
+          if (response.status === 404) {
+            continue;
+          }
+          if (response.status === 429) {
+            return {
+              valid: true,
+              status: 429,
+              warning: "API key dikenali, tetapi endpoint sedang rate limit.",
+              detectedVersion: candidate.version,
+              detectedType: "anthropic-compatible",
+              baseUrl: candidate.url,
+              models: [],
+              modelCount: 0,
+              freeModelCount: 0,
+              paidModelCount: 0,
+              unknownPricingModelCount: 0,
+              method: "messages-probe",
+            };
+          }
+          if (response.status === 400 || (response.status >= 200 && response.status < 300)) {
+            return {
+              valid: true,
+              detectedVersion: candidate.version,
+              detectedType: "anthropic-compatible",
+              baseUrl: candidate.url,
+              models: [],
+              modelCount: 0,
+              freeModelCount: 0,
+              paidModelCount: 0,
+              unknownPricingModelCount: 0,
+              method: "messages-probe",
+              warning: "Key valid, tetapi provider tidak menyediakan daftar model melalui /models.",
+            };
+          }
+        } catch (error) {
+          lastFailure = { valid: false, error: getErrorMessage(error), version: candidate.version };
+        }
+      }
+
       return lastFailure;
     };
 
