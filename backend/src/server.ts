@@ -3,6 +3,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import path from "node:path";
+import os from "node:os";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { authMiddleware } from "./middleware/auth.js";
 import { buildAutoRouter } from "./autoRouter.js";
@@ -13,6 +15,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FRONTEND_DIST = path.resolve(__dirname, "../../frontend/dist");
 
 const app = express();
+
+// Lightweight in-process diagnostics. Never store request bodies, tokens, cookies,
+// API keys, or other credentials here. These entries are intentionally bounded.
+type RuntimeError = { timestamp: string; type: string; message: string; stack?: string };
+const runtimeErrors: RuntimeError[] = [];
+const pushRuntimeError = (type: string, error: unknown) => {
+  const err = error instanceof Error ? error : new Error(String(error));
+  runtimeErrors.push({
+    timestamp: new Date().toISOString(),
+    type,
+    message: err.message,
+    stack: err.stack,
+  });
+  if (runtimeErrors.length > 50) runtimeErrors.shift();
+};
+
+process.on("unhandledRejection", (reason) => {
+  pushRuntimeError("unhandledRejection", reason);
+  console.error("[runtime] unhandledRejection:", reason);
+});
+process.on("uncaughtException", (error) => {
+  pushRuntimeError("uncaughtException", error);
+  console.error("[runtime] uncaughtException:", error);
+  process.exit(1);
+});
 
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
@@ -34,7 +61,36 @@ app.use(express.urlencoded({ extended: true, limit: "128mb" }));
 
 // ─── Health Check (no auth) ────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", version: "3.0.0", ts: Date.now() });
+  res.status(200).json({
+    status: "ok",
+    version: "3.0.0",
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Safe public diagnostics: useful for Railway/container troubleshooting without
+// exposing secrets or environment variable values.
+app.get("/api/diagnostics", (_req, res) => {
+  const memory = process.memoryUsage();
+  res.status(200).json({
+    status: "ok",
+    service: process.env.RAILWAY_SERVICE_NAME || "max-router",
+    environment: process.env.NODE_ENV || "development",
+    node: process.version,
+    platform: process.platform,
+    hostname: os.hostname(),
+    pid: process.pid,
+    port: PORT,
+    uptimeSeconds: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+    memoryMb: {
+      rss: Math.round(memory.rss / 1024 / 1024),
+      heapUsed: Math.round(memory.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(memory.heapTotal / 1024 / 1024),
+    },
+    recentErrors: runtimeErrors.slice(-20),
+  });
 });
 
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
@@ -102,6 +158,7 @@ async function start() {
 }
 
 start().catch((err) => {
+  pushRuntimeError("startup", err);
   console.error("Failed to start server:", err);
   process.exit(1);
 });
