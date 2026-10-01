@@ -167,7 +167,7 @@ export async function POST_handler(req, res) {
           return res.json({ valid: false, error: "Invalid API key" });
         }
 
-        const model = "test";
+        const fallbackModel = "test";
         const chatRes = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
@@ -175,7 +175,7 @@ export async function POST_handler(req, res) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model,
+            model: fallbackModel,
             max_tokens: 1,
             stream: false,
             messages: [{ role: "user", content: "ping" }],
