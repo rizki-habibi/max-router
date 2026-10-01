@@ -169,13 +169,8 @@ export const APIKEY_PROVIDERS = {
   "jina-reader": { id: "jina-reader", alias: "jina", name: "Jina Reader", icon: "menu_book", color: "#000000", textIcon: "JR", website: "https://jina.ai/reader", notice: { apiKeyUrl: "https://jina.ai/?sui=apikey" }, serviceKinds: ["webFetch"], fetchConfig: { baseUrl: "https://r.jina.ai", method: "GET", authType: "apikey", authHeader: "bearer", costPerQuery: 0, freeMonthlyQuota: 1000000, formats: ["markdown", "text", "html"], maxCharacters: 200000, timeoutMs: 30000 } },
 };
 
-// Web Cookie Providers (use browser session cookie instead of API key)
-export const WEB_COOKIE_PROVIDERS = {
-  "grok-web": { id: "grok-web", alias: "gw", name: "Grok Web (Subscription)", icon: "auto_awesome", color: "#1DA1F2", textIcon: "GW", website: "https://grok.com", authType: "cookie", authHint: "Paste your sso= cookie value from grok.com", passthroughModels: true, serviceKinds: ["llm"] },
-  "perplexity-web": { id: "perplexity-web", alias: "pw", name: "Perplexity Web (Pro/Max)", icon: "search", color: "#20808D", textIcon: "PW", website: "https://www.perplexity.ai", authType: "cookie", authHint: "Paste your __Secure-next-auth.session-token cookie value from perplexity.ai", serviceKinds: ["llm"] },
-  leonardo: { id: "leonardo", alias: "leo", name: "Leonardo AI", icon: "brush", color: "#7C3AED", textIcon: "LEO", website: "https://app.leonardo.ai", authType: "cookie", authHint: "Open app.leonardo.ai → DevTools → Application → Cookies → copy the value of the '__Secure-next-auth.session-token' cookie (starts with eyJ...)", serviceKinds: ["image", "video"], notice: { signupUrl: "https://leonardo.ai" }, deprecated: true },
-  // weavy removed — automation scripts deleted in v0.6.0
-};
+// Web Cookie Providers removed: Max Router exposes compatible provider nodes only.
+export const WEB_COOKIE_PROVIDERS = {};
 
 // Media provider kinds — each kind maps to a route and endpoint config
 export const MEDIA_PROVIDER_KINDS = [
