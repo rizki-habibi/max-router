@@ -11,7 +11,7 @@ const configuredBaseUrl = process.env.ANTIGRAVITY_BASE_URL?.trim();
 
 export const ANTIGRAVITY_BASE_URL = (
   configuredBaseUrl || "https://cloudcode-pa.googleapis.com"
-).replace(/\\/+$/, "");
+).replace(/\/+$/, "");
 
 export const ANTIGRAVITY_API_VERSION = "v1internal";
 
