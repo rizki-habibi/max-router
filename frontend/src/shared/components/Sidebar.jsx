@@ -18,7 +18,7 @@ const navItems = [
   { href: "/dashboard/antigravity", label: "Compatible CLI", icon: "terminal" },
   { href: "/dashboard/combos", label: "Combos", icon: "layers" },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
-  { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
+  { href: "/dashboard/parameters", label: "Parameter", icon: "tune" },
 ];
 
 const debugItems = [
