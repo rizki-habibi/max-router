@@ -1,4 +1,6 @@
-import { ANTIGRAVITY_ENDPOINTS } from "../constants/antigravity.js";\n/**
+import { ANTIGRAVITY_ENDPOINTS } from "../constants/antigravity.js";
+
+/**
  * Usage Fetcher - Get usage/quota/balance data from provider APIs
  * Ported from 9router monolith open-sse/services/usage.js
  */
@@ -290,7 +292,7 @@ async function getGeminiUsage(accessToken, providerSpecificData, proxyOptions = 
     let response;
     try {
       response = await proxyAwareFetch(
-        "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota",
+        `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:retrieveUserQuota`,
         {
           method: "POST",
           headers: {
@@ -354,7 +356,7 @@ async function getGeminiSubscriptionInfo(accessToken, proxyOptions = null) {
   const timeoutId = setTimeout(() => controller.abort(), 10000);
   try {
     const response = await proxyAwareFetch(
-      "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+      ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
       {
         method: "POST",
         headers: {
