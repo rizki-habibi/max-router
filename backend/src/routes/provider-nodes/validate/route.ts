@@ -62,7 +62,7 @@ const readErrorBody = async (response) => {
 
 const isAuthFailure = (status) => status === 401 || status === 403;
 
-const isReachableInferenceStatus = (status) => !isAuthFailure(status) && status < 500;
+const isReachableInferenceStatus = (status) => status === 429 || (status >= 200 && status < 300);
 
 const trimBaseUrl = (baseUrl) => baseUrl.trim().replace(/\/$/, "");
 
@@ -70,9 +70,10 @@ const trimBaseUrl = (baseUrl) => baseUrl.trim().replace(/\/$/, "");
 export async function POST_handler(req, res) {
   try {
     const body = req.body;
-    const { baseUrl, apiKey, type, modelId, apiType = "chat" } = body;
+    const { baseUrl, type, modelId, apiType = "chat" } = body;
+    const normalizedApiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
 
-    if (!baseUrl || !apiKey) {
+    if (!baseUrl || !normalizedApiKey) {
       return res.status(400).json({ error: "Base URL and API key required" });
     }
 
@@ -122,7 +123,7 @@ export async function POST_handler(req, res) {
       const upstreamRes = await fetchWithTimeout(modelsUrl, {
         method: "GET",
         headers: {
-          "x-api-key": apiKey,
+          "x-api-key": normalizedApiKey,
           "anthropic-version": "2023-06-01",
           "Authorization": `Bearer ${apiKey}`
         }
@@ -139,7 +140,7 @@ export async function POST_handler(req, res) {
         const messagesRes = await fetchWithTimeout(`${normalizedBase}/messages`, {
           method: "POST",
           headers: {
-            "x-api-key": apiKey,
+            "x-api-key": normalizedApiKey,
             "anthropic-version": "2023-06-01",
             "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json",
