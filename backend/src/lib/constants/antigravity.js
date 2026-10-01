@@ -1,31 +1,32 @@
-/**
- * Canonical Antigravity / Google Cloud Code Assist endpoint configuration.
- *
- * The public Gemini CLI source uses this Cloud Code endpoint:
- * https://daily-cloudcode-pa.googleapis.com
- *
- * Consumer Antigravity accounts use the daily Cloud Code backend. Enterprise
- * deployments can override ANTIGRAVITY_BASE_URL explicitly.
- */
-const configuredBaseUrl = process.env.ANTIGRAVITY_BASE_URL?.trim();
-
-export const ANTIGRAVITY_BASE_URL = (
-  configuredBaseUrl || "https://daily-cloudcode-pa.googleapis.com"
-).replace(/\/+$/, "");
+/** Antigravity / Google Cloud Code Assist endpoint configuration. */
+const trimBase = (value) => String(value || "").trim().replace(/\/+$/, "");
 
 export const ANTIGRAVITY_API_VERSION = "v1internal";
+export const ANTIGRAVITY_BASE_URL = trimBase(process.env.ANTIGRAVITY_BASE_URL || "https://daily-cloudcode-pa.googleapis.com");
 
-// The onboarding control-plane uses the daily Cloud Code endpoint.
-export const ANTIGRAVITY_DAILY_BASE_URL = (
-  process.env.ANTIGRAVITY_DAILY_BASE_URL?.trim() || "https://daily-cloudcode-pa.googleapis.com"
-).replace(/\/+$/, "");
+const parseEndpoints = (value, fallback) => (value || fallback.join(",")).split(",").map(trimBase).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+export const ANTIGRAVITY_ENDPOINT_FALLBACKS = Object.freeze(parseEndpoints(process.env.ANTIGRAVITY_ENDPOINTS, [
+  "https://daily-cloudcode-pa.googleapis.com",
+  "https://daily-cloudcode-pa.sandbox.googleapis.com",
+  "https://autopush-cloudcode-pa.sandbox.googleapis.com",
+  "https://cloudcode-pa.googleapis.com",
+]));
 
+export const ANTIGRAVITY_LOAD_ENDPOINTS = Object.freeze(parseEndpoints(process.env.ANTIGRAVITY_LOAD_ENDPOINTS, [
+  "https://cloudcode-pa.googleapis.com",
+  "https://daily-cloudcode-pa.googleapis.com",
+  "https://daily-cloudcode-pa.sandbox.googleapis.com",
+  "https://autopush-cloudcode-pa.sandbox.googleapis.com",
+]));
+
+const endpoint = (base, method) => base + "/" + ANTIGRAVITY_API_VERSION + ":" + method;
 export const ANTIGRAVITY_ENDPOINTS = Object.freeze({
-  loadCodeAssist: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:loadCodeAssist`,
-  onboardUser: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:onboardUser`,
-  dailyOnboardUser: `${ANTIGRAVITY_DAILY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:onboardUser`,
-  fetchAvailableModels: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:fetchAvailableModels`,
-  generateContent: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:generateContent`,
-  streamGenerateContent: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:streamGenerateContent`,
-  retrieveUserQuota: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:retrieveUserQuota`,
+  loadCodeAssist: endpoint(ANTIGRAVITY_BASE_URL, "loadCodeAssist"),
+  onboardUser: endpoint(ANTIGRAVITY_BASE_URL, "onboardUser"),
+  dailyOnboardUser: endpoint("https://daily-cloudcode-pa.googleapis.com", "onboardUser"),
+  fetchAvailableModels: endpoint(ANTIGRAVITY_BASE_URL, "fetchAvailableModels"),
+  generateContent: endpoint(ANTIGRAVITY_BASE_URL, "generateContent"),
+  streamGenerateContent: endpoint(ANTIGRAVITY_BASE_URL, "streamGenerateContent"),
+  retrieveUserQuota: endpoint(ANTIGRAVITY_BASE_URL, "retrieveUserQuota"),
+  endpoint,
 });
