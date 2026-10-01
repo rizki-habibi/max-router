@@ -61,7 +61,8 @@ app.use(express.urlencoded({ extended: true, limit: "128mb" }));
 // ─── Health Check (no auth) ────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
   res.status(200).json({
-    status: "ok",
+    status: startupReady ? "ok" : "starting",
+    ready: startupReady,
     version: "3.0.0",
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
@@ -83,6 +84,7 @@ app.get("/api/diagnostics", (_req, res) => {
     port: PORT,
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
+    ready: startupReady,
     memoryMb: {
       rss: Math.round(memory.rss / 1024 / 1024),
       heapUsed: Math.round(memory.heapUsed / 1024 / 1024),
