@@ -38,6 +38,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
     if (node) {
       setFormData({
         name: node.name || "",
+        iconUrl: node.iconUrl || "",
         prefix: node.prefix || "",
         apiType: node.apiType || "chat",
         baseUrl: node.baseUrl || (isAnthropic ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1"),
@@ -104,21 +105,21 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
   if (!node) return null;
 
   return (
-    <Modal isOpen={isOpen} title={`Edit ${isAnthropic ? "Anthropic" : "OpenAI"} Compatible`} onClose={onClose}>
+    <Modal isOpen={isOpen} title="Edit Provider Kompatibel" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <Input
           label="Name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder={`${isAnthropic ? "Anthropic" : "OpenAI"} Compatible (Prod)`}
+          placeholder="Provider Kompatibel (Prod)"
           hint="Required. A friendly label for this node."
         />
         <Input
-          label="Prefix"
-          value={formData.prefix}
-          onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+          label="Icon URL (opsional)"
+          value={formData.iconUrl || ""}
+          onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
           placeholder={isAnthropic ? "ac-prod" : "oc-prod"}
-          hint="Required. Used as the provider prefix for model IDs."
+          hint="URL HTTPS logo resmi provider."
         />
         {!isAnthropic && (
           <Select
