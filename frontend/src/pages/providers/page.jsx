@@ -982,7 +982,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
           <textarea
             value={apiKeys}
             onChange={(e) => setApiKeys(e.target.value)}
-            onKeyDown={(e) => e.stopPropagation()}
+            onKeyDownCapture={(e) => { if (e.key === "Enter") e.stopPropagation(); }}
             rows={7}
             className="w-full rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs"
             placeholder={"key-pertama\\nkey-kedua\\nkey-ketiga"}
