@@ -17,7 +17,7 @@ const Combos          = lazy(() => import("./pages/combos/page"));
 const Endpoint        = lazy(() => import("./pages/endpoint/page"));
 const Translator      = lazy(() => import("./pages/translator/page"));
 const Automation      = lazy(() => import("./pages/automation/page"));
-const AntigravityTerminal = lazy(() => import("./pages/antigravity-terminal/page"));
+const CompatibleCLI = lazy(() => import("./pages/compatible-cli/page"));
 const CompatibleChat = lazy(() => import("./pages/compatible-chat/page"));
 const ModelDetection = lazy(() => import("./pages/model-detection/page"));
 const Parameters = lazy(() => import("./pages/parameters/page"));
@@ -109,7 +109,7 @@ export default function App() {
             <Route path="automation/ammail-tutorial" element={<AmmailTutorial />} />
             <Route path="chat" element={<CompatibleChat />} />
             <Route path="model-detection" element={<ModelDetection />} />
-            <Route path="antigravity" element={<AntigravityTerminal />} />
+            <Route path="compatible-cli" element={<CompatibleCLI />} />
             <Route path="profile"         element={<Profile />} />
             <Route path="console-log"     element={<ConsoleLog />} />
           </Route>
