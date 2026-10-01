@@ -1,4 +1,4 @@
-/**
+import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";\n/**
  * Usage Fetcher - Get usage data from provider APIs
  */
 
@@ -31,8 +31,8 @@ const MINIMAX_USAGE_URLS = {
 
 // Antigravity API config (from Quotio)
 const ANTIGRAVITY_CONFIG = {
-  quotaApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
-  loadProjectApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+  quotaApiUrl: ANTIGRAVITY_ENDPOINTS.fetchAvailableModels,
+  loadProjectApiUrl: ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
   tokenUrl: "https://oauth2.googleapis.com/token",
   clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
   clientSecret: "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",
