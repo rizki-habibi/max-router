@@ -322,11 +322,11 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Verify Antigravity CLI page
+      - name: Verify Compatible CLI page
         working-directory: frontend
         run: |
           test -f src/pages/antigravity-terminal/page.tsx
           grep -q '/api/v1/chat/completions' src/pages/antigravity-terminal/page.tsx
-          grep -q 'MODEL = "claude-opus-4-6-thinking"' src/pages/antigravity-terminal/page.tsx
+          grep -q 'Compatible CLI' src/pages/antigravity-terminal/page.tsx
           grep -q 'path="antigravity"' src/App.tsx
           echo "Antigravity CLI page audit: OK"
