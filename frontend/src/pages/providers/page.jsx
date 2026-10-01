@@ -118,8 +118,7 @@ export default function ProvidersPage() {
   const [loading, setLoading] = useState(true);
   const [showAllApikey, setShowAllApikey] = useState(false);
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
-  const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] =
-    useState(false);
+  const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] = useState(false);
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
   const notify = useNotificationStore();
@@ -272,7 +271,7 @@ export default function ProvidersPage() {
     .filter((node) => node.type === "openai-compatible")
     .map((node) => ({
       id: node.id,
-      name: node.name || "OpenAI Compatible",
+      name: node.name || "Provider Kompatibel",
       color: "#10A37F",
       textIcon: "OC",
       apiType: node.apiType,
@@ -283,7 +282,7 @@ export default function ProvidersPage() {
     .filter((node) => node.type === "anthropic-compatible")
     .map((node) => ({
       id: node.id,
-      name: node.name || "Anthropic Compatible",
+      name: node.name || "Provider Kompatibel",
       color: "#D97757",
       textIcon: "AC",
     }))
@@ -329,7 +328,7 @@ export default function ProvidersPage() {
         </div>
       )}
 
-      {/* Custom Providers (OpenAI/Anthropic Compatible) — dynamic */}
+      {/* Provider Kompatibel — dynamic */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
@@ -342,7 +341,7 @@ export default function ProvidersPage() {
               onClick={() => setShowAddAnthropicCompatibleModal(true)}
               className="w-full sm:w-auto"
             >
-              Add Anthropic Compatible
+              Tambah Kompatibel (Messages)
             </Button>
             <Button
               size="sm"
@@ -351,7 +350,7 @@ export default function ProvidersPage() {
               onClick={() => setShowAddCompatibleModal(true)}
               className="w-full !bg-white !text-black hover:!bg-gray-100 sm:w-auto"
             >
-              Add OpenAI Compatible
+              Tambah Kompatibel (OpenAI)
             </Button>
           </div>
         </div>
@@ -359,7 +358,7 @@ export default function ProvidersPage() {
         anthropicCompatibleProviders.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
             <span className="material-symbols-outlined text-[18px]">extension</span>
-            <span>No custom providers — use buttons above to add OpenAI/Anthropic compatible endpoints</span>
+            <span>Belum ada provider kompatibel — tambahkan endpoint OpenAI-compatible atau Anthropic Messages-compatible.</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -815,6 +814,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
     prefix: "",
     apiType: "chat",
     baseUrl: "https://api.openai.com/v1",
+    iconUrl: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [checkKey, setCheckKey] = useState("");
@@ -847,6 +847,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
         body: JSON.stringify({
           name: formData.name,
           prefix: formData.prefix,
+          iconUrl: formData.iconUrl,
           apiType: formData.apiType,
           baseUrl: formData.baseUrl,
           type: "openai-compatible",
@@ -860,6 +861,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           prefix: "",
           apiType: "chat",
           baseUrl: "https://api.openai.com/v1",
+          iconUrl: "",
         });
         setCheckKey("");
         setValidationResult(null);
@@ -937,7 +939,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="OpenAI Compatible (Prod)"
-          hint="Required. A friendly label for this node."
+          hint="Nama tampilan provider kompatibel."
         />
         <Input
           label="Prefix"
@@ -1020,6 +1022,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
     name: "",
     prefix: "",
     baseUrl: "https://api.anthropic.com/v1",
+    iconUrl: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [checkKey, setCheckKey] = useState("");
@@ -1061,6 +1064,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
           name: "",
           prefix: "",
           baseUrl: "https://api.anthropic.com/v1",
+          iconUrl: "",
         });
         setCheckKey("");
         setValidationResult(null);
