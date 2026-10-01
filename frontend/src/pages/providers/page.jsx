@@ -290,24 +290,11 @@ export default function ProvidersPage() {
     }))
     .filter((p) => matchSearch(p.name));
 
-  const oauthEntries = Object.entries(OAUTH_PROVIDERS).filter(
-    ([, info]) => !info.hidden && matchSearch(info.name),
-  );
-  const freeEntries = Object.entries(FREE_PROVIDERS).filter(
-    ([, info]) => !info.hidden && matchSearch(info.name),
-  );
-  const freeTierEntries = Object.entries(FREE_TIER_PROVIDERS).filter(
-    ([, info]) => !info.hidden && matchSearch(info.name),
-  );
-  const apikeyEntries = sortByPriority(
-    Object.entries(APIKEY_PROVIDERS).filter(
-      ([, info]) =>
-        !info.hidden &&
-        (info.serviceKinds ?? ["llm"]).includes("llm") &&
-        matchSearch(info.name),
-    ),
-    "apikey",
-  );
+  // Max Router is intentionally compatible-provider-only. Legacy built-in services are disabled.
+  const oauthEntries = [];
+  const freeEntries = [];
+  const freeTierEntries = [];
+  const apikeyEntries = [];
   const isApikeySearching = !!searchQuery.trim();
   const visibleApikeyEntries =
     isApikeySearching || showAllApikey
