@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Button } from "@/shared/components";
 
@@ -181,6 +181,9 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [testingAll, setTestingAll] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [apiError, setApiError] = useState(null);
+  const [bulkAction, setBulkAction] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [disabledModelIds, setDisabledModelIds] = useState([]);
 
   const handleTestModel = async (modelId, fromAll = false) => {
     if (testingModelId || (testingAll && !fromAll)) return false;
@@ -201,6 +204,14 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     } finally { setTestingModelId(null); }
   };
 
+  const handleLoadDisabled = async () => {
+    try {
+      const res = await fetch(`/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}`, { cache: "no-store" });
+      const data = await res.json();
+      setDisabledModelIds(Array.isArray(data.ids) ? data.ids : []);
+    } catch { setDisabledModelIds([]); }
+  };
+
   const handleTestAll = async () => {
     if (testingAll || testingModelId || allModels.length === 0) return;
     setTestingAll(true);
@@ -217,6 +228,37 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     fullModel,
     alias,
   }));
+
+  const errorModels = allModels.filter(({ modelId }) => modelTestResults[modelId] === "error");
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || errorModels.length === 0 || bulkBusy) return;
+    setBulkBusy(true);
+    try {
+      if (bulkAction === "delete") {
+        for (const item of errorModels) await onDeleteAlias(item.alias);
+        setModelTestResults((prev) => {
+          const next = { ...prev };
+          errorModels.forEach(({ modelId }) => delete next[modelId]);
+          return next;
+        });
+      } else if (bulkAction === "disable") {
+        const ids = errorModels.map(({ modelId }) => modelId);
+        const res = await fetch("/api/models/disabled", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ providerAlias: providerStorageAlias, ids }),
+        });
+        if (!res.ok) throw new Error("Gagal menonaktifkan model error.");
+        setDisabledModelIds((prev) => [...new Set([...prev, ...ids])]);
+      }
+      setBulkAction(null);
+    } catch (error) {
+      setApiError({ status: 0, statusText: "", url: "/api/models/disabled", contentType: "", raw: "", isHtml: false, message: error?.message || "Aksi model gagal." });
+    } finally { setBulkBusy(false); }
+  };
+
+  useEffect(() => { handleLoadDisabled(); }, [providerStorageAlias]);
 
   const generateDefaultAlias = (modelId) => {
     const parts = modelId.split("/");
@@ -368,6 +410,10 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           {importing ? "Importing..." : "Import from /models"}
         </Button>
         <Button size="sm" variant="secondary" icon="science" onClick={handleTestAll} disabled={testingAll || !!testingModelId || allModels.length === 0}>{testingAll ? "Menguji semua..." : "Tes Semua Model"}</Button>
+        {errorModels.length > 0 && <>
+          <Button size="sm" variant="secondary" icon="block" onClick={() => setBulkAction("disable")}>Nonaktifkan Error ({errorModels.length})</Button>
+          <Button size="sm" variant="secondary" icon="delete_sweep" onClick={() => setBulkAction("delete")}>Hapus Error ({errorModels.length})</Button>
+        </>}
       </div>
 
       {!canImport && (
@@ -425,6 +471,26 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         </div>
       )}
     </div>
+    {bulkAction && (
+      <div className="fixed inset-0 z-[115] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+          <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+            <span className="material-symbols-outlined text-amber-500">{bulkAction === "delete" ? "delete_sweep" : "block"}</span>
+            <div>
+              <h2 className="text-base font-semibold">{bulkAction === "delete" ? "Hapus semua model error?" : "Nonaktifkan semua model error?"}</h2>
+              <p className="mt-1 text-xs text-text-muted">{errorModels.length} model yang hasil tesnya gagal akan {bulkAction === "delete" ? "dihapus dari daftar." : "disembunyikan dari pemilihan model aktif."}</p>
+            </div>
+          </div>
+          <div className="px-5 py-4 max-h-48 overflow-auto space-y-1">
+            {errorModels.map(({ modelId }) => <div key={modelId} className="rounded-lg border border-border px-3 py-2 text-xs font-mono break-all">{modelId}</div>)}
+          </div>
+          <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+            <Button size="sm" variant="secondary" onClick={() => setBulkAction(null)} disabled={bulkBusy}>Batal</Button>
+            <Button size="sm" icon={bulkAction === "delete" ? "delete_sweep" : "block"} onClick={handleBulkAction} disabled={bulkBusy}>{bulkBusy ? "Memproses..." : bulkAction === "delete" ? "Hapus semua" : "Nonaktifkan semua"}</Button>
+          </div>
+        </div>
+      </div>
+    )}
     {deleteTarget && (
       <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-model-title">
         <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
