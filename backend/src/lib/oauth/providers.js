@@ -27,6 +27,7 @@ import {
   getOAuthClientMetadata,
 } from "./constants/oauth.js";
 import { XAI_CONFIG, XAI_PKCE_VERIFIER_BYTES } from "./constants/xai.js";
+import { ANTIGRAVITY_ENDPOINTS } from "./constants/antigravity.js";
 
 // Inlined from services/xai.js to keep web route bundle free of `open` (CLI-only) package
 let cachedXaiDiscovery = null;
@@ -361,7 +362,7 @@ const PROVIDERS = {
       let projectId = "";
       try {
         const projectRes = await fetch(
-          "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+          ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
           {
             method: "POST",
             headers: {
