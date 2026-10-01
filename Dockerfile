@@ -30,7 +30,6 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/frontend/dist ./frontend/dist
-# Optional automation and MITM routes launch runtime scripts from this tree.
 # Generated browser profiles are excluded by .dockerignore.
 COPY backend/src ./backend/src
 
