@@ -1,0 +1,196 @@
+name: Max Router - Deteksi Runtime Antigravity
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  antigravity-runtime-audit:
+    name: Audit Antigravity Executor
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        working-directory: .
+        run: npm install --no-audit --no-fund --workspaces
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Scan source untuk errorInfo undefined
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+
+          const file = 'open-sse/executors/antigravity.js';
+          const source = fs.readFileSync(file, 'utf8');
+
+          const declarations = [...source.matchAll(/\\b(?:const|let|var)\\s+errorInfo\\b/g)];
+          const references = [...source.matchAll(/\\berrorInfo\\b/g)];
+
+          console.log('errorInfo declarations:', declarations.map(m => m.index));
+          console.log('errorInfo references:', references.map(m => m.index));
+
+          if (!declarations.length) {
+            throw new Error('FAIL: antigravity.js tidak memiliki deklarasi errorInfo');
+          }
+
+          // Detect the exact corruption that previously produced:
+          // "errorInfo is not defined"
+          if (source.includes('\\\\n          const errorInfo')) {
+            throw new Error('FAIL: ditemukan literal \\n sebelum const errorInfo');
+          }
+
+          // Print every surrounding occurrence for CI diagnostics.
+          for (const match of references) {
+            const start = Math.max(0, match.index - 140);
+            const end = Math.min(source.length, match.index + 220);
+            console.log('--- errorInfo context ---');
+            console.log(source.slice(start, end));
+          }
+
+          console.log('Static errorInfo scan: PASS');
+          NODE
+
+      - name: ESLint no-undef pada executor
+        run: |
+          npx --yes eslint@9 open-sse/executors/antigravity.js \
+            --no-config \
+            --rule 'no-undef:error' \
+            --global process \
+            --global console \
+            --global URL \
+            --global Headers \
+            --global Response \
+            --global AbortController \
+            --global TextEncoder \
+            --global TextDecoder \
+            --global Buffer \
+            --global fetch \
+            --global crypto
+
+      - name: Syntax check seluruh executor JavaScript
+        run: |
+          find open-sse src -type f -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file" || exit 1
+          done
+
+      - name: Audit compiled dist
+        run: |
+          test -f dist/open-sse/executors/antigravity.js
+
+          if grep -nF '\\\\n          const errorInfo' dist/open-sse/executors/antigravity.js; then
+            echo 'FAIL: dist masih mengandung literal newline corruption pada errorInfo'
+            exit 1
+          fi
+
+          if grep -nF 'errorInfo is not defined' dist/open-sse/executors/antigravity.js; then
+            echo 'FAIL: pesan runtime error ditemukan di compiled executor'
+            exit 1
+          fi
+
+          echo 'Compiled Antigravity audit: PASS'
+
+      - name: Unit smoke test parser quota
+        run: |
+          node --input-type=module - <<'NODE'
+          const { AntigravityExecutor } = await import('./open-sse/executors/antigravity.js');
+
+          const executor = new AntigravityExecutor();
+          const response = new Response(
+            JSON.stringify({
+              error: {
+                message: 'You exceeded your current quota (reset after 30s)'
+              }
+            }),
+            { status: 403, headers: { 'content-type': 'application/json' } }
+          );
+
+          const parsed = executor.parseError(
+            response,
+            JSON.stringify({
+              error: {
+                message: 'You exceeded your current quota (reset after 30s)'
+              }
+            })
+          );
+
+          console.log('Parsed quota:', JSON.stringify(parsed));
+
+          if (parsed.status !== 403) {
+            throw new Error('FAIL: upstream quota status harus tetap 403, mendapat ' + parsed.status);
+          }
+
+          if (!parsed.resetsAtMs || parsed.resetsAtMs <= Date.now()) {
+            throw new Error('FAIL: resetsAtMs tidak dihitung');
+          }
+
+          if (!/quota/i.test(parsed.message)) {
+            throw new Error('FAIL: pesan quota hilang');
+          }
+
+          console.log('Quota parser smoke test: PASS');
+          NODE
+
+      - name: Runtime smoke test
+        env:
+          NODE_ENV: test
+          PORT: 20222
+        run: |
+          timeout 30s npm start > /tmp/max-router-runtime.log 2>&1 &
+          PID=$!
+          sleep 6
+
+          if ! kill -0 "$PID" 2>/dev/null; then
+            cat /tmp/max-router-runtime.log
+            exit 1
+          fi
+
+          node --input-type=module - <<'NODE'
+          const health = await fetch('http://127.0.0.1:20222/api/health');
+          const body = await health.text();
+          console.log('HEALTH:', health.status, body);
+
+          if (!health.ok) {
+            throw new Error('Health endpoint gagal');
+          }
+
+          if (/errorInfo is not defined/i.test(body)) {
+            throw new Error('Health mengandung errorInfo is not defined');
+          }
+          NODE
+
+          cat /tmp/max-router-runtime.log
+
+          if grep -niE 'errorInfo is not defined|ReferenceError: errorInfo|SyntaxError' /tmp/max-router-runtime.log; then
+            echo 'FAIL: runtime mengandung errorInfo undefined/syntax error'
+            exit 1
+          fi
+
+          kill "$PID" || true
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: antigravity-runtime-diagnostics
+          path: /tmp/max-router-runtime.log
+          if-no-files-found: ignore
