@@ -284,6 +284,9 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
           proxyUrl.searchParams.set("app_port", appPort);
           proxyUrl.searchParams.set("state", data.state);
           proxyUrl.searchParams.set("redirect_uri", redirectUri);
+          if (provider === "antigravity" && data.codeVerifier) {
+            proxyUrl.searchParams.set("code_verifier", data.codeVerifier);
+          }
           const proxyRes = await fetch(proxyUrl.toString());
           const proxyData = await proxyRes.json();
           antigravityProxyActive = proxyData.success;
