@@ -182,7 +182,8 @@ jobs:
 
           const checks = [
             ['Antigravity provider', 'antigravity'],
-            ['Antigravity fetchAvailableModels endpoint', 'v1internal:fetchAvailableModels'],
+            ['Antigravity fetchAvailableModels endpoint', 'fetchAvailableModels'],
+            ['Antigravity internal API version', 'ANTIGRAVITY_API_VERSION'],
             ['Antigravity object-model parser', 'Object.entries(data.models)'],
             ['Provider connections API', '/api/providers'],
             ['Model endpoint', '/models'],
