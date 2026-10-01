@@ -28,6 +28,34 @@ async function readApiResponse(res) {
   };
 }
 
+function getCapabilityTags(model) {
+  const id = String(model?.id || model?.modelId || "").toLowerCase();
+  const caps = model?.capabilities || {};
+  const params = Array.isArray(model?.supportedParameters) ? model.supportedParameters : [];
+  const tags = [];
+  if (id.includes("atria-dawn-preview")) {
+    tags.push(["code", "Coding"], ["smart_toy", "Agent"], ["psychology", "Reasoning"], ["text_fields", "Teks saja"]);
+  } else {
+    if (caps.tools || params.some((p) => /tool|function/i.test(String(p)))) tags.push(["build", "Tools"]);
+    if (caps.vision || params.some((p) => /vision|image/i.test(String(p)))) tags.push(["image", "Vision"]);
+    if (caps.reasoning || params.some((p) => /reason/i.test(String(p)))) tags.push(["psychology", "Reasoning"]);
+    if (!tags.length) tags.push(["smart_toy", "Chat"]);
+  }
+  if (model?.contextLength || model?.context_window || model?.contextWindow) {
+    const ctx = Number(model.contextLength || model.context_window || model.contextWindow);
+    if (Number.isFinite(ctx) && ctx > 0) tags.push(["data_object", (ctx / 1000 >= 1000 ? (ctx / 1000000).toFixed(0) + "M" : Math.round(ctx / 1000) + "K") + " konteks"]);
+  }
+  return tags;
+}
+function CapabilityBadges({model}) {
+  return <div className="mt-2 flex flex-wrap gap-1">{getCapabilityTags(model).map(([icon,label]) =>
+    <span key={label} className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[9px] text-text-muted">
+      <span className="material-symbols-outlined text-[11px]">{icon}</span>{label}
+    </span>
+  )}</div>;
+}
+CapabilityBadges.propTypes={model:PropTypes.object};
+
 function ModelApiErrorDialog({ error, onClose, onRetry }) {
   if (!error) return null;
 
@@ -103,7 +131,7 @@ function ModelApiErrorDialog({ error, onClose, onRetry }) {
   );
 }
 
-function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
+function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting, metadata }) {
   const borderColor = testStatus === "ok"
     ? "border-green-500/40"
     : testStatus === "error"
@@ -125,7 +153,7 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
         {testStatus === "ok" ? "check_circle" : testStatus === "error" ? "cancel" : "smart_toy"}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{modelId}</p>
+        <p className="text-sm font-medium truncate">{modelId}</p><CapabilityBadges model={metadata || {id:modelId}} />
         <div className="flex items-center gap-1 mt-1">
           <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">{fullModel}</code>
           <div className="relative group/btn">
@@ -556,7 +584,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
             {importedModels.map((model) => (
               <div key={model.id || model.name} className="rounded-lg border border-border px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2"><span className="truncate font-mono">{model.id || model.name}</span><span className={model.accessTier === "free" ? "text-emerald-500" : model.accessTier === "paid" || model.accessTier === "premium" ? "text-amber-500" : "text-text-muted"}>{model.accessTier || "Harga tidak diketahui"}</span></div>
-                <div className="mt-1 text-text-muted">{model.contextWindow ? "Konteks: " + Number(model.contextWindow).toLocaleString("id-ID") : ""}{model.maxOutput ? " · Output: " + Number(model.maxOutput).toLocaleString("id-ID") : ""}</div>
+                <div className="mt-1 text-text-muted">{model.contextWindow ? "Konteks: " + Number(model.contextWindow).toLocaleString("id-ID") : ""}{model.maxOutput ? " · Output: " + Number(model.maxOutput).toLocaleString("id-ID") : ""}</div><CapabilityBadges model={model} />
                 {Array.isArray(model.supportedParameters) && model.supportedParameters.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{model.supportedParameters.map((p) => <span key={p} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{p}</span>)}</div>}
               </div>
             ))}
@@ -586,6 +614,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
                 onTest={connections.length > 0 ? () => handleTestModel(modelId) : undefined}
                 testStatus={modelTestResults[modelId]}
                 isTesting={testingModelId === modelId}
+                metadata={importedModels.find((m) => (m.id || m.modelId) === modelId)}
               />
             ))}
           </div>
