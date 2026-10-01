@@ -1,5 +1,5 @@
 import { getAdapter } from "../driver.js";
-import { stringifyJson }/ from "../helpers/jsonCol.js";
+import { stringifyJson } from "../helpers/jsonCol.js";
 import { makeKv } from "../helpers/kvStore.js";
 
 const aliasKv = makeKv("modelAliases");
