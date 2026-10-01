@@ -1019,7 +1019,17 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
                 <div className="text-lg font-semibold text-text-main">{validation.unknownPricingModelCount ?? 0}</div>
               </div>
             </div>
-            {(validation.supportedParameters?.length > 0 || validation.models?.some((model) => Array.isArray(model.supportedParameters) && model.supportedParameters.length > 0)) && (\n              <div className="mb-3 rounded-lg border border-border bg-surface-2/50 p-2">\n                <div className="mb-2 text-xs font-medium text-text-muted">Parameter yang terdeteksi</div>\n                <div className="flex flex-wrap gap-1.5">\n                  {(validation.supportedParameters || Array.from(new Set(validation.models.flatMap((model) => Array.isArray(model.supportedParameters) ? model.supportedParameters : [])))).map((parameter) => (\n                    <span key={parameter} className="rounded bg-primary/10 px-2 py-1 text-[11px] text-primary">{parameter}</span>\n                  ))}\n                </div>\n              </div>\n            )}\n            {validation.models?.length > 0 && (
+            {(validation.supportedParameters?.length > 0 || validation.models?.some((model) => Array.isArray(model.supportedParameters) && model.supportedParameters.length > 0)) && (
+              <div className="mb-3 rounded-lg border border-border bg-surface-2/50 p-2">
+                <div className="mb-2 text-xs font-medium text-text-muted">Parameter yang terdeteksi</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(validation.supportedParameters || Array.from(new Set(validation.models.flatMap((model) => Array.isArray(model.supportedParameters) ? model.supportedParameters : [])))).map((parameter) => (
+                    <span key={parameter} className="rounded bg-primary/10 px-2 py-1 text-[11px] text-primary">{parameter}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {validation.models?.length > 0 && (
               <div className="mb-3 max-h-40 overflow-y-auto rounded-lg border border-border bg-surface-2/50 p-2">
                 <div className="mb-2 text-xs font-medium text-text-muted">Model yang terdeteksi</div>
                 <div className="grid gap-1 sm:grid-cols-2">
