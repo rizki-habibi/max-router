@@ -32,6 +32,17 @@ function getToastStyle(type) {
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("max-router-sidebar-collapsed") === "1"; } catch { return false; }
+  });
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      try { localStorage.setItem("max-router-sidebar-collapsed", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const { pathname } = useLocation();
   const notifications = useNotificationStore((state) => state.notifications);
   const removeNotification = useNotificationStore((state) => state.removeNotification);
@@ -76,8 +87,8 @@ export default function DashboardLayout() {
       )}
 
       {/* Sidebar - Desktop */}
-      <div className="hidden lg:flex">
-        <Sidebar />
+      <div className="hidden lg:flex min-h-full">
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleSidebarCollapsed} />
       </div>
 
       {/* Sidebar - Mobile */}
