@@ -1,4 +1,5 @@
 import { PROVIDERS } from "../config/providers.js";
+import { ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.js";
 
 const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
@@ -179,11 +180,9 @@ export function buildProviderUrl(provider, model, stream = true, options = {}) {
     }
 
     case "antigravity": {
-      // Use baseUrlIndex from options or default to 0
-      const urlIndex = options?.baseUrlIndex || 0;
-      const baseUrl = config.baseUrls[urlIndex] || config.baseUrls[0];
-      const path = stream ? "/v1internal:streamGenerateContent?alt=sse" : "/v1internal:generateContent";
-      return `${baseUrl}${path}`;
+      return stream
+        ? `${ANTIGRAVITY_ENDPOINTS.streamGenerateContent}?alt=sse`
+        : ANTIGRAVITY_ENDPOINTS.generateContent;
     }
 
     case "codex":
