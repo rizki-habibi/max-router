@@ -34,10 +34,19 @@ export class AntigravityExecutor extends BaseExecutor {
     return {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${credentials.accessToken}`,
-      "User-Agent": this.config.headers?.["User-Agent"] || ANTIGRAVITY_HEADERS["User-Agent"],
+      // Match the current Antigravity client identity used by maintained proxies.
+      // These headers describe the client; they do not grant or manufacture a license.
+      "User-Agent": this.config.headers?.["User-Agent"] || "antigravity/1.107.0",
       "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
+      "Client-Metadata": JSON.stringify({ ideType: 9, platform: 5, pluginType: 2 }),
+      "X-Client-Name": "antigravity",
+      "X-Client-Version": "1.107.0",
+      ...(sessionId && {
+        "X-VSCode-SessionId": sessionId,
+        "X-Machine-Session-Id": sessionId,
+      }),
+      "x-request-source": "local",
       [INTERNAL_REQUEST_HEADER.name]: INTERNAL_REQUEST_HEADER.value,
-      ...(sessionId && { "X-Machine-Session-Id": sessionId }),
       "Accept": stream ? "text/event-stream" : "application/json"
     };
   }
