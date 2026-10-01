@@ -7,7 +7,7 @@ import {
   getProxyPoolById,
 } from "../../models/index.js";
 import { APIKEY_PROVIDERS } from "../../shared/constants/config.js";
-import { AI_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isCustomEmbeddingProvider } from "../../shared/constants/providers.js";
+import { AI_PROVIDERS, FREE_TIER_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isCustomEmbeddingProvider } from "../../shared/constants/providers.js";
 import { normalizeProviderId, normalizeProviderSpecificData } from "../../lib/providerNormalization.js";
 
 export const dynamic = "force-dynamic";
@@ -100,11 +100,9 @@ export async function POST_handler(req, res) {
     }
     const proxyPoolId = proxyPoolResult.proxyPoolId;
 
-    // Validation
-    const isWebCookieProvider = !!WEB_COOKIE_PROVIDERS[provider];
+    // Validation: only configured API-key and compatible provider nodes are supported.
     const isValidProvider = APIKEY_PROVIDERS[provider] ||
       FREE_TIER_PROVIDERS[provider] ||
-      isWebCookieProvider ||
       isOpenAICompatibleProvider(provider) ||
       isAnthropicCompatibleProvider(provider) ||
       isCustomEmbeddingProvider(provider) ||
@@ -114,7 +112,7 @@ export async function POST_handler(req, res) {
       return res.status(400).json({ error: "Invalid provider" });
     }
     if (!apiKey && provider !== "ollama-local") {
-      return res.status(400).json({ error: `${isWebCookieProvider ? "Cookie value" : "API Key"} is required` });
+      return res.status(400).json({ error: "API Key is required" });
     }
     const connectionName = name || displayName || AI_PROVIDERS[provider]?.name;
     if (!connectionName) {
@@ -184,7 +182,7 @@ export async function POST_handler(req, res) {
 
     const newConnection = await createProviderConnection({
       provider,
-      authType: isWebCookieProvider ? "cookie" : "apikey",
+      authType: "apikey",
       name: connectionName,
       apiKey: apiKey || "",
       email: email || "",
