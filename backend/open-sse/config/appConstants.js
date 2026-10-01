@@ -1,4 +1,5 @@
 import { platform, arch } from "os";
+import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
 
 // === Gemini CLI ===
 export const GEMINI_CLI_VERSION = "0.34.0";
@@ -131,8 +132,8 @@ export const ANTIGRAVITY_HEADERS = {
 
 // Cloud Code Assist API
 export const CLOUD_CODE_API = {
-  loadCodeAssist: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
-  onboardUser: "https://cloudcode-pa.googleapis.com/v1internal:onboardUser",
+  loadCodeAssist: ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
+  onboardUser: ANTIGRAVITY_ENDPOINTS.onboardUser,
 };
 
 export const LOAD_CODE_ASSIST_HEADERS = {
