@@ -2,7 +2,7 @@ import { getProviderConnections, validateApiKey, updateProviderConnection, getSe
 import { resolveConnectionProxyConfig } from "../../lib/network/connectionProxy.js";
 import { formatRetryAfter, checkFallbackError, isModelLockActive, buildModelLockUpdate, getEarliestModelLockUntil } from "open-sse/services/accountFallback.js";
 import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
-import { resolveProviderId, FREE_PROVIDERS } from "../../shared/constants/providers.js";
+import { resolveProviderId, FREE_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "../../shared/constants/providers.js";
 import * as log from "../utils/logger.js";
 
 // Mutex to prevent race conditions during account selection
@@ -113,7 +113,8 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     const settings = await getSettings();
     // Per-provider strategy overrides global setting
     const providerOverride = (settings.providerStrategies || {})[providerId] || {};
-    const strategy = providerOverride.fallbackStrategy || settings.fallbackStrategy || "fill-first";
+    const isCompatible = isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
+    const strategy = isCompatible ? "round-robin" : (providerOverride.fallbackStrategy || settings.fallbackStrategy || "fill-first");
 
     let connection;
     // Pin to preferred connection if specified and available
