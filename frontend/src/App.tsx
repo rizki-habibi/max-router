@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import React, { Suspense, lazy } from "react";
 import { DashboardLayout } from "@/shared/components/layouts";
 
 // Lazy-loaded pages (code splitting — loads each page only when needed)
@@ -35,6 +35,44 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+
+class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; message: string }> {
+  state = { hasError: false, message: "" };
+
+  static getDerivedStateFromError(error: unknown) {
+    return {
+      hasError: true,
+      message: error instanceof Error ? error.message : "Kesalahan tampilan tidak diketahui.",
+    };
+  }
+
+  componentDidCatch(error: unknown, info: React.ErrorInfo) {
+    console.error("[UI] Kesalahan render:", error, info);
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex items-center justify-center p-6">
+        <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-xl">
+          <h1 className="text-xl font-semibold mb-2">Tampilan mengalami kesalahan</h1>
+          <p className="text-sm text-text-muted mb-4">
+            Halaman gagal dirender. Data aplikasi tetap aman. Muat ulang untuk mencoba lagi.
+          </p>
+          <pre className="mb-4 max-h-32 overflow-auto rounded-lg bg-black/10 p-3 text-xs text-text-muted whitespace-pre-wrap">{this.state.message}</pre>
+          <button
+            type="button"
+            onClick={() => globalThis.location.reload()}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+          >
+            Muat Ulang
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 function LoadingFallback() {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
@@ -45,7 +83,7 @@ function LoadingFallback() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <AppErrorBoundary><BrowserRouter>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Public */}
@@ -80,6 +118,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </BrowserRouter></AppErrorBoundary>
   );
 }
