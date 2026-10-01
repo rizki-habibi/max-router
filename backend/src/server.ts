@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import path from "node:path";
 import os from "node:os";
-import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { authMiddleware } from "./middleware/auth.js";
 import { buildAutoRouter } from "./autoRouter.js";
@@ -146,12 +145,13 @@ async function start() {
 
   // ─── Error Handler ─────────────────────────────────────────────────────────
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    pushRuntimeError("request", err);
     console.error("[server] unhandled error:", err);
     if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
   });
 
-  app.listen(PORT, () => {
-    console.log(`\n🚀 9Router V3 Backend running on http://localhost:${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`\n🚀 9Router V3 Backend listening on 0.0.0.0:${PORT}`);
     console.log(`   Frontend origin: ${FRONTEND_ORIGIN}`);
     console.log(`   Environment: ${process.env.NODE_ENV || "development"}\n`);
   });
