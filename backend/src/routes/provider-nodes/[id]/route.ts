@@ -6,7 +6,7 @@ export async function PUT_handler(req, res, { params }) {
   try {
     const { id } = await params;
     const body = req.body;
-    const { name, prefix, apiType, baseUrl } = body;
+    const { name, prefix, apiType, baseUrl, iconUrl } = body;
     const node = await getProviderNodeById(id);
 
     if (!node) {
@@ -61,10 +61,19 @@ export async function PUT_handler(req, res, { params }) {
       }
     }
 
+    let sanitizedIconUrl = null;
+    if (typeof iconUrl === "string" && iconUrl.trim()) {
+      try {
+        const icon = new URL(iconUrl.trim());
+        if (["http:", "https:"].includes(icon.protocol)) sanitizedIconUrl = icon.toString();
+      } catch {}
+    }
+
     const updates = {
       name: name.trim(),
       prefix: prefix.trim(),
       baseUrl: sanitizedBaseUrl,
+      iconUrl: sanitizedIconUrl,
     };
 
     if (node.type === "openai-compatible") {
@@ -82,6 +91,7 @@ export async function PUT_handler(req, res, { params }) {
           apiType: node.type === "openai-compatible" ? apiType : undefined,
           baseUrl: sanitizedBaseUrl,
           nodeName: updated.name,
+          iconUrl: sanitizedIconUrl,
         }
       })
     )));
