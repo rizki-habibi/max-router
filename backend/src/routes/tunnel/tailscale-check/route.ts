@@ -3,11 +3,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 
 import { isTailscaleInstalled, isTailscaleLoggedIn, TAILSCALE_SOCKET } from "../../../lib/tunnel/index.js";
-import * as mitmManager from "../../../mitm/manager.js";
-
-const getCachedPassword = () => typeof mitmManager.getCachedPassword === "function" ? mitmManager.getCachedPassword() : null;
-const loadEncryptedPassword = () => typeof mitmManager.loadEncryptedPassword === "function" ? mitmManager.loadEncryptedPassword() : null;
-
+import { getCachedPassword, loadEncryptedPassword } from "../../../mitm/manager.js";
 const execAsync = promisify(exec);
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
 const PROBE_TIMEOUT_MS = 1500;
