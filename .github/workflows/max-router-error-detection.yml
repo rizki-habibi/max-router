@@ -28,6 +28,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install workspace dependencies
+        working-directory: .
+        run: npm install --no-audit --no-fund --workspaces
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
@@ -164,7 +168,7 @@ jobs:
 
       - name: Verify provider and database support
         run: |
-          node --input-type=module - <<'NODE'
+          node --import ./bin/register-alias.mjs --input-type=module - <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
 
@@ -325,7 +329,7 @@ jobs:
 
       - name: Compile-only runtime import audit
         run: |
-          node --input-type=module - <<'NODE'
+          node --import ./bin/register-alias.mjs --input-type=module - <<'NODE'
           const modules = [
             './dist/lib/oauth/antigravity-pkce.js',
             './dist/lib/oauth/providers.js',
