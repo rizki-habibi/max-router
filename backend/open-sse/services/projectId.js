@@ -193,11 +193,21 @@ async function fetchProjectId(accessToken, signal) {
             const onboarded = await onboardUser(accessToken, tierID, signal);
             if (onboarded) return onboarded;
 
+            // Standard-tier Antigravity accounts can require a user-defined
+            // Cloud project. If Google does not auto-provision one, create a
+            // real GCP project with the OAuth token, then bind/onboard it.
+            const createdProject = await createGoogleCloudProject(accessToken, signal);
+            if (createdProject) {
+                const bound = await bindProjectAndReload(accessToken, createdProject, tierID, signal);
+                if (bound) return bound;
+                lastError = `created Google Cloud project ${createdProject} but Google Code Assist did not bind it`;
+            }
+
             // onboardUser may report done without a project binding. Re-load
             // the control plane before trying the next backend.
             const reloaded = await reloadProjectId(accessToken, signal);
             if (reloaded) return reloaded;
-            lastError = "authenticated but no cloudaicompanionProject was provisioned";
+            lastError = lastError || "authenticated but no cloudaicompanionProject was provisioned";
         } catch (error) {
             if (error?.name === "AbortError") return null;
             lastError = error?.message || String(error);
@@ -205,6 +215,96 @@ async function fetchProjectId(accessToken, signal) {
     }
 
     console.warn(`[ProjectId] Antigravity project discovery failed: ${lastError || "unknown error"}`, initialData ? "provisioning response received" : "no loadCodeAssist response");
+    return null;
+}
+
+async function createGoogleCloudProject(accessToken, signal) {
+    const suffix = Math.random().toString(36).slice(2, 10);
+    const projectId = `max-router-ag-${Date.now().toString(36).slice(-7)}-${suffix}`.slice(0, 30);
+    const response = await fetch("https://cloudresourcemanager.googleapis.com/v1/projects", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            projectId,
+            name: `Max Router Antigravity ${projectId}`,
+        }),
+        signal,
+    });
+    const text = await response.text().catch(() => "");
+    if (!response.ok && response.status !== 409) {
+        console.warn(`[ProjectId] Google Cloud project creation failed: HTTP ${response.status} ${text.slice(0, 220)}`);
+        return null;
+    }
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch {}
+    const operationName = data.name;
+    if (operationName) {
+        for (let i = 0; i < 15; i++) {
+            if (signal?.aborted) return null;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const op = await fetch(`https://cloudresourcemanager.googleapis.com/v1/${operationName}`, {
+                headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+                signal,
+            }).then((r) => r.ok ? r.json() : null).catch(() => null);
+            if (op?.done) {
+                if (op.error) {
+                    console.warn("[ProjectId] Google Cloud project operation failed:", JSON.stringify(op.error).slice(0, 300));
+                    return null;
+                }
+                break;
+            }
+        }
+    }
+    console.log(`[ProjectId] Created Google Cloud project: ${projectId}`);
+    return projectId;
+}
+
+async function bindProjectAndReload(accessToken, projectId, tierID, signal) {
+    for (const baseUrl of [
+        "https://daily-cloudcode-pa.googleapis.com",
+        ...ANTIGRAVITY_LOAD_ENDPOINTS,
+    ].filter((v, i, a) => a.indexOf(v) === i)) {
+        if (signal?.aborted) return null;
+        try {
+            const headers = { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*", "x-request-source": "local" };
+            const metadata = { ...LOAD_CODE_ASSIST_METADATA, duetProject: projectId };
+            const loadResponse = await fetch(`${baseUrl}/v1internal:loadCodeAssist`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ cloudaicompanionProject: projectId, metadata, mode: 1 }),
+                signal,
+            });
+            if (!loadResponse.ok) continue;
+
+            const onboardResponse = await fetch(`${baseUrl}/v1internal:onboardUser`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ tierId: tierID, cloudaicompanionProject: projectId, metadata }),
+                signal,
+            });
+            const onboardText = await onboardResponse.text().catch(() => "");
+            if (!onboardResponse.ok) {
+                console.warn(`[ProjectId] Project binding rejected: HTTP ${onboardResponse.status} ${onboardText.slice(0, 220)}`);
+                continue;
+            }
+            const onboardData = onboardText ? JSON.parse(onboardText) : {};
+            const direct = extractProjectIdFromOnboard(onboardData);
+            if (direct) return direct;
+
+            const reloaded = await reloadProjectId(accessToken, signal);
+            if (reloaded) return reloaded;
+
+            // A user-defined project is valid even when onboarding returns
+            // done=true without echoing the project. Verify it explicitly.
+            if (onboardData.done === true) return projectId;
+        } catch (error) {
+            if (error?.name === "AbortError") return null;
+        }
+    }
     return null;
 }
 
