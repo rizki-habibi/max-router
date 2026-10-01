@@ -132,21 +132,8 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
     return () => { stopped = true; if (timer) window.clearTimeout(timer); };
   }, [connection.id]);
   const formatCount = (value) => value === null || value === undefined ? "—" : Number(value).toLocaleString("id-ID");
-  const formatReset = (seconds) => {
-    if (seconds === null || seconds === undefined) return "—";
-    const s = Math.max(0, Number(seconds));
-    if (s < 60) return Math.ceil(s) + " dtk";
-    if (s < 3600) return Math.floor(s / 60) + " mnt";
-    return Math.floor(s / 3600) + " jam " + Math.floor((s % 3600) / 60) + " mnt";
-  };
   const localUsage = usage?.local || {};
-  const modelUsage = localUsage.byModel || {};
-  const modelCatalog = Array.isArray(usage?.models) ? usage.models : [];
-  const modelMap = new Map(modelCatalog.map((m) => [m.id, m]));
-  const usedModels = Object.keys(modelUsage).slice(0, 8);
   const freeTokens = usage?.free_tokens || {};
-  const shortWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "short") : null;
-  const longWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "long") : null;
   const maskedKey = connection.apiKey ? "••••" + String(connection.apiKey).slice(-4) : null;
   const allowancePercent = (remaining, limit) => {
     const r = Number(remaining), l = Number(limit);
@@ -221,7 +208,7 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
             </Badge>
             {maskedKey && !isOAuthConnection && <span className="font-mono text-xs text-text-muted">Key {maskedKey}</span>}
             {usage && (
-            <div className="mt-2 w-full max-w-3xl rounded-md border border-border bg-sidebar/25 px-2.5 py-2">
+            <div className="mt-2 w-full max-w-3xl rounded-md border-t border-border/70 pt-2">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold">Pemakaian & sisa key</span>
                 <span className="text-[10px] text-text-muted">{usageLoading ? "Memuat..." : "Diperbarui otomatis 1 menit"}</span>
@@ -233,42 +220,14 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
                 <div className="min-w-0"><div className="text-[9px] text-text-muted">Token masuk/keluar</div><div className="truncate text-[11px] font-medium">{formatCount(localUsage.inputTokens)} / {formatCount(localUsage.outputTokens)}</div><div className="mt-1 h-1 rounded-full bg-purple-500/20"><div className="h-full w-2/3 rounded-full bg-purple-500/55" /></div></div>
                 <div className="min-w-0"><div className="text-[9px] text-text-muted">Saldo</div><div className="text-[11px] font-medium">{usage.wallet?.balance_usd != null ? "$" + usage.wallet.balance_usd : "—"}</div><div className="mt-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"><div className={Number(usage.wallet?.balance_usd || 0) > 0 ? "h-full w-full rounded-full bg-emerald-500" : "h-full w-full rounded-full bg-red-500"} /></div></div>
               </div>
-              {(shortWindow || longWindow) && (
-                <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-text-muted">
-                  {shortWindow && <span>Jangka pendek: ${shortWindow.remaining_usd} sisa · reset {formatReset(shortWindow.resets_in_sec)}</span>}
-                  {longWindow && <span>Jangka panjang: ${longWindow.remaining_usd} sisa · reset {formatReset(longWindow.resets_in_sec)}</span>}
-                </div>
-              )}
-              {usedModels.length > 0 && (
-                <div className="mt-2 border-t border-border pt-2">
-                  <div className="mb-1 text-[10px] text-text-muted">Model yang benar-benar dipakai key ini</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {usedModels.map((modelId) => {
-                      const meta = modelMap.get(modelId);
-                      const tier = meta?.accessTier || "unknown";
-                      const tierLabel = tier === "free" ? "Gratis" : tier === "paid" ? "Berbayar" : tier === "premium" ? "Premium" : "Tidak diketahui";
-                      const row = modelUsage[modelId];
-                      return (
-                        <div key={modelId} className="max-w-full rounded border border-border bg-background px-1.5 py-1">
-                          <div className="flex items-center gap-1.5"><span className="max-w-[170px] truncate font-mono text-[9px] font-normal">{modelId}</span><span className="shrink-0 text-[9px] font-normal text-text-muted">[{tierLabel}]</span></div>
-                          <div className="mt-0.5 text-[8px] font-normal text-text-muted">Req {formatCount(row.requests)} · In {formatCount(row.inputTokens)} · Out {formatCount(row.outputTokens)} · Cache {formatCount(row.cacheReadTokens)}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {modelCatalog.length > 0 && usedModels.length === 0 && <div className="mt-2 text-[10px] text-text-muted">{modelCatalog.length} model terdeteksi dari Base URL; belum ada pemakaian lokal untuk key ini.</div>}
-            </div>
-          )}
-          {hasAnyProxy && (
+        {hasAnyProxy && (
               <Badge variant={proxyBadgeVariant} size="sm">
                 Proxy
               </Badge>
             )}
             {isCooldown && connection.isActive !== false && <CooldownTimer until={modelLockUntil} />}
             {connection.lastError && connection.isActive !== false && (
-              <div className="mt-2 flex min-w-0 items-start gap-1.5 rounded border border-red-500/25 bg-red-500/5 px-2 py-1.5 text-[10px] text-red-500">
+              <div className="mt-2 w-full max-w-3xl flex min-w-0 items-start gap-1.5 rounded border border-red-500/25 bg-red-500/5 px-2 py-1.5 text-[10px] text-red-500">
                 <span className="material-symbols-outlined mt-px text-[14px]">error</span>
                 <span className="min-w-0 break-words" title={connection.lastError}>{connection.lastError}</span>
               </div>
@@ -302,7 +261,7 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
           )}
         </div>
       </div>
-      <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+      <div className="flex w-full items-center justify-end gap-2 border-t border-border/70 pt-2 sm:w-auto sm:border-t-0 sm:pt-0">
         <div className="grid flex-1 grid-cols-3 gap-1 sm:flex sm:flex-none">
           {/* Proxy button with inline dropdown */}
           {(proxyPools || []).length > 0 && (
@@ -344,7 +303,7 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
           </button>
           <button onClick={onDelete} className="flex flex-col items-center rounded px-2 py-1 text-red-500 hover:bg-red-500/10">
             <span className="material-symbols-outlined text-[18px]">delete</span>
-            <span className="text-[10px] leading-tight">Delete</span>
+            <span className="text-[10px] leading-tight">Hapus</span>
           </button>
         </div>
         <Toggle
