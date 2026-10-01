@@ -2,6 +2,122 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Button } from "@/shared/components";
+
+function extractHtmlTitle(text) {
+  const match = String(text || "").match(/<title[^>]*>([^<]+)<\/title>/i);
+  return match?.[1]?.trim() || "";
+}
+
+async function readApiResponse(res) {
+  const contentType = res.headers.get("content-type") || "";
+  const text = await res.text();
+  let data = null;
+  if (text) {
+    try { data = JSON.parse(text); } catch { /* handled below */ }
+  }
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    url: res.url,
+    contentType,
+    data,
+    raw: text,
+    isHtml: /text\/html/i.test(contentType) || /^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text),
+  };
+}
+
+function ModelApiErrorDialog({ error, onClose, onRetry }) {
+  if (!error) return null;
+
+  const copyDetails = async () => {
+    const details = [
+      `Status: ${error.status} ${error.statusText || ""}`.trim(),
+      `URL: ${error.url}`,
+      `Content-Type: ${error.contentType || "unknown"}`,
+      error.htmlTitle ? `HTML title: ${error.htmlTitle}` : "",
+      error.message ? `Pesan: ${error.message}` : "",
+      error.raw ? `Respons server:\n${error.raw.slice(0, 4000)}` : "",
+    ].filter(Boolean).join("\n");
+    try {
+      await navigator.clipboard.writeText(details);
+    } catch {
+      window.prompt("Salin detail error berikut:", details);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-red-500/30 bg-background shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-red-500">error</span>
+              <h2 className="text-base font-semibold">Gagal mengambil model</h2>
+            </div>
+            <p className="mt-1 text-xs text-text-muted">
+              Respons endpoint tidak sesuai format yang diharapkan.
+            </p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1 text-text-muted hover:bg-sidebar hover:text-text">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="space-y-3 px-5 py-4">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-border p-3">
+              <div className="text-[10px] uppercase tracking-wide text-text-muted">HTTP</div>
+              <div className="mt-1 font-mono text-sm">{error.status || "—"} {error.statusText || ""}</div>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <div className="text-[10px] uppercase tracking-wide text-text-muted">Format respons</div>
+              <div className="mt-1 font-mono text-sm">{error.isHtml ? "HTML" : error.contentType || "unknown"}</div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border p-3">
+            <div className="text-[10px] uppercase tracking-wide text-text-muted">Endpoint</div>
+            <div className="mt-1 break-all font-mono text-xs">{error.url}</div>
+          </div>
+
+          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+            <div className="text-xs font-medium text-red-500">
+              {error.isHtml
+                ? "Server mengembalikan HTML. Ini biasanya berarti route API salah, rewrite/proxy bermasalah, atau deployment mengirim halaman frontend."
+                : error.message || "Server mengembalikan respons yang tidak dapat diproses sebagai JSON."}
+            </div>
+            {error.htmlTitle && <div className="mt-1 text-xs text-text-muted">Judul halaman: {error.htmlTitle}</div>}
+          </div>
+
+          {error.raw && (
+            <details className="rounded-lg border border-border">
+              <summary className="cursor-pointer px-3 py-2 text-xs font-medium">Lihat respons mentah</summary>
+              <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words border-t border-border p-3 text-[11px] text-text-muted">{error.raw.slice(0, 8000)}</pre>
+            </details>
+          )}
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-4">
+          <Button size="sm" variant="secondary" icon="content_copy" onClick={copyDetails}>Salin detail</Button>
+          <Button size="sm" variant="secondary" icon="open_in_new" onClick={() => window.open(error.url, "_blank", "noopener,noreferrer")}>Buka endpoint</Button>
+          {onRetry && <Button size="sm" icon="refresh" onClick={onRetry}>Coba lagi</Button>}
+          <Button size="sm" variant="secondary" onClick={onClose}>Tutup</Button>
+        </div>
+      </div>
+    </div>
+    <ModelApiErrorDialog
+      error={apiError}
+      onClose={() => setApiError(null)}
+      onRetry={() => {
+        setApiError(null);
+        handleImport();
+      }}
+    />
+    </>
+  );
+}
 function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
   const borderColor = testStatus === "ok"
     ? "border-green-500/40"
@@ -79,18 +195,23 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [usageInfo, setUsageInfo] = useState(null);
   const [testingAll, setTestingAll] = useState(false);
   const [autoDisableFailed, setAutoDisableFailed] = useState(true);
+  const [apiError, setApiError] = useState(null);
 
   const handleTestModel = async (modelId, fromAll = false) => {
     if (testingModelId || (testingAll && !fromAll)) return false;
     setTestingModelId(modelId);
     try {
       const res = await fetch("/api/models/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: providerStorageAlias + "/" + modelId }) });
-      const data = await res.json();
+      const response = await readApiResponse(res);
+      if (!response.ok || !response.data || typeof response.data !== "object") {
+        throw new Error(response.data?.error || `HTTP ${response.status}: respons tes model tidak valid`);
+      }
+      const data = response.data;
       const ok = !!data.ok;
       setModelTestResults((prev) => ({ ...prev, [modelId]: ok ? "ok" : "error" }));
       if (!ok && autoDisableFailed) await fetch("/api/models/disabled", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerAlias: providerStorageAlias, ids: [modelId] }) }).catch(() => {});
       return ok;
-    } catch {
+    } catch (error) {
       setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
       if (autoDisableFailed) await fetch("/api/models/disabled", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerAlias: providerStorageAlias, ids: [modelId] }) }).catch(() => {});
       return false;
@@ -157,16 +278,28 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
 
     setImporting(true);
     try {
-      const res = await fetch(`/api/providers/${activeConnection.id}/models`);
-      const data = await res.json();
-      if (!res.ok) {
+      const res = await fetch(`/api/providers/${activeConnection.id}/models`, {
+        headers: { Accept: "application/json" },
+      });
+      const response = await readApiResponse(res);
+      const data = response.data || {};
+      if (!response.ok || !response.data || typeof response.data !== "object") {
         const detail = [
           data.error,
           data.upstreamError ? "Upstream: " + data.upstreamError : "",
           Array.isArray(data.candidates) ? "Dicoba: " + data.candidates.join(" | ") : "",
         ].filter(Boolean).join("\n");
-        alert(detail || "Gagal mengambil model.");
-        return;
+        const parseError = new Error(
+          response.isHtml
+            ? "Server mengembalikan HTML, bukan JSON."
+            : detail || "Gagal mengambil model."
+        );
+        parseError.response = {
+          ...response,
+          htmlTitle: response.isHtml ? extractHtmlTitle(response.raw) : "",
+          message: detail || parseError.message,
+        };
+        throw parseError;
       }
       const models = Array.isArray(data.models) ? data.models : [];
       setImportedModels(models);
@@ -174,7 +307,15 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
       if (data.warning) console.warn("[Model Import]", data.warning, data.upstreamError || "");
 
       if (models.length === 0) {
-        alert("No models returned from /models.");
+        setApiError({
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          contentType: response.contentType,
+          raw: response.raw,
+          isHtml: false,
+          message: "Endpoint berhasil merespons, tetapi tidak mengembalikan model.",
+        });
         return;
       }
       let importedCount = 0;
@@ -187,10 +328,29 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         importedCount += 1;
       }
       if (importedCount === 0) {
-        alert("No new models were added.");
+        setApiError({
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          contentType: response.contentType,
+          raw: "",
+          isHtml: false,
+          message: "Model berhasil dideteksi, tetapi tidak ada model baru yang bisa ditambahkan.",
+        });
       }
     } catch (error) {
       console.log("Error importing models:", error);
+      const response = error?.response;
+      setApiError({
+        status: response?.status || 0,
+        statusText: response?.statusText || "",
+        url: response?.url || `/api/providers/${activeConnection.id}/models`,
+        contentType: response?.contentType || "",
+        raw: response?.raw || "",
+        isHtml: response?.isHtml || false,
+        htmlTitle: response?.htmlTitle || "",
+        message: error?.message || "Terjadi kesalahan saat mengambil model.",
+      });
     } finally {
       setImporting(false);
     }
@@ -199,6 +359,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const canImport = connections.some((conn) => conn.isActive !== false);
 
   return (
+    <>
     <div className="flex flex-col gap-4">
       <p className="text-sm text-text-muted">
         Add {isAnthropic ? "Anthropic" : "OpenAI"}-compatible models manually or import them from the /models endpoint.
