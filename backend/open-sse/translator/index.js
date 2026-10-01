@@ -4,7 +4,7 @@ import { prepareClaudeRequest } from "./helpers/claudeHelper.js";
 import { cloakClaudeTools } from "../utils/claudeCloaking.js";
 import { filterToOpenAIFormat } from "./helpers/openaiHelper.js";
 import { normalizeThinkingConfig } from "../services/provider.js";
-import { AntigravityExecutor } from "./../../src/lib/constants/antigravity.js";
+import { AntigravityExecutor } from "../executors/antigravity.js";
 
 // Registry for translators
 const requestRegistry = new Map();
