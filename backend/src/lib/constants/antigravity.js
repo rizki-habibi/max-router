@@ -18,7 +18,7 @@ export const ANTIGRAVITY_API_VERSION = "v1internal";
 // The onboarding control-plane uses the daily Cloud Code endpoint.
 export const ANTIGRAVITY_DAILY_BASE_URL = (
   process.env.ANTIGRAVITY_DAILY_BASE_URL?.trim() || "https://daily-cloudcode-pa.googleapis.com"
-).replace(/\\/+$/, "");
+).replace(/\/+$/, "");
 
 export const ANTIGRAVITY_ENDPOINTS = Object.freeze({
   loadCodeAssist: `${ANTIGRAVITY_BASE_URL}/${ANTIGRAVITY_API_VERSION}:loadCodeAssist`,
