@@ -7,6 +7,7 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
 import ThemeToggle from "@/shared/components/ThemeToggle";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
 import { translate } from "@/i18n/runtime";
@@ -152,6 +153,10 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
   const [displayName, setDisplayName] = useState("");
   const [loginMethod, setLoginMethod] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const removeNotification = useNotificationStore((state) => state.removeNotification);
+  const clearNotifications = useNotificationStore((state) => state.clearAll);
  
   // Memoize page info to prevent unnecessary recalculations
   const pageInfo = useMemo(() => getPageInfo(pathname), [pathname]);
@@ -284,6 +289,52 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
             </span>
           </div>
         )}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowNotifications((value) => !value)}
+            className="relative flex size-9 items-center justify-center rounded-xl border border-transparent text-text-muted transition-all hover:border-primary/20 hover:bg-primary/10 hover:text-primary"
+            aria-label="Notifikasi"
+            title="Notifikasi"
+          >
+            <span className="material-symbols-outlined text-[21px]">notifications</span>
+            {notifications.length > 0 && (
+              <span className="absolute right-1 top-1 flex min-w-4 h-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
+                {notifications.length > 99 ? "99+" : notifications.length}
+              </span>
+            )}
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 top-11 z-[90] w-[min(92vw,360px)] overflow-hidden rounded-2xl border border-primary/15 bg-surface/95 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold">Notifikasi</p>
+                  <p className="text-[10px] text-text-muted">{notifications.length} pemberitahuan aktif</p>
+                </div>
+                {notifications.length > 0 && (
+                  <button type="button" onClick={clearNotifications} className="text-[11px] text-primary hover:underline">Bersihkan</button>
+                )}
+              </div>
+              <div className="max-h-80 overflow-y-auto p-2">
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <span className="material-symbols-outlined text-3xl text-text-muted/60">notifications_none</span>
+                    <p className="mt-2 text-xs text-text-muted">Belum ada notifikasi</p>
+                  </div>
+                ) : notifications.slice().reverse().map((n) => (
+                  <div key={n.id} className="flex gap-2 rounded-xl px-3 py-2.5 hover:bg-primary/5">
+                    <span className="material-symbols-outlined mt-0.5 text-[17px] text-primary">{n.type === "error" ? "error" : n.type === "warning" ? "warning" : n.type === "success" ? "check_circle" : "info"}</span>
+                    <div className="min-w-0 flex-1">
+                      {n.title && <p className="text-xs font-semibold">{n.title}</p>}
+                      <p className="text-xs text-text-muted">{n.message}</p>
+                    </div>
+                    {n.dismissible && <button type="button" onClick={() => removeNotification(n.id)} className="text-text-muted hover:text-text-main"><span className="material-symbols-outlined text-[15px]">close</span></button>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <HeaderSearch />
         <ThemeToggle />
         <HeaderMenu onLogout={handleLogout} isLoggedIn={isLoggedIn} />
