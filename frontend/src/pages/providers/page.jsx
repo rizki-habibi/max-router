@@ -935,7 +935,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
     try {
       const data = await fetchProviderNodeValidation({
         baseUrl: formData.baseUrl,
-        apiKey: checkKey,
+        apiKey: checkKey.trim(),
         type: "openai-compatible",
         apiType: formData.apiType,
         modelId: checkModelId.trim() || undefined,
@@ -1136,7 +1136,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
     try {
       const data = await fetchProviderNodeValidation({
         baseUrl: formData.baseUrl,
-        apiKey: checkKey,
+        apiKey: checkKey.trim(),
         type: "anthropic-compatible",
         modelId: checkModelId.trim() || undefined,
       });
