@@ -219,6 +219,34 @@ async function fetchProjectId(accessToken, signal) {
 }
 
 async function createGoogleCloudProject(accessToken, signal) {
+    // First try to reuse a real project already owned by the Google account.
+    // This avoids depending on the Antigravity OAuth client's own API enablement.
+    try {
+        const listResponse = await fetch("https://cloudresourcemanager.googleapis.com/v1/projects?filter=lifecycleState%3AACTIVE", {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/json",
+            },
+            signal,
+        });
+        if (listResponse.ok) {
+            const listText = await listResponse.text().catch(() => "");
+            const listData = listText ? JSON.parse(listText) : {};
+            const existing = Array.isArray(listData.projects)
+                ? listData.projects.find((p) => typeof p?.projectId === "string" && p.projectId.trim())
+                : null;
+            if (existing?.projectId) {
+                console.log(`[ProjectId] Reusing existing Google Cloud project: ${existing.projectId}`);
+                return existing.projectId.trim();
+            }
+        }
+    } catch (error) {
+        if (error?.name === "AbortError") return null;
+    }
+
+    // Creating a project requires resourcemanager.projects.create and an enabled
+    // Cloud Resource Manager API. Do not silently retry this expensive operation
+    // when Google explicitly says the API is disabled or permission is missing.
     const suffix = Math.random().toString(36).slice(2, 10);
     const projectId = `max-router-ag-${Date.now().toString(36).slice(-7)}-${suffix}`.slice(0, 30);
     const response = await fetch("https://cloudresourcemanager.googleapis.com/v1/projects", {
