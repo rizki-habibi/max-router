@@ -54,6 +54,17 @@ async function trySqlJs() {
 
 async function initAdapter() {
   const databaseUrl = process.env.DATABASE_URL?.trim();
+  const isProduction = process.env.NODE_ENV === "production";
+  const allowEphemeralSqlite = /^(1|true|yes)$/i.test(
+    process.env.ALLOW_EPHEMERAL_SQLITE || ""
+  );
+
+  if (isProduction && !databaseUrl && !allowEphemeralSqlite) {
+    throw new Error(
+      "[DB] DATABASE_URL wajib di production. SQLite lokal/ephemeral dinonaktifkan agar koneksi OAuth provider tidak hilang saat redeploy. Set DATABASE_URL PostgreSQL atau ALLOW_EPHEMERAL_SQLITE=true hanya untuk pengujian."
+    );
+  }
+
   if (databaseUrl) {
     const { createPostgresAdapter } = await import("./adapters/postgresAdapter.js");
     const adapter = await createPostgresAdapter(databaseUrl);
