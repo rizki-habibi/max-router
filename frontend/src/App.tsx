@@ -18,7 +18,6 @@ const Endpoint        = lazy(() => import("./pages/endpoint/page"));
 const Translator      = lazy(() => import("./pages/translator/page"));
 const Automation      = lazy(() => import("./pages/automation/page"));
 const BasicChat       = lazy(() => import("./pages/basic-chat/page"));
-const Mitm            = lazy(() => import("./pages/mitm/page"));
 const Profile         = lazy(() => import("./pages/profile/page"));
 const Docs            = lazy(() => import("./pages/docs/page"));
 const Skills          = lazy(() => import("./pages/skills/page"));
