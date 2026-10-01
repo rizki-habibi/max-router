@@ -38,16 +38,19 @@ export async function POST_handler(req, res) {
       return res.status(400).json({ error: "Name is required" });
     }
 
-    if (!prefix?.trim()) {
-      return res.status(400).json({ error: "Prefix is required" });
-    }
+    const safeName = name.trim();
+    const generatedPrefix = (prefix?.trim() || safeName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "provider");
 
     const normalizedIconUrl = typeof iconUrl === "string" ? iconUrl.trim() : "";
     if (normalizedIconUrl && !/^https:\/\//i.test(normalizedIconUrl)) {
       return res.status(400).json({ error: "Icon URL must use HTTPS" });
     }
 
-    // Determine type
+    if (baseUrl && !/^https:\/\//i.test(String(baseUrl).trim())) {
+      return res.status(400).json({ error: "Base URL harus menggunakan HTTPS" });
+    }
+
+    // Determine type automatically when the validator has detected it.
     const nodeType = type || "openai-compatible";
 
     if (nodeType === "openai-compatible") {
@@ -58,10 +61,10 @@ export async function POST_handler(req, res) {
       const node = await createProviderNode({
         id: `${OPENAI_COMPATIBLE_PREFIX}${apiType}-${generateId()}`,
         type: "openai-compatible",
-        prefix: prefix.trim(),
+        prefix: generatedPrefix,
         apiType,
         baseUrl: (baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl).trim(),
-        name: name.trim(),
+        name: safeName,
         iconUrl: normalizedIconUrl || null,
       });
       return res.status(201).json({ node });
