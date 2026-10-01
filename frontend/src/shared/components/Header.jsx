@@ -392,5 +392,7 @@ function HeaderSearch() {
 
 Header.propTypes = {
   onMenuClick: PropTypes.func,
-  showMenuButton: PropTypes.bool,\n  onToggleCollapse: PropTypes.func,\n  sidebarCollapsed: PropTypes.bool,
+  showMenuButton: PropTypes.bool,
+  onToggleCollapse: PropTypes.func,
+  sidebarCollapsed: PropTypes.bool,
 };
