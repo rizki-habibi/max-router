@@ -1,4 +1,4 @@
-
+import { ANTIGRAVITY_ENDPOINTS } from "../../../../lib/constants/antigravity.js";\n
 import { getProviderConnectionById } from "../../../../models/index.js";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "../../../../shared/constants/providers.js";
 import { GEMINI_CONFIG } from "../../../../lib/oauth/constants/oauth.js";
@@ -7,7 +7,7 @@ import { resolveOllamaLocalHost } from "../../../../../open-sse/config/providers
 import { resolveKiroModels } from "../../../../../open-sse/services/kiroModels.js";
 import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels.js";
 
-const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
+const GEMINI_CLI_MODELS_URL = ANTIGRAVITY_ENDPOINTS.fetchAvailableModels;
 
 const parseOpenAIStyleModels = (data) => {
   if (Array.isArray(data)) return data;
@@ -156,9 +156,7 @@ const PROVIDER_MODELS_CONFIG = {
   antigravity: {
     customResolver: async (connection) => {
       const endpoints = [
-        "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
-        "https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:fetchAvailableModels",
-        "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
+        ANTIGRAVITY_ENDPOINTS.fetchAvailableModels,
       ];
       const parseModels = (data) => {
         if (Array.isArray(data?.models)) return data.models;
