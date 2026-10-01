@@ -3,10 +3,13 @@
 import os from "os";
 import { execSync } from "child_process";
 import { installTailscale, loadState, generateShortId } from "../../../lib/tunnel/index.js";
-import { getCachedPassword, loadEncryptedPassword, initDbHooks } from "../../../mitm/manager.js";
+import * as mitmManager from "../../../mitm/manager.js";
 import { getSettings, updateSettings } from "../../../lib/localDb.js";
 
-initDbHooks(getSettings, updateSettings);
+mitmManager.initDbHooks(getSettings, updateSettings);
+
+const getCachedPassword = () => typeof mitmManager.getCachedPassword === "function" ? mitmManager.getCachedPassword() : null;
+const loadEncryptedPassword = () => typeof mitmManager.loadEncryptedPassword === "function" ? mitmManager.loadEncryptedPassword() : null;
 
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
 
