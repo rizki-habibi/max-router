@@ -7,6 +7,8 @@ import {
   pollForToken 
 } from "../../../../lib/oauth/providers.js";
 import { createProviderConnection } from "../../../../models/index.js";
+import { generatePKCE } from "../../../../lib/oauth/utils/pkce.js";
+import { buildAntigravityAuthUrl, exchangeAntigravityTokens } from "../../../../lib/oauth/antigravity-pkce.js";
 import {
   startCodexProxy,
   stopCodexProxy,
@@ -82,6 +84,20 @@ export async function GET_handler(req, res, { params }) {
       const reservedParams = new Set(["redirect_uri"]);
       const meta = {};
       searchParams.forEach((value, key) => { if (!reservedParams.has(key)) meta[key] = value; });
+      if (provider === "antigravity") {
+        const { codeVerifier, codeChallenge, state } = generatePKCE();
+        return res.json({
+          authUrl: buildAntigravityAuthUrl(redirectUri, state, codeChallenge),
+          state,
+          codeVerifier,
+          codeChallenge,
+          redirectUri,
+          flowType: "authorization_code_pkce",
+          fixedPort: 51121,
+          callbackPath: "/oauth-callback",
+        });
+      }
+
       const authData = await generateAuthData(provider, redirectUri, Object.keys(meta).length ? meta : undefined);
       return res.json(authData);
     }
@@ -107,7 +123,7 @@ export async function GET_handler(req, res, { params }) {
         if (provider === "xai" && codeVerifier) {
           serverSide = registerXaiSession({ state, codeVerifier, redirectUri });
         } else if (provider === "antigravity") {
-          serverSide = registerAntigravitySession({ state, redirectUri });
+          serverSide = codeVerifier ? registerAntigravitySession({ state, codeVerifier, redirectUri }) : false;
         } else if (provider === "codex" && codeVerifier) {
           serverSide = registerCodexSession({ state, codeVerifier, redirectUri });
         }
@@ -255,8 +271,11 @@ export async function POST_handler(req, res, { params }) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      // Exchange code for tokens (meta carries provider-specific params, e.g. gitlab clientId/baseUrl)
-      const tokenData = await exchangeTokens(provider, code, redirectUri, codeVerifier, state, meta);
+      // Antigravity uses Google OAuth PKCE. Keep this exchange independent from the
+      // legacy provider handler so the verifier is always sent to Google's token endpoint.
+      const tokenData = provider === "antigravity"
+        ? await exchangeAntigravityTokens(code, redirectUri, codeVerifier)
+        : await exchangeTokens(provider, code, redirectUri, codeVerifier, state, meta);
 
       // Save to database
       const connection = await createProviderConnection({
