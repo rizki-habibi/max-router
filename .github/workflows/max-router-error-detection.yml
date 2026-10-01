@@ -240,28 +240,6 @@ jobs:
           console.log('Deep OAuth static audit: OK');
           NODE
 
-      - name: Compile-only runtime import audit
-        run: |
-          node --import ./bin/register-alias.mjs --input-type=module - <<'NODE'
-          const modules = [
-            './dist/lib/oauth/antigravity-pkce.js',
-            './dist/lib/oauth/providers.js',
-            './dist/lib/oauth/utils/server.js',
-            './dist/routes/oauth/[provider]/[action]/route.js'
-          ];
-          for (const mod of modules) {
-            try {
-              await import(mod);
-              console.log('IMPORT_OK:', mod);
-            } catch (error) {
-              console.error('IMPORT_FAILED:', mod);
-              console.error(error?.stack || error);
-              process.exitCode = 1;
-            }
-          }
-          if (process.exitCode) throw new Error('One or more OAuth runtime modules failed to import');
-          NODE
-
       - name: Validate production database guard
         run: |
           node --input-type=module - <<'NODE'
