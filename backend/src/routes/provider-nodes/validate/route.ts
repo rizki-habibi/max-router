@@ -96,7 +96,44 @@ export async function POST_handler(req, res) {
 
     const classifyModels = (data) => {
       const models = Array.isArray(data) ? data : (data?.data || data?.models || data?.results || []);
-      return Array.from(new Set(models.map((item) => item?.id || item?.name || item?.model).filter((id) => typeof id === "string" && id.trim()).map((id) => id.trim())));
+      const normalizePrice = (value) => {
+        if (value === null || value === undefined || value === "") return null;
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      };
+      const classifyPrice = (item) => {
+        if (item?.free === true || item?.is_free === true || item?.isFree === true) return "free";
+        const tier = String(item?.tier || item?.pricing?.tier || "").toLowerCase();
+        if (tier === "free") return "free";
+        if (tier === "paid" || tier === "pro") return "paid";
+        const pricing = item?.pricing;
+        if (pricing && typeof pricing === "object") {
+          const values = [
+            pricing.input, pricing.output, pricing.prompt, pricing.completion,
+            pricing.input_token, pricing.output_token, pricing.prompt_token, pricing.completion_token,
+          ].map(normalizePrice).filter((v) => v !== null);
+          if (values.length) return values.every((v) => v === 0) ? "free" : "paid";
+        }
+        return "unknown";
+      };
+      const seen = new Set();
+      return models.map((item) => {
+        const id = item?.id || item?.name || item?.model;
+        if (typeof id !== "string" || !id.trim() || seen.has(id.trim())) return null;
+        seen.add(id.trim());
+        return {
+          id: id.trim(),
+          pricing: item?.pricing ?? null,
+          priceClass: classifyPrice(item),
+          free: classifyPrice(item) === "free",
+          paid: classifyPrice(item) === "paid",
+          description: item?.description || item?.description_text || null,
+          contextWindow: item?.context_window ?? item?.contextWindow ?? item?.context_length ?? null,
+          maxOutput: item?.max_output ?? item?.maxOutput ?? item?.max_tokens ?? null,
+          capabilities: Array.isArray(item?.capabilities) ? item.capabilities : null,
+          supportedParameters: item?.supported_parameters ?? item?.supportedParameters ?? null,
+        };
+      }).filter(Boolean);
     };
 
     const testKey = async (apiKey) => {
