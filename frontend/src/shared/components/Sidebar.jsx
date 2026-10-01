@@ -31,7 +31,7 @@ const systemItems = [
   { href: "/dashboard/automation", label: "Otomatisasi", icon: "smart_toy" },
 ];
 
-export default function Sidebar({ onClose }) {
+export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }) {
   const { pathname } = useLocation();
   const [showRemoteModal, setShowRemoteModal] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
@@ -100,7 +100,7 @@ export default function Sidebar({ onClose }) {
 
   return (
     <>
-      <aside className="flex w-72 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-colors duration-300 min-h-full">
+      <aside className={cn("flex shrink-0 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-[width] duration-200 min-h-full", collapsed ? "w-[72px]" : "w-72")}>
         {/* Traffic lights */}
         <div className="flex items-center gap-2 px-6 pt-5 pb-2">
           <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
@@ -109,10 +109,10 @@ export default function Sidebar({ onClose }) {
         </div>
 
         {/* Logo */}
-        <div className="px-6 py-4 flex flex-col gap-2">
-          <Link to="/dashboard" className="flex items-center gap-3">
+        <div className={cn("py-4 flex flex-col gap-2", collapsed ? "px-3 items-center" : "px-6")}>
+          <Link to="/dashboard" className={cn("flex items-center", collapsed ? "justify-center" : "gap-3") } title={collapsed ? "9Router V3" : undefined}>
             <img src="/branding/9router-v3-logo.png" alt="9Router V3" className="size-9 rounded-[10px] object-contain" />
-            <div className="flex flex-col">
+            <div className={cn("flex flex-col", collapsed ? "hidden" : "")}>
               <h1 className="text-lg font-semibold tracking-tight text-text-main leading-tight">
                 9Router V3
               </h1>
@@ -147,14 +147,15 @@ export default function Sidebar({ onClose }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+        <nav className={cn("flex-1 py-2 space-y-0.5 overflow-y-auto custom-scrollbar", collapsed ? "px-2" : "px-4")}>
           {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
+                "flex items-center rounded-lg transition-all group",
+                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                 isActive(item.href)
                   ? "bg-primary/10 text-primary"
                   : "text-text-muted hover:bg-surface-2 hover:text-text-main"
@@ -168,13 +169,13 @@ export default function Sidebar({ onClose }) {
               >
                 {item.icon}
               </span>
-              <span className="text-[13px] font-medium">{item.label}</span>
+              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
             </Link>
           ))}
 
           {/* System section */}
           <div className="pt-3 mt-2 space-y-0.5">
-            <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
+            <p className={cn("px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2", collapsed ? "hidden" : "")}>
               System
             </p>
 
@@ -185,7 +186,8 @@ export default function Sidebar({ onClose }) {
                 to={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
+                  "flex items-center rounded-lg transition-all group",
+                  collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                   isActive(item.href)
                     ? "bg-primary/10 text-primary"
                     : "text-text-muted hover:bg-surface-2 hover:text-text-main"
@@ -199,7 +201,7 @@ export default function Sidebar({ onClose }) {
                 >
                   {item.icon}
                 </span>
-                <span className="text-[13px] font-medium">{item.label}</span>
+                <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
               </Link>
             ))}
 
@@ -235,14 +237,15 @@ export default function Sidebar({ onClose }) {
             <button
               onClick={() => setShowRemoteModal(true)}
               className={cn(
-                "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group w-full",
+                "flex items-center rounded-lg transition-all group w-full",
+                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
                 "text-text-muted hover:bg-surface-2 hover:text-text-main"
               )}
             >
               <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
                 computer
               </span>
-              <span className="text-[13px] font-medium">Jarak Jauh</span>
+              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Jarak Jauh</span>
             </button>
 
             {/* Settings */}
@@ -264,9 +267,28 @@ export default function Sidebar({ onClose }) {
               >
                 settings
               </span>
-              <span className="text-[13px] font-medium">Pengaturan</span>
+              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Pengaturan</span>
             </Link>
           </div>
+        <div className={cn("border-t border-border-subtle px-2 py-2", collapsed ? "flex justify-center" : "")}>
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className={cn(
+              "flex items-center rounded-lg text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
+              collapsed ? "justify-center size-9" : "w-full gap-3 px-3 py-2"
+            )}
+            title={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
+            aria-label={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {collapsed ? "chevron_right" : "chevron_left"}
+            </span>
+            <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>
+              Ciutkan
+            </span>
+          </button>
+        </div>
         </nav>
 
       </aside>
@@ -319,6 +341,8 @@ export default function Sidebar({ onClose }) {
 
 Sidebar.propTypes = {
   onClose: PropTypes.func,
+  collapsed: PropTypes.bool,
+  onToggleCollapse: PropTypes.func,
 };
 
 function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdown, onCancel, countdown, isDisconnected }) {
