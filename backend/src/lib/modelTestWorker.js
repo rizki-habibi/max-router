@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { pingModelByKind } from "./routes/models/test/ping.js";
+import { pingModelByKind } from "../routes/models/test/ping.js";
 import {
   createModelTestJob,
   getModelTestJob,
