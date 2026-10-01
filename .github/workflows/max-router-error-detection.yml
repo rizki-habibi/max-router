@@ -237,7 +237,7 @@ jobs:
 
       - name: Import every route module
         run: |
-          node --input-type=module - <<'NODE'
+          node --import ./bin/register-alias.mjs --input-type=module - <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
 
