@@ -22,18 +22,30 @@ function decryptPassword(stored) {
   try {
     const [ivHex, tagHex, dataHex] = stored.split(":");
     if (!ivHex || !tagHex || !dataHex) return null;
-    const decipher = crypto.createDecipheriv(ENCRYPT_ALGO, deriveKey(), Buffer.from(ivHex, "hex"));
+    const decipher = crypto.createDecipheriv(
+      ENCRYPT_ALGO,
+      deriveKey(),
+      Buffer.from(ivHex, "hex"),
+    );
     decipher.setAuthTag(Buffer.from(tagHex, "hex"));
-    return decipher.update(Buffer.from(dataHex, "hex"), undefined, "utf8") + decipher.final("utf8");
+    return (
+      decipher.update(Buffer.from(dataHex, "hex"), undefined, "utf8") +
+      decipher.final("utf8")
+    );
   } catch {
     return null;
   }
 }
 
-const getCachedPassword = () => {
+/**
+ * Returns the in-memory MITM sudo password, when one has been explicitly
+ * cached by the MITM setup flow. Kept as a named function export so the
+ * generated runtime route modules can import it reliably.
+ */
+export function getCachedPassword() {
   const password = globalThis.__mitmSudoPassword;
   return typeof password === "string" && password.length > 0 ? password : null;
-};
+}
 
 export function setCachedPassword(password) {
   if (password) globalThis.__mitmSudoPassword = password;
@@ -44,8 +56,6 @@ export function initDbHooks(getSettingsFn, updateSettingsFn) {
   _getSettings = getSettingsFn;
   _updateSettings = updateSettingsFn;
 }
-
-export { getCachedPassword };
 
 export async function loadEncryptedPassword() {
   if (!_getSettings) return null;
