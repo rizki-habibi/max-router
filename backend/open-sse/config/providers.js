@@ -104,7 +104,7 @@ export const PROVIDERS = {
     headers: {},
   },
   antigravity: {
-    baseUrl: ANTIGRAVITY_BASE_URL,
+    baseUrls: [ANTIGRAVITY_BASE_URL],
     format: "antigravity",
     headers: { "User-Agent": `antigravity/1.107.0 ${platform()}/${arch()}` },
     clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
