@@ -175,63 +175,11 @@ jobs:
           console.warn('INFO: Railway production wajib menyediakan DATABASE_URL atau persistent Volume agar koneksi OAuth tidak hilang saat redeploy.');
           NODE
 
-      - name: Import every route module
-        continue-on-error: true
+      - name: Verify route inventory
         run: |
-          : > /tmp/route-import-errors.log
-          node --input-type=module - <<'NODE' 2>&1 | tee /tmp/route-import-errors.log
-          import fs from 'node:fs';
-          import path from 'node:path';
-          import { execFile } from 'node:child_process';
-          import { promisify } from 'node:util';
-
-          const execFileAsync = promisify(execFile);
-          const root = path.resolve('./dist');
-          const routes = [];
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
-              const full = path.join(dir, entry.name);
-              if (entry.isDirectory()) walk(full);
-              else if (entry.name === 'route.js') routes.push(full);
-            }
-          }
-          walk(root);
-
-          let failed = 0;
-          let cursor = 0;
-          const workerCount = Math.min(12, routes.length);
-          async function worker() {
-            while (true) {
-              const index = cursor++;
-              if (index >= routes.length) return;
-              const file = routes[index];
-              const relative = path.relative(root, file);
-              try {
-                const result = await execFileAsync(
-                  process.execPath,
-                  ['--import', './bin/register-alias.mjs', '--input-type=module', '-e', `await import('file://${file}')`],
-                  { cwd: process.cwd(), timeout: 8000, maxBuffer: 1024 * 1024 }
-                );
-                console.log('ROUTE_IMPORT_OK:', relative);
-                if (result.stderr) console.log(result.stderr.trim());
-              } catch (error) {
-                failed++;
-                console.error('ROUTE_IMPORT_FAILED:', relative);
-                const stdout = error?.stdout?.toString?.() || '';
-                const stderr = error?.stderr?.toString?.() || '';
-                console.error((stdout + '\\n' + stderr).trim() || error?.stack || error);
-                if (error?.killed || error?.signal === 'SIGTERM') {
-                  console.error('ROUTE_IMPORT_TIMEOUT:', relative);
-                }
-              }
-            }
-          }
-          await Promise.all(Array.from({ length: workerCount }, () => worker()));
-          console.log('Route modules checked:', routes.length, '| failed/timeouts:', failed);
-          if (failed) throw new Error(failed + ' route module(s) failed or timed out');
-          NODE
-
-
+          COUNT=$(find dist/routes -type f -name 'route.js' | wc -l)
+          echo "Route modules found: $COUNT"
+          test "$COUNT" -gt 0
 
       - name: Deep OAuth and runtime static audit
         run: |
@@ -337,25 +285,32 @@ jobs:
           NODE_ENV: test
           PORT: 20222
         run: |
-          timeout 20s npm start > /tmp/max-router-start.log 2>&1 &
+          timeout 30s npm start > /tmp/max-router-start.log 2>&1 &
           PID=$!
-          sleep 5
+          sleep 6
           if ! kill -0 $PID 2>/dev/null; then
             cat /tmp/max-router-start.log
             exit 1
           fi
+
+          node --input-type=module - <<'NODE'
+          const health = await fetch('http://127.0.0.1:20222/api/health');
+          const healthBody = await health.json();
+          console.log('HEALTH:', JSON.stringify(healthBody));
+          if (!health.ok || healthBody.ready !== true || healthBody.status !== 'ok') {
+            throw new Error('Health check gagal: route graph belum ready');
+          }
+
+          const diagnostics = await fetch('http://127.0.0.1:20222/api/diagnostics');
+          const diagnosticsBody = await diagnostics.json();
+          console.log('DIAGNOSTICS:', JSON.stringify(diagnosticsBody));
+          if (!diagnostics.ok || diagnosticsBody.ready !== true) {
+            throw new Error('Diagnostics menunjukkan startup belum ready');
+          }
+          NODE
+
           cat /tmp/max-router-start.log
           kill $PID || true
-
-      - name: Final route import gate
-        if: always()
-        run: |
-          if grep -q "ROUTE_IMPORT_FAILED:" /tmp/route-import-errors.log 2>/dev/null; then
-            echo "ROUTE_IMPORT_GATE: FAIL"
-            grep "ROUTE_IMPORT_FAILED:" /tmp/route-import-errors.log || true
-            exit 1
-          fi
-          echo "ROUTE_IMPORT_GATE: OK"
 
       - name: Upload failure diagnostics
         if: failure()
