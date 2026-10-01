@@ -6,6 +6,8 @@ import { resolveOllamaLocalHost } from "../../../../../open-sse/config/providers
 import { resolveKiroModels } from "../../../../../open-sse/services/kiroModels.js";
 import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels.js";
 
+const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
+
 const readJsonResponse = async (response) => {
   const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
