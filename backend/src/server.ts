@@ -130,6 +130,9 @@ async function start() {
     server.close(() => process.exit(1));
     return server;
   }
+
+  startupReady = true;
+  console.log("[startup] Route graph ready.");
   app.use("/api", (req, res, next) => {
     console.log("API request:", req.method, req.url, req.originalUrl);
     apiRouter(req, res, next);
