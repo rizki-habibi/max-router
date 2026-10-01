@@ -1,5 +1,3 @@
-import { ANTIGRAVITY_ENDPOINTS } from "./../../../../lib/constants/antigravity.js";
-
 import { getProviderConnectionById, updateProviderConnection } from "../../../../models/index.js";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "../../../../shared/constants/providers.js";
 import { GEMINI_CONFIG } from "../../../../lib/oauth/constants/oauth.js";
