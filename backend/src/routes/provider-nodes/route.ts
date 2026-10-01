@@ -32,7 +32,7 @@ export async function GET(req, res) {
 export async function POST_handler(req, res) {
   try {
     const body = req.body;
-    const { name, prefix, apiType, baseUrl, type } = body;
+    const { name, prefix, apiType, baseUrl, type, iconUrl } = body;
 
     if (!name?.trim()) {
       return res.status(400).json({ error: "Name is required" });
@@ -40,6 +40,11 @@ export async function POST_handler(req, res) {
 
     if (!prefix?.trim()) {
       return res.status(400).json({ error: "Prefix is required" });
+    }
+
+    const normalizedIconUrl = typeof iconUrl === "string" ? iconUrl.trim() : "";
+    if (normalizedIconUrl && !/^https:\/\//i.test(normalizedIconUrl)) {
+      return res.status(400).json({ error: "Icon URL must use HTTPS" });
     }
 
     // Determine type
@@ -57,6 +62,7 @@ export async function POST_handler(req, res) {
         apiType,
         baseUrl: (baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl).trim(),
         name: name.trim(),
+        iconUrl: normalizedIconUrl || null,
       });
       return res.status(201).json({ node });
     }
@@ -74,6 +80,7 @@ export async function POST_handler(req, res) {
         prefix: prefix.trim(),
         baseUrl: sanitizedBaseUrl,
         name: name.trim(),
+        iconUrl: normalizedIconUrl || null,
       });
       return res.status(201).json({ node });
     }
@@ -92,6 +99,7 @@ export async function POST_handler(req, res) {
         prefix: prefix.trim(),
         baseUrl: sanitizedBaseUrl,
         name: name.trim(),
+        iconUrl: normalizedIconUrl || null,
       });
       return res.status(201).json({ node });
     }
