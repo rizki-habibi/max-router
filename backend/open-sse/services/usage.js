@@ -261,7 +261,7 @@ async function getGeminiUsage(accessToken, providerSpecificData, proxyOptions = 
     let response;
     try {
       response = await proxyAwareFetch(
-        "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota",
+        ANTIGRAVITY_ENDPOINTS.retrieveUserQuota,
         {
           method: "POST",
           headers: {
@@ -325,7 +325,7 @@ async function getGeminiSubscriptionInfo(accessToken, proxyOptions = null) {
   const timeoutId = setTimeout(() => controller.abort(), 10000);
   try {
     const response = await proxyAwareFetch(
-      "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+      ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
       {
         method: "POST",
         headers: {
