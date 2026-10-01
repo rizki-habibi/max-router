@@ -230,7 +230,13 @@ export class DefaultExecutor extends BaseExecutor {
           headers["x-api-key"] = credentials.apiKey || credentials.accessToken;
           if (!headers["anthropic-version"]) headers["anthropic-version"] = "2023-06-01";
         } else {
-          headers["Authorization"] = `Bearer ${credentials.apiKey || credentials.accessToken}`;
+          const token = credentials.apiKey || credentials.accessToken;
+          if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+            if (this.provider?.startsWith?.("openai-compatible-")) {
+              headers["x-api-key"] = token;
+            }
+          }
         }
     }
 
