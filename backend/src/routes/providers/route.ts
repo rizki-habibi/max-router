@@ -82,102 +82,96 @@ export async function GET(req, res) {
   }
 }
 
-// POST /api/providers - Create new connection (API Key only, OAuth via separate flow)
+// POST /api/providers - Create one or many compatible connections.
 export async function POST_handler(req, res) {
   try {
-    const body = req.body;
+    const body = req.body || {};
     const provider = normalizeProviderId(body.provider);
-    const { apiKey, email, name, displayName, priority, globalPriority, defaultModel, testStatus } = body;
     const proxyConfig = normalizeProxyConfig(body);
-    if (proxyConfig.error) {
-      return res.status(400).json({ error: proxyConfig.error });
-    }
+    if (proxyConfig.error) return res.status(400).json({ error: proxyConfig.error });
 
     const proxyPoolResult = await normalizeProxyPoolId(body.proxyPoolId);
-    if (proxyPoolResult.error) {
-      return res.status(400).json({ error: proxyPoolResult.error });
-    }
+    if (proxyPoolResult.error) return res.status(400).json({ error: proxyPoolResult.error });
     const proxyPoolId = proxyPoolResult.proxyPoolId;
 
-    // Validation: only configured API-key and compatible provider nodes are supported.
-    const isValidProvider =
-      isOpenAICompatibleProvider(provider) ||
-      isAnthropicCompatibleProvider(provider);
-
-    if (!provider || !isValidProvider) {
-      return res.status(400).json({ error: "Invalid provider" });
-    }
-    if (!apiKey) {
-      return res.status(400).json({ error: "API Key is required" });
-    }
-    const connectionName = name || displayName || AI_PROVIDERS[provider]?.name;
-    if (!connectionName) {
-      return res.status(400).json({ error: "Name is required" });
+    const isOpenAI = isOpenAICompatibleProvider(provider);
+    const isAnthropic = isAnthropicCompatibleProvider(provider);
+    if (!provider || (!isOpenAI && !isAnthropic)) {
+      return res.status(400).json({ error: "Invalid compatible provider" });
     }
 
-    let providerSpecificData = normalizeProviderSpecificData(provider, body, body.providerSpecificData);
+    const node = await getProviderNodeById(provider);
+    if (!node) return res.status(404).json({ error: "Compatible provider node not found" });
 
-    // Compatible nodes allow exactly one connection each. These guards were
-    // dropped accidentally during the bun:sqlite refactor (v0.4.28); restored to honor
-    // the contract locked in by tests/unit/compatible-provider-connections.test.js (#925).
-    if (isOpenAICompatibleProvider(provider)) {
-      const node = await getProviderNodeById(provider);
-      if (!node) {
-        return res.status(404).json({ error: "OpenAI Compatible node not found" });
-      }
-      const existingConnections = await getProviderConnections({ provider });
-      if (existingConnections.length > 0) {
-        return res.status(400).json({ error: "Only one connection is allowed for this OpenAI Compatible node" });
-      }
-      providerSpecificData = {
+    // Batch input: [{ apiKey, defaultModel?, name? }].
+    // Single-key requests remain supported through apiKey.
+    const batch = Array.isArray(body.batch) && body.batch.length
+      ? body.batch
+      : [{ apiKey: body.apiKey, defaultModel: body.defaultModel, name: body.name || body.displayName }];
+
+    const validBatch = batch
+      .map((item) => ({
+        apiKey: typeof item?.apiKey === "string" ? item.apiKey.trim() : "",
+        defaultModel: typeof item?.defaultModel === "string" ? item.defaultModel.trim() : "",
+        name: typeof item?.name === "string" ? item.name.trim() : "",
+      }))
+      .filter((item) => item.apiKey);
+
+    if (!validBatch.length) return res.status(400).json({ error: "Minimal satu API key diperlukan" });
+
+    const existing = await getProviderConnections({ provider });
+    const created = [];
+
+    for (let index = 0; index < validBatch.length; index += 1) {
+      const item = validBatch[index];
+      const connectionName =
+        item.name ||
+        node.name ||
+        `${node.name || "Provider Kompatibel"} #${existing.length + index + 1}`;
+
+      let providerSpecificData = {
         prefix: node.prefix,
         apiType: node.apiType,
         baseUrl: node.baseUrl,
         nodeName: node.name,
         iconUrl: node.iconUrl || null,
+        connectionProxyEnabled: proxyConfig.connectionProxyEnabled,
+        connectionProxyUrl: proxyConfig.connectionProxyUrl,
+        connectionNoProxy: proxyConfig.connectionNoProxy,
       };
-    } else if (isAnthropicCompatibleProvider(provider)) {
-      const node = await getProviderNodeById(provider);
-      if (!node) {
-        return res.status(404).json({ error: "Anthropic Compatible node not found" });
-      }
-      const existingConnections = await getProviderConnections({ provider });
-      if (existingConnections.length > 0) {
-        return res.status(400).json({ error: "Only one connection is allowed for this Anthropic Compatible node" });
-      }
-      providerSpecificData = {
-        prefix: node.prefix,
-        baseUrl: node.baseUrl,
-        nodeName: node.name,
-      };
+
+      if (proxyPoolId !== null) providerSpecificData.proxyPoolId = proxyPoolId;
+
+      const connection = await createProviderConnection({
+        provider,
+        authType: "apikey",
+        name: connectionName,
+        apiKey: item.apiKey,
+        email: body.email || "",
+        priority: Number(body.priority || index + 1),
+        globalPriority: body.globalPriority || null,
+        defaultModel: item.defaultModel || body.defaultModel || null,
+        providerSpecificData,
+        isActive: true,
+        testStatus: "unknown",
+      });
+      const safe = { ...connection };
+      delete safe.apiKey;
+      created.push(safe);
     }
 
-    const mergedProviderSpecificData = {
-      ...(providerSpecificData || {}),
-      connectionProxyEnabled: proxyConfig.connectionProxyEnabled,
-      connectionProxyUrl: proxyConfig.connectionProxyUrl,
-      connectionNoProxy: proxyConfig.connectionNoProxy,
-    };
-
-    if (proxyPoolId !== null) {
-      mergedProviderSpecificData.proxyPoolId = proxyPoolId;
-    }
-
-    const newConnection = await createProviderConnection({
-      provider,
-      authType: "apikey",
-      name: connectionName,
-      apiKey: apiKey || "",
-      email: email || "",
-      priority: priority || 1,
-      globalPriority: globalPriority || null,
-      defaultModel: defaultModel || null,
-      providerSpecificData: mergedProviderSpecificData,
-      isActive: true,
-      testStatus: testStatus || "unknown",
+    return res.status(201).json({
+      connections: created,
+      connection: created[0] || null,
+      createdCount: created.length,
     });
+  } catch (error) {
+    console.log("Error creating compatible provider:", error);
+    return res.status(500).json({ error: "Failed to create provider" });
+  }
+}
 
-    // Hide sensitive fields
+// Hide sensitive fields
     const result = { ...newConnection };
     delete result.apiKey;
 
