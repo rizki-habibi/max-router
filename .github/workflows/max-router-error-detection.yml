@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   audit-backend:
@@ -132,7 +132,9 @@ jobs:
             ['Provider connections API', '/api/providers'],
             ['Model endpoint', '/models'],
             ['PostgreSQL adapter', 'createPostgresAdapter'],
-            ['DATABASE_URL', 'process.env.DATABASE_URL']
+            ['DATABASE_URL', 'process.env.DATABASE_URL'],
+            ['PostgreSQL migration runner', 'runVersionedMigrations'],
+            ['PostgreSQL schema version metadata', "schemaVersion"]
           ];
 
           for (const [label, needle] of checks) {
