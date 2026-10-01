@@ -6,6 +6,22 @@ import { resolveOllamaLocalHost } from "../../../../../open-sse/config/providers
 import { resolveKiroModels } from "../../../../../open-sse/services/kiroModels.js";
 import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels.js";
 
+const normalizeCompatibleBaseUrl = (value) => {
+  const raw = String(value || "").trim().replace(/\/+$/, "");
+  if (!raw) return raw;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.hostname.toLowerCase() === "xkiro.com" || parsed.hostname.toLowerCase() === "www.xkiro.com") {
+      parsed.hostname = "api.xkiro.com";
+      parsed.pathname = "/v1";
+      parsed.search = "";
+      parsed.hash = "";
+      return parsed.toString().replace(/\/$/, "");
+    }
+  } catch {}
+  return raw;
+};
+
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
 const readJsonResponse = async (response) => {
@@ -466,8 +482,18 @@ export async function GET_handler(req, res, { params }) {
     }
 
     if (isOpenAICompatibleProvider(connection.provider)) {
-      const baseUrl = connection.providerSpecificData?.baseUrl;
+      const baseUrl = normalizeCompatibleBaseUrl(connection.providerSpecificData?.baseUrl);
       if (!baseUrl) return res.status(400).json({ error: "No base URL configured for OpenAI compatible provider" });
+      if (baseUrl !== connection.providerSpecificData?.baseUrl) {
+        try {
+          await updateProviderConnection(connection.id, {
+            providerSpecificData: { ...(connection.providerSpecificData || {}), baseUrl },
+          });
+          connection.providerSpecificData = { ...(connection.providerSpecificData || {}), baseUrl };
+        } catch (error) {
+          console.log("Compatible base URL normalization skipped:", error.message);
+        }
+      }
 
       const rootBase = baseUrl.replace(/\/$/, "");
       // Prefer the standard OpenAI-compatible endpoint. Some providers serve
