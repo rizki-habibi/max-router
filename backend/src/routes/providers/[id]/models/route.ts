@@ -5,6 +5,7 @@ import { refreshGoogleToken, updateProviderCredentials } from "../../../../sse/s
 import { resolveOllamaLocalHost } from "../../../../../open-sse/config/providers.js";
 import { resolveKiroModels } from "../../../../../open-sse/services/kiroModels.js";
 import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels.js";
+import { ANTIGRAVITY_ENDPOINTS } from "../../../../lib/constants/antigravity.js";
 
 const normalizeCompatibleBaseUrl = (value) => {
   const raw = String(value || "").trim().replace(/\/+$/, "");
@@ -22,7 +23,7 @@ const normalizeCompatibleBaseUrl = (value) => {
   return raw;
 };
 
-const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
+const GEMINI_CLI_MODELS_URL = ANTIGRAVITY_ENDPOINTS.fetchAvailableModels;
 
 const readJsonResponse = async (response) => {
   const contentType = response.headers.get("content-type") || "";
