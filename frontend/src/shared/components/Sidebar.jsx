@@ -272,7 +272,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Pengaturan</span>
             </Link>
           </div>
-        <div className={cn("border-t border-border-subtle px-2 py-2", collapsed ? "flex justify-center" : "")}>
+        <div className={cn("mt-auto border-t border-black/5 dark:border-white/10 px-3 py-3", collapsed ? "flex justify-center" : "")}>
           <button
             type="button"
             onClick={onToggleCollapse}
@@ -287,7 +287,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               {collapsed ? "chevron_right" : "chevron_left"}
             </span>
             <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>
-              Ciutkan
+              {collapsed ? "Buka" : "Tutup panel"}
             </span>
           </button>
         </div>
