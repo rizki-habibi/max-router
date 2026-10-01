@@ -10,6 +10,36 @@ import { resolveQoderModels } from "../../../../../open-sse/services/qoderModels
 
 const GEMINI_CLI_MODELS_URL = ANTIGRAVITY_ENDPOINTS.fetchAvailableModels;
 
+const normalizeModelMetadata = (model) => {
+  if (!model || typeof model !== "object") return model;
+  const capabilities = model.capabilities && typeof model.capabilities === "object" ? model.capabilities : {};
+  const supported = new Set(
+    Array.isArray(model.supported_parameters) ? model.supported_parameters :
+    Array.isArray(model.supportedParameters) ? model.supportedParameters :
+    Array.isArray(model.parameters) ? model.parameters :
+    Array.isArray(model.metadata?.supported_parameters) ? model.metadata.supported_parameters : []
+  );
+  if (capabilities.tools === true) supported.add("tools");
+  if (capabilities.vision === true) supported.add("vision");
+  if (capabilities.reasoning === true) {
+    supported.add("reasoning");
+    supported.add("reasoning_effort");
+  }
+  if (model.reasoning_efforts?.levels?.length) supported.add("reasoning_effort");
+  if (model.response_format || capabilities.structured_output === true) supported.add("response_format");
+  return {
+    ...model,
+    supportedParameters: Array.from(supported),
+    accessTier: model.access_tier || model.accessTier || model.tier || null,
+    contextWindow: model.context_window ?? model.contextWindow ?? model.context_length ?? null,
+    maxOutput: model.max_output_tokens ?? model.max_output ?? model.maxOutput ?? model.max_tokens ?? null,
+    pricing: model.pricing ?? null,
+    capabilities: Object.keys(capabilities).length ? capabilities : model.capabilities ?? null,
+  };
+};
+
+const normalizeModels = (models) => (Array.isArray(models) ? models.map(normalizeModelMetadata) : []);
+
 const parseOpenAIStyleModels = (data) => {
   if (Array.isArray(data)) return data;
   return data?.data || data?.models || data?.results || [];
@@ -470,73 +500,134 @@ export async function GET_handler(req, res, { params }) {
 
     if (isOpenAICompatibleProvider(connection.provider)) {
       const baseUrl = connection.providerSpecificData?.baseUrl;
-      if (!baseUrl) {
-        return res.status(400).json({ error: "No base URL configured for OpenAI compatible provider" });
-      }
-      const url = `${baseUrl.replace(/\/$/, "")}/models`;
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${connection.apiKey}`,
-        },
-      });
+      if (!baseUrl) return res.status(400).json({ error: "No base URL configured for OpenAI compatible provider" });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`Error fetching models from ${connection.provider}:`, errorText);
-        return res.status(response.status).json(
-          { error: `Failed to fetch models: ${response.status}` }
-        );
+      const rootBase = baseUrl.replace(/\/$/, "");
+      const candidates = Array.from(new Set([
+        rootBase + "/models",
+        rootBase.endsWith("/v1") ? rootBase + "/models" : rootBase + "/v1/models",
+        rootBase.replace(/\/v[0-9]+$/i, "") + "/v1/models",
+      ]));
+
+      let response = null;
+      let lastError = "";
+      let usedUrl = candidates[0];
+
+      for (const url of candidates) {
+        try {
+          const candidate = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "Authorization": "Bearer " + connection.apiKey,
+              "x-api-key": connection.apiKey,
+            },
+            signal: AbortSignal.timeout(12000),
+          });
+          if (candidate.ok) {
+            response = candidate;
+            usedUrl = url;
+            break;
+          }
+          lastError = "HTTP " + candidate.status + ": " + (await candidate.text().catch(() => "")).slice(0, 240);
+          if (![404, 405].includes(candidate.status)) break;
+        } catch (error) {
+          lastError = error.message;
+        }
+      }
+
+      if (!response) {
+        return res.status(502).json({
+          error: "Gagal mengambil daftar model. " + (lastError || "Endpoint /models tidak tersedia"),
+          candidates,
+        });
       }
 
       const data = await response.json();
-      const models = data.data || data.models || [];
+      const models = normalizeModels(data.data || data.models || data.results || []);
+      let usage = null;
+
+      try {
+        const parsedUrl = new URL(usedUrl);
+        if (/xkiro[.]com$/i.test(parsedUrl.hostname)) {
+          const usageRes = await fetch(parsedUrl.origin + "/v1/usage", {
+            headers: {
+              "Authorization": "Bearer " + connection.apiKey,
+              "x-api-key": connection.apiKey,
+              "Accept": "application/json",
+            },
+            signal: AbortSignal.timeout(8000),
+          });
+          if (usageRes.ok) usage = await usageRes.json();
+        }
+      } catch (usageError) {
+        console.log("Usage detection skipped:", usageError.message);
+      }
 
       return res.json({
         provider: connection.provider,
         connectionId: connection.id,
-        models
+        models,
+        usage,
+        endpoint: usedUrl,
+        modelCount: models.length,
+        freeModelCount: models.filter((m) => ["free"].includes(String(m.accessTier || "").toLowerCase()) || (m.pricing && Number(m.pricing.input ?? -1) === 0 && Number(m.pricing.output ?? -1) === 0)).length,
+        paidModelCount: models.filter((m) => ["paid", "premium"].includes(String(m.accessTier || "").toLowerCase()) || (m.pricing && (Number(m.pricing.input ?? 0) > 0 || Number(m.pricing.output ?? 0) > 0))).length,
+        supportedParameters: Array.from(new Set(models.flatMap((m) => m.supportedParameters || []))),
       });
     }
 
     if (isAnthropicCompatibleProvider(connection.provider)) {
       let baseUrl = connection.providerSpecificData?.baseUrl;
-      if (!baseUrl) {
-        return res.status(400).json({ error: "No base URL configured for Anthropic compatible provider" });
-      }
-
+      if (!baseUrl) return res.status(400).json({ error: "No base URL configured for Anthropic compatible provider" });
       baseUrl = baseUrl.replace(/\/$/, "");
-      if (baseUrl.endsWith("/messages")) {
-        baseUrl = baseUrl.slice(0, -9);
+      if (baseUrl.endsWith("/messages")) baseUrl = baseUrl.slice(0, -9);
+
+      const candidates = Array.from(new Set([
+        baseUrl + "/models",
+        baseUrl.endsWith("/v1") ? baseUrl + "/models" : baseUrl + "/v1/models",
+        baseUrl.replace(/\/v[0-9]+$/i, "") + "/v1/models",
+      ]));
+      let response = null;
+      let lastError = "";
+
+      for (const url of candidates) {
+        try {
+          const candidate = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "x-api-key": connection.apiKey,
+              "anthropic-version": "2023-06-01",
+              "Authorization": "Bearer " + connection.apiKey,
+            },
+            signal: AbortSignal.timeout(12000),
+          });
+          if (candidate.ok) { response = candidate; break; }
+          lastError = "HTTP " + candidate.status + ": " + (await candidate.text().catch(() => "")).slice(0, 240);
+          if (![404, 405].includes(candidate.status)) break;
+        } catch (error) {
+          lastError = error.message;
+        }
       }
 
-      const url = `${baseUrl}/models`;
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": connection.apiKey,
-          "anthropic-version": "2023-06-01",
-          "Authorization": `Bearer ${connection.apiKey}`
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`Error fetching models from ${connection.provider}:`, errorText);
-        return res.status(response.status).json(
-          { error: `Failed to fetch models: ${response.status}` }
-        );
+      if (!response) {
+        return res.status(502).json({
+          error: "Gagal mengambil daftar model Anthropic. " + (lastError || "Endpoint /models tidak tersedia"),
+          candidates,
+        });
       }
 
       const data = await response.json();
-      const models = data.data || data.models || [];
-
+      const models = normalizeModels(data.data || data.models || data.results || []);
       return res.json({
         provider: connection.provider,
         connectionId: connection.id,
-        models
+        models,
+        modelCount: models.length,
+        supportedParameters: Array.from(new Set(models.flatMap((m) => m.supportedParameters || []))),
       });
     }
 
