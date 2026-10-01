@@ -179,9 +179,10 @@ jobs:
         continue-on-error: true
         run: |
           : > /tmp/route-import-errors.log
-          node --import ./bin/register-alias.mjs --input-type=module - <<'NODE' 2>&1 | tee /tmp/route-import-errors.log
+          node --input-type=module - <<'NODE' 2>&1 | tee /tmp/route-import-errors.log
           import fs from 'node:fs';
           import path from 'node:path';
+          import { execFileSync } from 'node:child_process';
 
           const root = path.resolve('./dist');
           const routes = [];
@@ -196,16 +197,27 @@ jobs:
 
           let failed = 0;
           for (const file of routes) {
+            const relative = path.relative(root, file);
             try {
-              await import('file://' + file);
+              execFileSync(
+                process.execPath,
+                ['--import', './bin/register-alias.mjs', '--input-type=module', '-e', `await import('file://${file}')`],
+                { cwd: process.cwd(), timeout: 8000, stdio: ['ignore', 'pipe', 'pipe'] }
+              );
+              console.log('ROUTE_IMPORT_OK:', relative);
             } catch (error) {
               failed++;
-              console.error('ROUTE_IMPORT_FAILED:', path.relative(root,file));
-              console.error(error?.stack || error);
+              console.error('ROUTE_IMPORT_FAILED:', relative);
+              const stdout = error?.stdout?.toString?.() || '';
+              const stderr = error?.stderr?.toString?.() || '';
+              console.error((stdout + '\\n' + stderr).trim() || error?.stack || error);
+              if (error?.killed || error?.signal === 'SIGTERM') {
+                console.error('ROUTE_IMPORT_TIMEOUT:', relative);
+              }
             }
           }
           console.log('Route modules checked:', routes.length);
-          if (failed) throw new Error(failed + ' route module(s) failed to import');
+          if (failed) throw new Error(failed + ' route module(s) failed or timed out');
           NODE
 
 
