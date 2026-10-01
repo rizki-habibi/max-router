@@ -677,8 +677,9 @@ export default function ProviderDetailPage() {
     }
   };
 
+  const selectableConnections = isCompatible ? connections.filter((conn) => !!conn.apiKey) : connections;
   const selectedConnections = connections.filter((conn) => selectedConnectionIds.includes(conn.id));
-  const allSelected = connections.length > 0 && selectedConnectionIds.length === connections.length;
+  const allSelected = selectableConnections.length > 0 && selectableConnections.every((conn) => selectedConnectionIds.includes(conn.id));
 
   const toggleSelectConnection = (connectionId) => {
     setSelectedConnectionIds((prev) => (
@@ -693,7 +694,7 @@ export default function ProviderDetailPage() {
       setSelectedConnectionIds([]);
       return;
     }
-    setSelectedConnectionIds(connections.map((conn) => conn.id));
+    setSelectedConnectionIds(selectableConnections.map((conn) => conn.id));
   };
 
   const clearSelection = () => {
@@ -702,8 +703,9 @@ export default function ProviderDetailPage() {
   };
 
   useEffect(() => {
-    setSelectedConnectionIds((prev) => prev.filter((id) => connections.some((conn) => conn.id === id)));
-  }, [connections]);
+    const allowedIds = new Set(selectableConnections.map((conn) => conn.id));
+    setSelectedConnectionIds((prev) => prev.filter((id) => allowedIds.has(id)));
+  }, [connections, isCompatible]);
 
   const selectedProxySummary = (() => {
     if (selectedConnections.length === 0) return "";
