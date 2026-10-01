@@ -1000,6 +1000,45 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
                 {validation.detectedType ? " · " + (validation.detectedType === "anthropic-compatible" ? "Anthropic Messages" : "OpenAI-compatible") : ""}
               </span>
             </div>
+            <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded-lg bg-emerald-500/10 px-3 py-2">
+                <div className="text-[11px] text-text-muted">Model terdeteksi</div>
+                <div className="text-lg font-semibold text-text-main">{validation.modelCount ?? validation.models?.length ?? 0}</div>
+              </div>
+              <div className="rounded-lg bg-sky-500/10 px-3 py-2">
+                <div className="text-[11px] text-text-muted">Gratis</div>
+                <div className="text-lg font-semibold text-emerald-500">{validation.freeModelCount ?? 0}</div>
+              </div>
+              <div className="rounded-lg bg-amber-500/10 px-3 py-2">
+                <div className="text-[11px] text-text-muted">Berbayar</div>
+                <div className="text-lg font-semibold text-amber-500">{validation.paidModelCount ?? 0}</div>
+              </div>
+              <div className="rounded-lg bg-surface-2 px-3 py-2">
+                <div className="text-[11px] text-text-muted">Harga tidak diketahui</div>
+                <div className="text-lg font-semibold text-text-main">{validation.unknownPricingModelCount ?? 0}</div>
+              </div>
+            </div>
+            {validation.models?.length > 0 && (
+              <div className="mb-3 max-h-40 overflow-y-auto rounded-lg border border-border bg-surface-2/50 p-2">
+                <div className="mb-2 text-xs font-medium text-text-muted">Model yang terdeteksi</div>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {validation.models.map((model) => (
+                    <div key={model.id} className="flex items-center justify-between gap-2 rounded px-2 py-1.5 text-xs">
+                      <span className="min-w-0 truncate font-mono">{model.id}</span>
+                      <span className={
+                        model.priceClass === "free"
+                          ? "shrink-0 text-emerald-500"
+                          : model.priceClass === "paid"
+                            ? "shrink-0 text-amber-500"
+                            : "shrink-0 text-text-muted"
+                      }>
+                        {model.priceClass === "free" ? "Gratis" : model.priceClass === "paid" ? "Berbayar" : "Harga tidak diketahui"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex max-h-44 flex-col gap-2 overflow-y-auto">
               {validation.results.map((result, index) => (
                 <div key={result.keyPreview + "-" + index} className="flex items-center gap-2 text-xs">
@@ -1025,7 +1064,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
             onClick={handleCheck}
             disabled={checking || saving || !baseUrl.trim() || !keyLines().length}
           >
-            {checking ? "Memeriksa..." : "Periksa API Key"}
+            {checking ? "Mendeteksi..." : "Tes Key & Deteksi Model"}
           </Button>
           <Button
             fullWidth
