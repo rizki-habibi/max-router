@@ -33,6 +33,8 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
   const [showProxyDropdown, setShowProxyDropdown] = useState(false);
   const [updatingProxy, setUpdatingProxy] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
+  const [usage, setUsage] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(false);
   const proxyDropdownRef = useRef(null);
 
   const proxyPoolMap = new Map((proxyPools || []).map((p) => [p.id, p]));
@@ -73,6 +75,38 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
     const t = modelLockUntil ? setInterval(check, 1000) : null;
     return () => { if (t) clearInterval(t); };
   }, [modelLockUntil]);
+
+  useEffect(() => {
+    let stopped = false;
+    let timer = null;
+    const loadUsage = async () => {
+      if (!connection.id || connection.isActive === false) return;
+      setUsageLoading(true);
+      try {
+        const res = await fetch("/api/usage/" + encodeURIComponent(connection.id), { cache: "no-store" });
+        const data = await res.json().catch(() => null);
+        if (!stopped && res.ok && data && !data.error) setUsage(data);
+      } catch {} finally { if (!stopped) setUsageLoading(false); }
+      if (!stopped) timer = window.setTimeout(loadUsage, 60000);
+    };
+    loadUsage();
+    return () => { stopped = true; if (timer) window.clearTimeout(timer); };
+  }, [connection.id, connection.isActive]);
+
+  const formatCount = (value) => value === null || value === undefined ? "—" : Number(value).toLocaleString("id-ID");
+  const formatReset = (seconds) => {
+    if (seconds === null || seconds === undefined) return "—";
+    const s = Math.max(0, Number(seconds));
+    if (s < 60) return Math.ceil(s) + " dtk";
+    if (s < 3600) return Math.floor(s / 60) + " mnt";
+    return Math.floor(s / 3600) + " jam " + Math.floor((s % 3600) / 60) + " mnt";
+  };
+  const free = usage?.free_tokens || {};
+  const shortWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "short") : null;
+  const longWindow = Array.isArray(usage?.windows) ? usage.windows.find((w) => w.kind === "long") : null;
+  const modelUsage = usage?.local?.byModel || {};
+  const selectedModel = connection.defaultModel || Object.keys(modelUsage)[0] || null;
+  const selectedModelUsage = selectedModel ? modelUsage[selectedModel] : null;
 
   useEffect(() => {
     if (!showProxyDropdown) return;
