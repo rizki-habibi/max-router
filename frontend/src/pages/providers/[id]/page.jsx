@@ -835,6 +835,7 @@ export default function ProviderDetailPage() {
       officialWebsite={officialProviderWebsite}
       officialBaseUrl={officialProviderBaseUrl}
       onAddKey={triggerAddConnection}
+      requireApiKey={isCompatible || providerInfo?.authType === "apikey"}
     />
   );
 
