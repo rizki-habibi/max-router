@@ -265,19 +265,13 @@ async function createBypassRequest(parsedUrl, realIP, options) {
       };
 
       const req = https.request(reqOptions, (res) => {
-        const response = {
-          ok: res.statusCode >= HTTP_SUCCESS_MIN && res.statusCode < HTTP_SUCCESS_MAX,
+        // Return a real Fetch Response so callers can safely use clone(), text(),
+        // json(), body, and streaming semantics consistently with native fetch().
+        const response = new Response(Readable.toWeb(res), {
           status: res.statusCode,
-          statusText: res.statusMessage,
-          headers: new Map(Object.entries(res.headers)),
-          body: Readable.toWeb(res),
-          text: async () => {
-            const chunks = [];
-            for await (const chunk of res) chunks.push(chunk);
-            return Buffer.concat(chunks).toString();
-          },
-          json: async () => JSON.parse(await response.text()),
-        };
+          statusText: res.statusMessage || "",
+          headers: res.headers,
+        });
         resolve(response);
       });
 
