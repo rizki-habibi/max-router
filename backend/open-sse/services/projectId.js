@@ -301,10 +301,7 @@ async function createGoogleCloudProject(accessToken, signal) {
 }
 
 async function bindProjectAndReload(accessToken, projectId, tierID, signal) {
-    for (const baseUrl of [
-        "https://daily-cloudcode-pa.googleapis.com",
-        ...ANTIGRAVITY_LOAD_ENDPOINTS,
-    ].filter((v, i, a) => a.indexOf(v) === i)) {
+    for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
         if (signal?.aborted) return null;
         try {
             const headers = { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*", "x-request-source": "local" };
