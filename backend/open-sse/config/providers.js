@@ -1,5 +1,4 @@
 import { platform, arch } from "os";
-import { ANTIGRAVITY_BASE_URL, ANTIGRAVITY_ENDPOINTS, ANTIGRAVITY_LOAD_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
 
 // === OS/Arch helpers ===
 function mapStainlessOs() {
@@ -102,13 +101,6 @@ export const PROVIDERS = {
     baseUrl: "https://api3.qoder.sh/algo/api/v2/service/pro/sse/agent_chat_generation",
     format: "openai",
     headers: {},
-  },
-  antigravity: {
-    baseUrls: [ANTIGRAVITY_BASE_URL],
-    format: "antigravity",
-    headers: { "User-Agent": `antigravity/1.107.0 ${platform()}/${arch()}` },
-    clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
-    clientSecret: "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"
   },
   openrouter: {
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
