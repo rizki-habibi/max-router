@@ -68,11 +68,11 @@ export default function Modal({
               {/* Traffic lights — desktop only */}
               {showTrafficLights && (
                 <div className="hidden md:flex items-center gap-2 mr-4 ml-2">
-                  <Tooltip text="Close" position="top" color="#FF5F56">
+                  <Tooltip text="Tutup" position="top" color="#FF5F56">
                     <button
                       onClick={onClose}
-                      aria-label="Close"
-                      title="Close"
+                      aria-label="Tutup"
+                      title="Tutup"
                       className="w-4 h-4 rounded-full bg-[#FF5F56] hover:brightness-90 transition-all cursor-pointer flex items-center justify-center group/dot"
                     >
                       <span className="text-[9px] font-bold text-white opacity-0 group-hover/dot:opacity-100 transition-opacity leading-none">✕</span>
@@ -89,7 +89,7 @@ export default function Modal({
             {/* X button — mobile only */}
             <button
               onClick={onClose}
-              aria-label="Close"
+              aria-label="Tutup"
               className="md:hidden p-1.5 rounded-[10px] text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>
@@ -115,10 +115,10 @@ export function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = "Confirm",
+  title = "Konfirmasi",
   message,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText = "Konfirmasi",
+  cancelText = "Batal",
   variant = "danger",
   loading = false,
 }) {
