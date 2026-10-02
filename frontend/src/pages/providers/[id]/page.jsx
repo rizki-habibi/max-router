@@ -55,7 +55,6 @@ export default function ProviderDetailPage() {
   const [kiloFreeModels, setKiloFreeModels] = useState([]);
   const [disabledModelIds, setDisabledModelIds] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
-  const [showAgRiskModal, setShowAgRiskModal] = useState(false);
   const [oneByOneRunning, setOneByOneRunning] = useState(false);
   const [oneByOneStopping, setOneByOneStopping] = useState(false);
   const [oneByOneCurrentConnectionId, setOneByOneCurrentConnectionId] = useState(null);
@@ -67,26 +66,12 @@ export default function ProviderDetailPage() {
   const [providerTab, setProviderTab] = useState("overview"); // overview | admin
   const { copied, copy } = useCopyToClipboard();
 
-  const AG_RISK_STORAGE_KEY = "ag_risk_confirmed";
-
   const openOAuthConnection = () => {
     setShowOAuthModal(true);
   };
 
   const triggerOAuthConnection = () => {
-    if (providerId === "antigravity" && typeof window !== "undefined") {
-      const confirmed = window.localStorage.getItem(AG_RISK_STORAGE_KEY) === "true";
-      if (!confirmed) {
-        setShowAgRiskModal(true);
-        return;
-      }
-    }
-    if (isOAuth) {
-      openOAuthConnection();
-      return;
-    }
-    setAddConnectionError("");
-    setShowAddApiKeyModal(true);
+    setShowOAuthModal(true);
   };
 
   const triggerApiKeyConnection = () => {
