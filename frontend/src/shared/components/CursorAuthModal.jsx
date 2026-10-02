@@ -191,7 +191,7 @@ export default function CursorAuthModal({ isOpen, onSuccess, onClose }) {
                 fullWidth
                 disabled={importing || !accessToken.trim() || !machineId.trim()}
               >
-                {importing ? "Importing..." : "Import Token"}
+                {importing ? "Mengimpor..." : "Impor Token"}
               </Button>
               <Button onClick={onClose} variant="ghost" fullWidth>
                 Cancel
