@@ -23,6 +23,21 @@ export const GITHUB_COPILOT = {
   API_VERSION: "2025-04-01",
 };
 
+export const CLOUD_CODE_API = {
+  loadCodeAssist: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+  onboardUser: "https://cloudcode-pa.googleapis.com/v1internal:onboardUser",
+};
+export const LOAD_CODE_ASSIST_HEADERS = {
+  "Content-Type": "application/json",
+  "User-Agent": "google-api-nodejs-client/9.15.1",
+  "X-Goog-Api-Client": GEMINI_CLI_API_CLIENT,
+};
+export const LOAD_CODE_ASSIST_METADATA = {
+  ideType: 10,
+  platform: 3,
+  pluginType: 2,
+};
+
 export const INTERNAL_REQUEST_HEADER = { name: "x-request-source", value: "local" };
 
 // Suffix added to client tools when forwarding to Claude provider (anti-ban cloaking)
