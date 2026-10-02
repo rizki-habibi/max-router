@@ -4,7 +4,6 @@ import { pd, WEAVY_SIZE_OV, DALLE3_SIZE_OV, DALLE2_SIZE_OV, DALLE3_QUALITY_OV, G
 
 // Provider models - Single source of truth
 // Key = alias (cc, cx, gc, qw, if, ag, gh for OAuth; id for API Key)
-// Field "provider" for special cases (e.g. AntiGravity models that call different backends)
 
 const CODEX_REVIEW_SUFFIX = "-review";
 
@@ -1604,7 +1603,6 @@ const OAUTH_ALIASES = {
   "gemini-cli": "gc",
   qwen: "qw",
   iflow: "if",
-  antigravity: "ag",
   github: "gh",
   kiro: "kr",
   cursor: "cu",
