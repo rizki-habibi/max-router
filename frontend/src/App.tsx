@@ -76,7 +76,7 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
 function LoadingFallback() {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
-      <span>Loading...</span>
+      <span>Memuat...</span>
     </div>
   );
 }
