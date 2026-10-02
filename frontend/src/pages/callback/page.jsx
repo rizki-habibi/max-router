@@ -70,7 +70,7 @@ function CallbackContent() {
               <span className="material-symbols-outlined text-3xl text-primary animate-spin">progress_activity</span>
             </div>
             <h1 className="text-xl font-semibold mb-2">Processing...</h1>
-            <p className="text-text-muted">Please wait while we complete the authorization.</p>
+            <p className="text-text-muted">Silakan tunggu, proses otorisasi sedang diselesaikan.</p>
           </>
         )}
 
@@ -81,7 +81,7 @@ function CallbackContent() {
             </div>
             <h1 className="text-xl font-semibold mb-2">Authorization Successful!</h1>
             <p className="text-text-muted">
-              {status === "success" ? "This window will close automatically..." : "You can close this tab now."}
+              {status === "success" ? "Jendela ini akan tertutup secara otomatis..." : "Anda dapat menutup tab ini sekarang."}
             </p>
           </>
         )}
@@ -113,7 +113,7 @@ export default function CallbackPage() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="material-symbols-outlined text-3xl text-primary animate-spin">progress_activity</span>
           </div>
-          <p className="text-text-muted">Loading...</p>
+          <p className="text-text-muted">Memuat...</p>
         </div>
       </div>
     }>
