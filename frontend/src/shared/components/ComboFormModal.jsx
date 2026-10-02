@@ -157,7 +157,7 @@ export default function ComboFormModal({ isOpen, combo, onClose, onSave, activeP
           </div>
 
           <div className="flex flex-col gap-2 pt-1 sm:flex-row">
-            <Button onClick={onClose} variant="ghost" fullWidth size="sm">Cancel</Button>
+            <Button onClick={onClose} variant="ghost" fullWidth size="sm">Batal</Button>
             <Button onClick={handleSave} fullWidth size="sm" disabled={!name.trim() || !!nameError || saving}>
               {saving ? "Menyimpan..." : isEdit ? "Simpan" : "Buat"}
             </Button>
