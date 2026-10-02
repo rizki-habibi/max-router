@@ -255,9 +255,9 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
             )}
             <div className="flex gap-2">
               <Button onClick={handleBulkSubmit} fullWidth disabled={saving || !bulkText.trim()}>
-                {saving ? "Adding..." : "Add All Keys"}
+                {saving ? "Menambahkan..." : "Tambah Semua Kunci"}
               </Button>
-              <Button onClick={onClose} variant="ghost" fullWidth>Cancel</Button>
+              <Button onClick={onClose} variant="ghost" fullWidth>Batal</Button>
             </div>
           </div>
         )}
@@ -443,7 +443,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
 
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={saving || (!isOllamaLocal && (!formData.name || !formData.apiKey)) || (isCompatible && !formData.defaultModel.trim()) || (isAzure && (!azureData.azureEndpoint || !azureData.deployment || !azureData.organization)) || (isCloudflareAi && !cloudflareData.accountId)}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Menyimpan..." : "Simpan"}
           </Button>
           <Button onClick={onClose} variant="ghost" fullWidth>
             Cancel

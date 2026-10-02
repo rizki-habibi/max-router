@@ -107,7 +107,7 @@ export default function ComboDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-    if (!res.ok) { const err = await res.json(); alert(err.error || "Failed to save"); return false; }
+    if (!res.ok) { const err = await res.json(); alert(err.error || "Gagal menyimpan"); return false; }
     return true;
   };
 

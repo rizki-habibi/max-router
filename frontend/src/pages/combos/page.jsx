@@ -563,7 +563,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               size="sm"
               disabled={!name.trim() || !!nameError || saving}
             >
-              {saving ? "Saving..." : isUbah ? "Save" : "Create"}
+              {saving ? "Menyimpan..." : isUbah ? "Simpan" : "Buat"}
             </Button>
           </div>
         </div>

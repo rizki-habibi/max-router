@@ -195,7 +195,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onClose,
         )}
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || saving}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Menyimpan..." : "Simpan"}
           </Button>
           <Button onClick={onClose} variant="ghost" fullWidth>
             Cancel

@@ -315,8 +315,8 @@ export default function EditConnectionModal({ isOpen, connection, proxyPools, on
         )}
 
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} fullWidth disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
-          <Button onClick={onClose} variant="ghost" fullWidth>Cancel</Button>
+          <Button onClick={handleSubmit} fullWidth disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</Button>
+          <Button onClick={onClose} variant="ghost" fullWidth>Batal</Button>
         </div>
       </div>
     </Modal>

@@ -108,7 +108,7 @@ export default function EndpointPresetControl({
         onClick={handleSave}
         disabled={!baseUrl || !apiKey}
         className="px-2 py-1.5 rounded border text-xs bg-surface border-border text-text-main hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-        title="Save current Base URL and API key as a browser-local preset"
+        title="Simpan alamat dasar dan kunci API saat ini sebagai prasetel lokal peramban"
       >
         Save
       </button>
