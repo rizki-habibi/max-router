@@ -4,8 +4,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
-import { Card, Button, Modal, Input, CardSkeleton, ModelSelectModal, Toggle, ConfirmModal } from "@/shared/components";
-import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import { Card, Button, Modal, Input, CardSkeleton, ModelSelectModal, Toggle, KonfirmasiModal } from "@/shared/components";
+import { useSalinToClipboard } from "@/shared/hooks/useSalinToClipboard";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
@@ -15,11 +15,11 @@ export default function CombosPage() {
   const [combos, setCombos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingCombo, setEditingCombo] = useState(null);
+  const [editingCombo, setUbahingCombo] = useState(null);
   const [activeProviders, setActiveProviders] = useState([]);
   const [comboStrategies, setComboStrategies] = useState({});
-  const [confirmState, setConfirmState] = useState(null);
-  const { copied, copy } = useCopyToClipboard();
+  const [confirmState, setKonfirmasiState] = useState(null);
+  const { copied, copy } = useSalinToClipboard();
 
   useEffect(() => {
     fetchData();
@@ -61,7 +61,7 @@ export default function CombosPage() {
         setShowCreateModal(false);
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create combo");
+        alert(err.error || "Gagal membuat gabungan");
       }
     } catch (error) {
       console.log("Error creating combo:", error);
@@ -77,22 +77,22 @@ export default function CombosPage() {
       });
       if (res.ok) {
         await fetchData();
-        setEditingCombo(null);
+        setUbahingCombo(null);
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to update combo");
+        alert(err.error || "Gagal memperbarui gabungan");
       }
     } catch (error) {
       console.log("Error updating combo:", error);
     }
   };
 
-  const handleDelete = async (id) => {
-    setConfirmState({
-      title: "Delete Combo",
-      message: "Delete this combo?",
-      onConfirm: async () => {
-        setConfirmState(null);
+  const handleHapus = async (id) => {
+    setKonfirmasiState({
+      title: "Hapus Gabungan",
+      message: "Hapus gabungan ini?",
+      onKonfirmasi: async () => {
+        setKonfirmasiState(null);
         try {
           const res = await fetch(`/api/combos/${id}`, { method: "DELETE" });
           if (res.ok) {
@@ -142,11 +142,11 @@ export default function CombosPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold">Combos</h1>
           <p className="text-sm text-text-muted mt-1">
-            Create model combos with fallback support
+            Buat gabungan model dengan dukungan cadangan
           </p>
         </div>
         <Button icon="add" onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
-          Create Combo
+          Buat Gabungan
         </Button>
       </div>
 
@@ -157,10 +157,10 @@ export default function CombosPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
               <span className="material-symbols-outlined text-[32px]">layers</span>
             </div>
-            <p className="text-text-main font-medium mb-1">No combos yet</p>
-            <p className="text-sm text-text-muted mb-4">Create model combos with fallback support</p>
+            <p className="text-text-main font-medium mb-1">Belum ada gabungan</p>
+            <p className="text-sm text-text-muted mb-4">Buat gabungan model dengan dukungan cadangan</p>
             <Button icon="add" onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
-              Create Combo
+              Buat Gabungan
             </Button>
           </div>
         </Card>
@@ -171,9 +171,9 @@ export default function CombosPage() {
               key={combo.id}
               combo={combo}
               copied={copied}
-              onCopy={copy}
-              onEdit={() => setEditingCombo(combo)}
-              onDelete={() => handleDelete(combo.id)}
+              onSalin={copy}
+              onUbah={() => setUbahingCombo(combo)}
+              onHapus={() => handleHapus(combo.id)}
               roundRobinEnabled={comboStrategies[combo.name]?.fallbackStrategy === "round-robin"}
               onToggleRoundRobin={(enabled) => handleToggleRoundRobin(combo.name, enabled)}
             />
@@ -190,22 +190,22 @@ export default function CombosPage() {
         activeProviders={activeProviders}
       />
 
-      {/* Edit Modal - Use key to force remount and reset state */}
+      {/* Ubah Modal - Use key to force remount and reset state */}
       <ComboFormModal
         key={editingCombo?.id || "new"}
         isOpen={!!editingCombo}
         combo={editingCombo}
-        onClose={() => setEditingCombo(null)}
+        onClose={() => setUbahingCombo(null)}
         onSave={(data) => handleUpdate(editingCombo.id, data)}
         activeProviders={activeProviders}
       />
 
-      {/* Confirm Delete Modal */}
-      <ConfirmModal
+      {/* Konfirmasi Hapus Modal */}
+      <KonfirmasiModal
         isOpen={!!confirmState}
-        onClose={() => setConfirmState(null)}
-        onConfirm={confirmState?.onConfirm}
-        title={confirmState?.title || "Confirm"}
+        onClose={() => setKonfirmasiState(null)}
+        onKonfirmasi={confirmState?.onKonfirmasi}
+        title={confirmState?.title || "Konfirmasi"}
         message={confirmState?.message}
         variant="danger"
       />
@@ -213,7 +213,7 @@ export default function CombosPage() {
   );
 }
 
-function ComboCard({ combo, copied, onCopy, onEdit, onDelete, roundRobinEnabled, onToggleRoundRobin }) {
+function ComboCard({ combo, copied, onSalin, onUbah, onHapus, roundRobinEnabled, onToggleRoundRobin }) {
   return (
     <Card padding="sm" className="group">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -225,7 +225,7 @@ function ComboCard({ combo, copied, onCopy, onEdit, onDelete, roundRobinEnabled,
             <code className="block truncate font-mono text-sm font-medium">{combo.name}</code>
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
               {combo.models.length === 0 ? (
-                <span className="text-xs text-text-muted italic">No models</span>
+                <span className="text-xs text-text-muted italic">Belum ada model</span>
               ) : (
                 combo.models.slice(0, 3).map((model, index) => (
                   <code key={index} className="max-w-full truncate rounded bg-black/5 px-1.5 py-0.5 font-mono text-[10px] text-text-muted dark:bg-white/5 sm:max-w-[220px]">
@@ -242,9 +242,9 @@ function ComboCard({ combo, copied, onCopy, onEdit, onDelete, roundRobinEnabled,
 
         {/* Actions */}
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:shrink-0">
-          {/* Round Robin Toggle — always visible */}
+          {/* Putaran Bergilir Toggle — always visible */}
           <div className="flex items-center justify-between gap-1.5 rounded-lg bg-black/[0.02] px-2 py-1.5 dark:bg-white/[0.02] sm:justify-start sm:bg-transparent sm:px-0 sm:py-0 sm:dark:bg-transparent">
-            <span className="text-xs text-text-muted font-medium">Round Robin</span>
+            <span className="text-xs text-text-muted font-medium">Putaran Bergilir</span>
             <Toggle
               size="sm"
               checked={roundRobinEnabled}
@@ -254,30 +254,30 @@ function ComboCard({ combo, copied, onCopy, onEdit, onDelete, roundRobinEnabled,
 
           <div className="grid grid-cols-3 gap-1 sm:flex">
             <button
-              onClick={(e) => { e.stopPropagation(); onCopy(combo.name, `combo-${combo.id}`); }}
+              onClick={(e) => { e.stopPropagation(); onSalin(combo.name, `combo-${combo.id}`); }}
               className="flex flex-col items-center rounded px-2 py-1 text-text-muted transition-colors hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
-              title="Copy combo name"
+              title="Salin nama gabungan"
             >
               <span className="material-symbols-outlined text-[18px]">
                 {copied === `combo-${combo.id}` ? "check" : "content_copy"}
               </span>
-              <span className="text-[10px] leading-tight">Copy</span>
+              <span className="text-[10px] leading-tight">Salin</span>
             </button>
             <button
-              onClick={onEdit}
+              onClick={onUbah}
               className="flex flex-col items-center rounded px-2 py-1 text-text-muted transition-colors hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
-              title="Edit"
+              title="Ubah"
             >
               <span className="material-symbols-outlined text-[18px]">edit</span>
-              <span className="text-[10px] leading-tight">Edit</span>
+              <span className="text-[10px] leading-tight">Ubah</span>
             </button>
             <button
-              onClick={onDelete}
+              onClick={onHapus}
               className="flex flex-col items-center rounded px-2 py-1 text-red-500 transition-colors hover:bg-red-500/10"
-              title="Delete"
+              title="Hapus"
             >
               <span className="material-symbols-outlined text-[18px]">delete</span>
-              <span className="text-[10px] leading-tight">Delete</span>
+              <span className="text-[10px] leading-tight">Hapus</span>
             </button>
           </div>
         </div>
@@ -286,7 +286,7 @@ function ComboCard({ combo, copied, onCopy, onEdit, onDelete, roundRobinEnabled,
   );
 }
 
-function ModelItem({ id, index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onRemove }) {
+function ModelItem({ id, index, model, isFirst, isLast, onUbah, onMoveUp, onMoveDown, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -294,18 +294,18 @@ function ModelItem({ id, index, model, isFirst, isLast, onEdit, onMoveUp, onMove
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 999 : undefined,
   };
-  const [editing, setEditing] = useState(false);
+  const [editing, setUbahing] = useState(false);
   const [draft, setDraft] = useState(model);
   const commit = () => {
     const trimmed = draft.trim();
-    if (trimmed && trimmed !== model) onEdit(trimmed);
+    if (trimmed && trimmed !== model) onUbah(trimmed);
     else setDraft(model);
-    setEditing(false);
+    setUbahing(false);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") commit();
-    if (e.key === "Escape") { setDraft(model); setEditing(false); }
+    if (e.key === "Escape") { setDraft(model); setUbahing(false); }
   };
 
   return (
@@ -345,7 +345,7 @@ function ModelItem({ id, index, model, isFirst, isLast, onEdit, onMoveUp, onMove
       ) : (
         <div
           className="min-w-0 flex-1 cursor-text truncate rounded px-1.5 py-0.5 font-mono text-xs text-text-main hover:bg-black/5 dark:hover:bg-white/5"
-          onClick={() => setEditing(true)}
+          onClick={() => setUbahing(true)}
           title="Click to edit"
         >
           {model}
@@ -482,14 +482,14 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
     setSaving(false);
   };
 
-  const isEdit = !!combo;
+  const isUbah = !!combo;
 
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={isEdit ? "Edit Combo" : "Create Combo"}
+        title={isUbah ? "Ubah Combo" : "Buat Gabungan"}
       >
         <div className="flex flex-col gap-3">
           {/* Name */}
@@ -513,7 +513,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
             {models.length === 0 ? (
               <div className="text-center py-4 border border-dashed border-black/10 dark:border-white/10 rounded-lg bg-black/[0.01] dark:bg-white/[0.01]">
                 <span className="material-symbols-outlined text-text-muted text-xl mb-1">layers</span>
-                <p className="text-xs text-text-muted">No models added yet</p>
+                <p className="text-xs text-text-muted">Belum ada model added yet</p>
               </div>
             ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToParentElement]}>
@@ -527,7 +527,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
                       model={model}
                       isFirst={index === 0}
                       isLast={index === modelItems.length - 1}
-                      onEdit={(newVal) => {
+                      onUbah={(newVal) => {
                         const updated = [...models];
                         updated[index] = newVal;
                         setModels(updated);
@@ -563,7 +563,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               size="sm"
               disabled={!name.trim() || !!nameError || saving}
             >
-              {saving ? "Saving..." : isEdit ? "Save" : "Create"}
+              {saving ? "Saving..." : isUbah ? "Save" : "Create"}
             </Button>
           </div>
         </div>
