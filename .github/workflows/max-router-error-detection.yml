@@ -41,58 +41,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify Antigravity source import paths
-        run: |
-          node --input-type=module - <<'NODE'
-          import fs from 'node:fs';
-          import path from 'node:path';
-
-          const root = path.resolve('.');
-          const files = [];
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-              const full = path.join(dir, entry.name);
-              if (entry.isDirectory()) walk(full);
-              else if (/\.(js|mjs|ts|tsx)$/.test(entry.name)) files.push(full);
-            }
-          }
-          walk(path.join(root, 'src'));
-          walk(path.join(root, 'open-sse'));
-
-          const failures = [];
-          const importPattern = /(?:from|import)\s*["']([^"']*antigravity\.js)["']/g;
-
-          for (const file of files) {
-            const source = fs.readFileSync(file, 'utf8');
-            let match;
-            while ((match = importPattern.exec(source))) {
-              const specifier = match[1];
-              if (!specifier.startsWith('.')) continue;
-              const target = path.resolve(path.dirname(file), specifier);
-              const candidates = [target];
-              if (!path.extname(target)) {
-                candidates.push(target + '.js', target + '.mjs', target + '.ts');
-              }
-              if (!candidates.some(fs.existsSync)) {
-                failures.push(path.relative(root, file) + ' -> ' + specifier);
-              }
-            }
-          }
-
-          if (failures.length) {
-            console.error('BROKEN_ANTIGRAVITY_IMPORTS:');
-            for (const item of failures) console.error(' - ' + item);
-            throw new Error('Ada import Antigravity yang menunjuk ke file sumber yang tidak ada');
-          }
-
-          const canonical = path.join(root, 'src/lib/constants/antigravity.js');
-          if (!fs.existsSync(canonical)) {
-            throw new Error('Canonical Antigravity constants source tidak ditemukan: ' + canonical);
-          }
-
-          console.log('Antigravity source import-path audit: OK');
-          NODE
-
       - name: Verify runtime exports
         run: |
           node --input-type=module - <<'NODE'
@@ -187,58 +135,16 @@ jobs:
         run: |
           node --input-type=module - <<'NODE'
           import fs from 'node:fs';
-          import path from 'node:path';
-
           const required = [
-            'src/lib/oauth/antigravity-pkce.js',
             'src/lib/oauth/providers.js',
             'src/lib/oauth/utils/server.js',
           ];
-
           for (const file of required) {
             if (!fs.existsSync(file)) throw new Error('Missing required OAuth file: ' + file);
           }
-
-          const helper = fs.readFileSync('src/lib/oauth/antigravity-pkce.js', 'utf8');
           const providers = fs.readFileSync('src/lib/oauth/providers.js', 'utf8');
-          const server = fs.readFileSync('src/lib/oauth/utils/server.js', 'utf8');
-
-          const requiredPatterns = [
-            ['PKCE S256 challenge', 'code_challenge_method'],
-            ['PKCE verifier', 'code_verifier'],
-            ['Antigravity token endpoint', 'tokenUrl'],
-            ['Antigravity canonical base', 'ANTIGRAVITY_CONFIG'],
-            ['clear session', 'clearAntigravitySession'],
-            ['session verifier storage', 'codeVerifier'],
-          ];
-
-          for (const [label, needle] of requiredPatterns) {
-            const combined = helper + '\n' + providers + '\n' + server;
-            if (!combined.includes(needle)) throw new Error('OAuth audit gagal: ' + label);
-          }
-
-          if (!helper.includes('code_challenge_method: "S256"')) {
-            throw new Error('Antigravity PKCE wajib menggunakan S256');
-          }
-          if (!helper.includes('code_verifier: codeVerifier')) {
-            throw new Error('Antigravity token exchange tidak mengirim code_verifier');
-          }
-          if (!server.includes('registerAntigravitySession({ state, codeVerifier, redirectUri })')) {
-            throw new Error('Callback proxy tidak menyimpan PKCE verifier');
-          }
-          if (!server.includes('session.codeVerifier')) {
-            throw new Error('Callback proxy tidak memakai verifier dari session');
-          }
-
-          // Detect accidental use of the legacy non-PKCE Antigravity handler.
-          const agBlockStart = providers.indexOf('  antigravity: {');
-          const agBlockEnd = providers.indexOf('  iflow: {', agBlockStart);
-          if (agBlockStart < 0 || agBlockEnd < 0) throw new Error('Antigravity provider block tidak ditemukan');
-          const agBlock = providers.slice(agBlockStart, agBlockEnd);
-          if (agBlock.includes('flowType: "authorization_code"')) {
-            console.warn('WARNING: legacy Antigravity provider block masih authorization_code; route PKCE override tetap wajib dipakai.');
-          }
-
+          if (!providers.includes('export')) throw new Error('OAuth provider registry appears invalid');
+          if (providers.includes('antigravity')) throw new Error('Antigravity provider masih terdaftar');
           console.log('Deep OAuth static audit: OK');
           NODE
 
