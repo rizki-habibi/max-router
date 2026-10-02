@@ -5,7 +5,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import { Card, Button, Modal, Input, CardSkeleton, ModelSelectModal, Toggle, KonfirmasiModal } from "@/shared/components";
-import { useSalinToClipboard } from "@/shared/hooks/useSalinToClipboard";
+import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
@@ -19,7 +19,7 @@ export default function CombosPage() {
   const [activeProviders, setActiveProviders] = useState([]);
   const [comboStrategies, setComboStrategies] = useState({});
   const [confirmState, setKonfirmasiState] = useState(null);
-  const { copied, copy } = useSalinToClipboard();
+  const { copied, copy } = useCopyToClipboard();
 
   useEffect(() => {
     fetchData();
