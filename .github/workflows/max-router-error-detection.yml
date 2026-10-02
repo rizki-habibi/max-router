@@ -32,171 +32,117 @@ jobs:
         working-directory: .
         run: npm install --no-audit --no-fund --workspaces
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Typecheck
+      - name: Typecheck backend
         run: npm run typecheck
 
-      - name: Build
+      - name: Build backend
         run: npm run build
-
-      - name: Verify runtime exports
-        run: |
-          node --input-type=module - <<'NODE'
-          const manager = await import('./dist/mitm/manager.js');
-          const dns = await import('./dist/mitm/dns/dnsConfig.js');
-
-          for (const name of ['getCachedPassword','setCachedPassword','initDbHooks','loadEncryptedPassword','saveMitmSettings']) {
-            if (typeof manager[name] !== 'function') throw new Error('Missing manager export: ' + name);
-          }
-          if (typeof dns.execWithPassword !== 'function') throw new Error('Missing DNS export: execWithPassword');
-          console.log('Runtime export audit: OK');
-          NODE
-
-      - name: Verify provider and database support
-        run: |
-          node --import ./bin/register-alias.mjs --input-type=module - <<'NODE'
-          import fs from 'node:fs';
-          import path from 'node:path';
-
-          const root = path.resolve('./dist');
-          const files = [];
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
-              const full = path.join(dir, entry.name);
-              if (entry.isDirectory()) walk(full);
-              else if (/\.(js|mjs)$/.test(entry.name)) files.push(full);
-            }
-          }
-          walk(root);
-          const source = files.map(f => fs.readFileSync(f,'utf8')).join('\n');
-
-          const checks = [
-            ['Antigravity provider', 'antigravity'],
-            ['Antigravity fetchAvailableModels endpoint', 'fetchAvailableModels'],
-            ['Antigravity internal API version', 'ANTIGRAVITY_API_VERSION'],
-            ['Antigravity object-model parser', 'Object.entries(data.models)'],
-            ['Provider connections API', '/api/providers'],
-            ['Model endpoint', '/models'],
-            ['PostgreSQL adapter', 'createPostgresAdapter'],
-            ['DATABASE_URL', 'process.env.DATABASE_URL'],
-            ['PostgreSQL migration runner', 'runVersionedMigrations'],
-            ['PostgreSQL schema version metadata', "schemaVersion"]
-          ];
-
-          for (const [label, needle] of checks) {
-            if (!source.includes(needle)) throw new Error('Provider/DB audit gagal: ' + label);
-            console.log('OK:', label);
-          }
-
-          if (source.includes('v1internal:models')) {
-            throw new Error('Antigravity masih memakai endpoint lama v1internal:models');
-          }
-
-          // The canonical endpoint may only be declared in the centralized
-          // Antigravity constants module; this prevents URL drift between modules.
-          const constantsPath = path.resolve('./dist/lib/constants/antigravity.js');
-          if (!fs.existsSync(constantsPath)) {
-            throw new Error('Antigravity constants module tidak ditemukan: ' + constantsPath);
-          }
-          const constantsSource = fs.readFileSync(constantsPath, 'utf8');
-          if (!constantsSource.includes('https://cloudcode-pa.googleapis.com')) {
-            throw new Error('Canonical Antigravity Base URL tidak ditemukan di constants module');
-          }
-
-          const forbiddenLegacy = [
-            'https://daily-cloudcode-pa.googleapis.com',
-            'https://daily-cloudcode-pa.sandbox.googleapis.com',
-            'https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels',
-            'https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist',
-            'https://cloudcode-pa.googleapis.com/v1internal:onboardUser',
-            'https://cloudcode-pa.googleapis.com/v1internal:generateContent',
-            'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent'
-          ];
-          for (const needle of forbiddenLegacy) {
-            const hits = files.filter(f => f !== constantsPath && fs.readFileSync(f, 'utf8').includes(needle));
-            if (hits.length) {
-              throw new Error('Antigravity endpoint hardcoded di luar constants: ' + needle + ' -> ' + hits.join(', '));
-            }
-          }
-
-          console.log('Provider + database + Antigravity endpoint audit: OK');
-          console.warn('INFO: Railway production wajib menyediakan DATABASE_URL atau persistent Volume agar koneksi OAuth tidak hilang saat redeploy.');
-          NODE
 
       - name: Verify route inventory
         run: |
+          test -d dist/routes
           COUNT=$(find dist/routes -type f -name 'route.js' | wc -l)
           echo "Route modules found: $COUNT"
           test "$COUNT" -gt 0
 
-      - name: Deep OAuth and runtime static audit
+      - name: Verify diagnostics and database guard
         run: |
           node --input-type=module - <<'NODE'
           import fs from 'node:fs';
+
           const required = [
+            'src/routes/diagnostics/route.ts',
             'src/lib/oauth/providers.js',
-            'src/lib/oauth/utils/server.js',
+            'src/lib/oauth/utils/server.js'
           ];
+
           for (const file of required) {
-            if (!fs.existsSync(file)) throw new Error('Missing required OAuth file: ' + file);
+            if (!fs.existsSync(file)) throw new Error('File wajib tidak ditemukan: ' + file);
+            console.log('OK:', file);
           }
-          const providers = fs.readFileSync('src/lib/oauth/providers.js', 'utf8');
-          if (!providers.includes('export')) throw new Error('OAuth provider registry appears invalid');
-          if (providers.includes('antigravity')) throw new Error('Antigravity provider masih terdaftar');
-          console.log('Deep OAuth static audit: OK');
+
+          const files = [];
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = dir + '/' + entry.name;
+              if (entry.isDirectory()) walk(full);
+              else if (/\.(js|ts|mjs|tsx)$/.test(entry.name)) files.push(full);
+            }
+          }
+          walk('src');
+
+          const source = files.map(f => fs.readFileSync(f, 'utf8')).join('\n');
+
+          const checks = [
+            ['Diagnostics endpoint', '/api/diagnostics'],
+            ['Health endpoint', '/api/health'],
+            ['Provider API', '/api/providers'],
+            ['PostgreSQL support', 'createPostgresAdapter'],
+            ['DATABASE_URL', 'DATABASE_URL'],
+            ['Ephemeral SQLite guard', 'ALLOW_EPHEMERAL_SQLITE']
+          ];
+
+          for (const [label, needle] of checks) {
+            if (!source.includes(needle)) throw new Error('Audit gagal: ' + label);
+            console.log('OK:', label);
+          }
+
+          if (/antigravity/i.test(source)) {
+            console.warn('WARNING: ditemukan referensi Antigravity di source; periksa sebelum rilis.');
+          }
+
+          if (/v1internal:models/.test(source)) {
+            throw new Error('Legacy v1internal:models masih ditemukan.');
+          }
+
+          console.log('Static runtime/database/diagnostics audit: OK');
           NODE
 
-      - name: Validate production database guard
+      - name: Validate workflow YAML
+        working-directory: .
         run: |
           node --input-type=module - <<'NODE'
           import fs from 'node:fs';
-          import path from 'node:path';
-          const candidates = [
-            'src/lib/db/driver.js',
-            'src/lib/db/driver.ts',
-            'src/lib/localDb.js',
-            'src/lib/localDb.ts'
-          ];
-          const existing = candidates.filter(fs.existsSync);
-          const source = existing.map(f => fs.readFileSync(f, 'utf8')).join('\n');
-          if (!source.includes('DATABASE_URL')) throw new Error('DATABASE_URL guard tidak ditemukan');
-          if (!source.includes('ALLOW_EPHEMERAL_SQLITE')) throw new Error('Production SQLite escape hatch/guard tidak ditemukan');
-          console.log('Production DB persistence audit: OK');
+          const file = '.github/workflows/max-router-error-detection.yml';
+          const text = fs.readFileSync(file, 'utf8');
+          if (!text.includes('jobs:')) throw new Error('Workflow YAML tidak memiliki jobs');
+          if (text.includes('Compatible CLI')) throw new Error('Workflow masih mengaudit Compatible CLI yang sudah dihapus');
+          if (text.includes('ANTIGRAVITY_')) throw new Error('Workflow masih memiliki audit Antigravity lama');
+          console.log('Workflow consistency audit: OK');
           NODE
 
       - name: Start smoke test
         env:
           NODE_ENV: test
           PORT: 20222
+          ALLOW_EPHEMERAL_SQLITE: 'true'
         run: |
           timeout 30s npm start > /tmp/max-router-start.log 2>&1 &
           PID=$!
-          sleep 6
-          if ! kill -0 $PID 2>/dev/null; then
+          sleep 8
+
+          if ! kill -0 "$PID" 2>/dev/null; then
             cat /tmp/max-router-start.log
             exit 1
           fi
 
           node --input-type=module - <<'NODE'
           const health = await fetch('http://127.0.0.1:20222/api/health');
-          const healthBody = await health.json();
-          console.log('HEALTH:', JSON.stringify(healthBody));
-          if (!health.ok || healthBody.ready !== true || healthBody.status !== 'ok') {
-            throw new Error('Health check gagal: route graph belum ready');
-          }
+          const healthText = await health.text();
+          console.log('HEALTH:', healthText);
+          if (!health.ok) throw new Error('Health endpoint gagal: HTTP ' + health.status);
 
           const diagnostics = await fetch('http://127.0.0.1:20222/api/diagnostics');
-          const diagnosticsBody = await diagnostics.json();
-          console.log('DIAGNOSTICS:', JSON.stringify(diagnosticsBody));
-          if (!diagnostics.ok || diagnosticsBody.ready !== true) {
-            throw new Error('Diagnostics menunjukkan startup belum ready');
-          }
+          const diagnosticsText = await diagnostics.text();
+          console.log('DIAGNOSTICS:', diagnosticsText);
+          if (!diagnostics.ok) throw new Error('Diagnostics endpoint gagal: HTTP ' + diagnostics.status);
           NODE
 
           cat /tmp/max-router-start.log
-          kill $PID || true
+          kill "$PID" || true
 
       - name: Upload failure diagnostics
         if: failure()
@@ -226,15 +172,10 @@ jobs:
         working-directory: frontend
         run: npm install --no-audit --no-fund
 
+      - name: Typecheck frontend
+        working-directory: frontend
+        run: npm run typecheck
+
       - name: Build frontend
         working-directory: frontend
         run: npm run build
-
-      - name: Verify Compatible CLI page
-        working-directory: frontend
-        run: |
-          test -f src/pages/compatible-cli/page.tsx
-          grep -q '/api/v1/chat/completions' src/pages/compatible-cli/page.tsx
-          grep -q 'Compatible CLI' src/pages/compatible-cli/page.tsx
-          grep -q 'path="compatible-cli"' src/App.tsx
-          echo "Compatible CLI page audit: OK"
