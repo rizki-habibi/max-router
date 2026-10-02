@@ -8,14 +8,12 @@ import { APP_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
-import NineRemotePromoModal from "./NineRemotePromoModal";
 
 const navItems = [
   { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
   { href: "/dashboard/providers", label: "Penyedia", icon: "dns" },
   { href: "/dashboard/chat", label: "Obrolan Kompatibel", icon: "chat" },
   { href: "/dashboard/model-detection", label: "Deteksi Model", icon: "manage_search" },
-  { href: "/dashboard/antigravity", label: "CLI Kompatibel", icon: "terminal" },
   { href: "/dashboard/combos", label: "Gabungan", icon: "layers" },
   { href: "/dashboard/usage", label: "Penggunaan", icon: "bar_chart" },
   { href: "/dashboard/parameters", label: "Parameter", icon: "tune" },
@@ -33,7 +31,6 @@ const systemItems = [
 
 export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }) {
   const { pathname } = useLocation();
-  const [showRemoteModal, setShowRemoteModal] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -234,21 +231,6 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               ) : null;
             })}
 
-            {/* Remote */}
-            <button
-              onClick={() => setShowRemoteModal(true)}
-              className={cn(
-                "mr-comic-nav-item flex items-center rounded-xl transition-all group w-full",
-                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
-                "text-text-muted hover:bg-surface-2 hover:text-text-main"
-              )}
-            >
-              <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
-                computer
-              </span>
-              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Jarak Jauh</span>
-            </button>
-
             {/* Settings */}
             <Link
               to="/dashboard/profile"
@@ -275,9 +257,6 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         </nav>
 
       </aside>
-
-      {/* Remote Promo Modal */}
-      <NineRemotePromoModal isOpen={showRemoteModal} onClose={() => setShowRemoteModal(false)} />
 
       {/* Update Confirmation Modal */}
       <ConfirmModal
