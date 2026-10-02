@@ -19,14 +19,14 @@ function getLocaleFromCookie() {
   return normalizeLocale(value);
 }
 
-export default function ProfilePage() {
+export default function ProfilPage() {
   const navigate = useNavigate();
   const { theme, setTheme, isDark } = useTheme();
   const [locale, setLocale] = useState("en");
   const [langOpen, setLangOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
-  const [settings, setSettings] = useState({ fallbackStrategy: "fill-first" });
+  const [settings, setPengaturan] = useState({ fallbackStrategy: "fill-first" });
   const [loading, setLoading] = useState(true);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [passStatus, setPassStatus] = useState({ type: "", message: "" });
@@ -38,7 +38,7 @@ export default function ProfilePage() {
     oidcIssuerUrl: "",
     oidcClientId: "",
     oidcScopes: "openid profile email",
-    oidcLoginLabel: "Sign in with OIDC",
+    oidcMasukLabel: "Sign in with OIDC",
   });
   const [oidcClientSecret, setOidcClientSecret] = useState("");
   const [oidcStatus, setOidcStatus] = useState({ type: "", message: "" });
@@ -85,13 +85,13 @@ export default function ProfilePage() {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
-        setSettings(data);
+        setPengaturan(data);
         setOidcForm({
           authMode: data?.authMode || "password",
           oidcIssuerUrl: data?.oidcIssuerUrl || "",
           oidcClientId: data?.oidcClientId || "",
           oidcScopes: data?.oidcScopes || "openid profile email",
-          oidcLoginLabel: data?.oidcLoginLabel || "Sign in with OIDC",
+          oidcMasukLabel: data?.oidcMasukLabel || "Sign in with OIDC",
         });
         setOidcClientSecret("");
         if (data?.authMode === "oidc" || data?.authMode === "both") setOidcExpanded(true);
@@ -116,7 +116,7 @@ export default function ProfilePage() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch settings:", err);
+        console.error("Gagal to fetch settings:", err);
         setLoading(false);
       });
   }, []);
@@ -127,7 +127,7 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const updateAutomationSettings = async (e) => {
+  const updateAutomationPengaturan = async (e) => {
     if (e) e.preventDefault();
     setAutomationLoading(true);
     setAutomationStatus({ type: "", message: "" });
@@ -153,10 +153,10 @@ export default function ProfilePage() {
 
       const data = await res.json();
       if (res.ok) {
-        setSettings((prev) => ({ ...prev, ...data }));
+        setPengaturan((prev) => ({ ...prev, ...data }));
         setAutomationStatus({ type: "success", message: "Automation settings saved successfully." });
       } else {
-        setAutomationStatus({ type: "error", message: data.error || "Failed to update automation settings" });
+        setAutomationStatus({ type: "error", message: data.error || "Gagal to update automation settings" });
       }
     } catch (err) {
       setAutomationStatus({ type: "error", message: "An error occurred" });
@@ -169,7 +169,7 @@ export default function ProfilePage() {
     setAmmailTestLoading(true);
     setAutomationStatus({ type: "", message: "" });
     try {
-      // Save settings first
+      // Simpan settings first
       const saveRes = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -182,7 +182,7 @@ export default function ProfilePage() {
       });
       if (!saveRes.ok) {
         const data = await saveRes.json().catch(() => ({}));
-        setAutomationStatus({ type: "error", message: data.error || "Failed to save settings before testing connection" });
+        setAutomationStatus({ type: "error", message: data.error || "Gagal to save settings before testing connection" });
         return;
       }
 
@@ -194,9 +194,9 @@ export default function ProfilePage() {
       });
       const testData = await testRes.json().catch(() => ({}));
       if (testRes.ok) {
-        setAutomationStatus({ type: "success", message: "Ammail Connection Successful!" });
+        setAutomationStatus({ type: "success", message: "Ammail Connection Berhasilful!" });
       } else {
-        setAutomationStatus({ type: "error", message: testData.error || "Ammail Connection Failed." });
+        setAutomationStatus({ type: "error", message: testData.error || "Ammail Connection Gagal." });
       }
     } catch (err) {
       setAutomationStatus({ type: "error", message: err.message || "An error occurred" });
@@ -209,7 +209,7 @@ export default function ProfilePage() {
     setAmmailWebhookLoading(true);
     setAutomationStatus({ type: "", message: "" });
     try {
-      // Save settings first
+      // Simpan settings first
       const saveRes = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -222,7 +222,7 @@ export default function ProfilePage() {
       });
       if (!saveRes.ok) {
         const data = await saveRes.json().catch(() => ({}));
-        setAutomationStatus({ type: "error", message: data.error || "Failed to save settings before registering webhook" });
+        setAutomationStatus({ type: "error", message: data.error || "Gagal to save settings before registering webhook" });
         return;
       }
 
@@ -234,12 +234,12 @@ export default function ProfilePage() {
       });
       const webhookData = await webhookRes.json().catch(() => ({}));
       if (webhookRes.ok) {
-        setAutomationStatus({ type: "success", message: "Ammail Webhook Registered Successfully!" });
+        setAutomationStatus({ type: "success", message: "Ammail Webhook Registered Berhasil!" });
         if (webhookData.webhook?.secret) {
           setAutomationForm(prev => ({ ...prev, ammail_webhook_secret: webhookData.webhook.secret }));
         }
       } else {
-        setAutomationStatus({ type: "error", message: webhookData.error || "Ammail Webhook Registration Failed." });
+        setAutomationStatus({ type: "error", message: webhookData.error || "Ammail Webhook Registration Gagal." });
       }
     } catch (err) {
       setAutomationStatus({ type: "error", message: err.message || "An error occurred" });
@@ -266,10 +266,10 @@ export default function ProfilePage() {
 
       const data = await res.json();
       if (res.ok) {
-        setSettings((prev) => ({ ...prev, ...data }));
+        setPengaturan((prev) => ({ ...prev, ...data }));
         setProxyStatus({ type: "success", message: "Proxy settings applied" });
       } else {
-        setProxyStatus({ type: "error", message: data.error || "Failed to update proxy settings" });
+        setProxyStatus({ type: "error", message: data.error || "Gagal to update proxy settings" });
       }
     } catch (err) {
       setProxyStatus({ type: "error", message: "An error occurred" });
@@ -283,7 +283,7 @@ export default function ProfilePage() {
 
     const proxyUrl = (proxyForm.outboundProxyUrl || "").trim();
     if (!proxyUrl) {
-      setProxyStatus({ type: "error", message: "Please enter a Proxy URL to test" });
+      setProxyStatus({ type: "error", message: "Silakan masukkan a Proxy URL to test" });
       return;
     }
 
@@ -329,14 +329,14 @@ export default function ProfilePage() {
 
       const data = await res.json();
       if (res.ok) {
-        setSettings((prev) => ({ ...prev, ...data }));
+        setPengaturan((prev) => ({ ...prev, ...data }));
         setProxyForm((prev) => ({ ...prev, outboundProxyEnabled: data?.outboundProxyEnabled === true }));
         setProxyStatus({
           type: "success",
           message: outboundProxyEnabled ? "Proxy enabled" : "Proxy disabled",
         });
       } else {
-        setProxyStatus({ type: "error", message: data.error || "Failed to update proxy settings" });
+        setProxyStatus({ type: "error", message: data.error || "Gagal to update proxy settings" });
       }
     } catch (err) {
       setProxyStatus({ type: "error", message: "An error occurred" });
@@ -371,7 +371,7 @@ export default function ProfilePage() {
         setPassStatus({ type: "success", message: "Password updated successfully" });
         setPasswords({ current: "", new: "", confirm: "" });
       } else {
-        setPassStatus({ type: "error", message: data.error || "Failed to update password" });
+        setPassStatus({ type: "error", message: data.error || "Gagal to update password" });
       }
     } catch (err) {
       setPassStatus({ type: "error", message: "An error occurred" });
@@ -388,10 +388,10 @@ export default function ProfilePage() {
         body: JSON.stringify({ fallbackStrategy: strategy }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, fallbackStrategy: strategy }));
+        setPengaturan(prev => ({ ...prev, fallbackStrategy: strategy }));
       }
     } catch (err) {
-      console.error("Failed to update settings:", err);
+      console.error("Gagal to update settings:", err);
     }
   };
 
@@ -403,10 +403,10 @@ export default function ProfilePage() {
         body: JSON.stringify({ comboStrategy: strategy }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, comboStrategy: strategy }));
+        setPengaturan(prev => ({ ...prev, comboStrategy: strategy }));
       }
     } catch (err) {
-      console.error("Failed to update combo strategy:", err);
+      console.error("Gagal to update combo strategy:", err);
     }
   };
 
@@ -421,10 +421,10 @@ export default function ProfilePage() {
         body: JSON.stringify({ stickyRoundRobinLimit: numLimit }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, stickyRoundRobinLimit: numLimit }));
+        setPengaturan(prev => ({ ...prev, stickyRoundRobinLimit: numLimit }));
       }
     } catch (err) {
-      console.error("Failed to update sticky limit:", err);
+      console.error("Gagal to update sticky limit:", err);
     }
   };
 
@@ -439,25 +439,25 @@ export default function ProfilePage() {
         body: JSON.stringify({ comboStickyRoundRobinLimit: numLimit }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, comboStickyRoundRobinLimit: numLimit }));
+        setPengaturan(prev => ({ ...prev, comboStickyRoundRobinLimit: numLimit }));
       }
     } catch (err) {
-      console.error("Failed to update combo sticky limit:", err);
+      console.error("Gagal to update combo sticky limit:", err);
     }
   };
 
-  const updateRequireLogin = async (requireLogin) => {
+  const updateRequireMasuk = async (requireMasuk) => {
     try {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requireLogin }),
+        body: JSON.stringify({ requireMasuk }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, requireLogin }));
+        setPengaturan(prev => ({ ...prev, requireMasuk }));
       }
     } catch (err) {
-      console.error("Failed to update require login:", err);
+      console.error("Gagal to update require login:", err);
     }
   };
 
@@ -465,11 +465,11 @@ export default function ProfilePage() {
     setOidcForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const saveOidcSettings = async (authMode = oidcForm.authMode || "password") => {
+  const saveOidcPengaturan = async (authMode = oidcForm.authMode || "password") => {
     const issuerUrl = oidcForm.oidcIssuerUrl.trim();
     const clientId = oidcForm.oidcClientId.trim();
     const scopes = oidcForm.oidcScopes.trim();
-    const loginLabel = oidcForm.oidcLoginLabel.trim();
+    const loginLabel = oidcForm.oidcMasukLabel.trim();
     const secret = oidcClientSecret.trim();
 
     if (authMode !== "password" && (!issuerUrl || !clientId || !secret) && !settings.oidcConfigured) {
@@ -487,7 +487,7 @@ export default function ProfilePage() {
         oidcIssuerUrl: issuerUrl,
         oidcClientId: clientId,
         oidcScopes: scopes || "openid profile email",
-        oidcLoginLabel: loginLabel || "Sign in with OIDC",
+        oidcMasukLabel: loginLabel || "Sign in with OIDC",
       };
       if (secret) {
         payload.oidcClientSecret = secret;
@@ -501,13 +501,13 @@ export default function ProfilePage() {
 
       const data = await res.json();
       if (res.ok) {
-        setSettings((prev) => ({ ...prev, ...data }));
+        setPengaturan((prev) => ({ ...prev, ...data }));
         setOidcForm({
           authMode: data?.authMode || authMode,
           oidcIssuerUrl: data?.oidcIssuerUrl || issuerUrl,
           oidcClientId: data?.oidcClientId || clientId,
           oidcScopes: data?.oidcScopes || scopes || "openid profile email",
-          oidcLoginLabel: data?.oidcLoginLabel || loginLabel || "Sign in with OIDC",
+          oidcMasukLabel: data?.oidcMasukLabel || loginLabel || "Sign in with OIDC",
         });
         setOidcClientSecret("");
         setOidcStatus({
@@ -520,7 +520,7 @@ export default function ProfilePage() {
                 : "OIDC settings saved",
         });
       } else {
-        setOidcStatus({ type: "error", message: data.error || "Failed to save OIDC settings" });
+        setOidcStatus({ type: "error", message: data.error || "Gagal to save OIDC settings" });
       }
     } catch (err) {
       setOidcStatus({ type: "error", message: "An error occurred" });
@@ -553,7 +553,7 @@ export default function ProfilePage() {
           oidcIssuerUrl: issuerUrl,
           oidcClientId: clientId,
           oidcScopes: scopes || "openid profile email",
-          oidcLoginLabel: oidcForm.oidcLoginLabel.trim() || "Sign in with OIDC",
+          oidcMasukLabel: oidcForm.oidcMasukLabel.trim() || "Sign in with OIDC",
           ...(secret ? { oidcClientSecret: secret } : {}),
         }),
       });
@@ -562,7 +562,7 @@ export default function ProfilePage() {
       if (!saveRes.ok) {
         setOidcTestStatus({
           type: "error",
-          message: saved.error || "Failed to save OIDC settings before testing",
+          message: saved.error || "Gagal to save OIDC settings before testing",
         });
         return;
       }
@@ -606,21 +606,21 @@ export default function ProfilePage() {
         body: JSON.stringify({ enableObservability: enabled }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, enableObservability: enabled }));
+        setPengaturan(prev => ({ ...prev, enableObservability: enabled }));
       }
     } catch (err) {
-      console.error("Failed to update enableObservability:", err);
+      console.error("Gagal to update enableObservability:", err);
     }
   };
 
-  const reloadSettings = async () => {
+  const reloadPengaturan = async () => {
     try {
       const res = await fetch("/api/settings");
       if (!res.ok) return;
       const data = await res.json();
-      setSettings(data);
+      setPengaturan(data);
     } catch (err) {
-      console.error("Failed to reload settings:", err);
+      console.error("Gagal to reload settings:", err);
     }
   };
 
@@ -631,7 +631,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/settings/database");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to export database");
+        throw new Error(data.error || "Gagal to export database");
       }
 
       const payload = await res.json();
@@ -649,7 +649,7 @@ export default function ProfilePage() {
 
       setDbStatus({ type: "success", message: "Database backup downloaded" });
     } catch (err) {
-      setDbStatus({ type: "error", message: err.message || "Failed to export database" });
+      setDbStatus({ type: "error", message: err.message || "Gagal to export database" });
     } finally {
       setDbLoading(false);
     }
@@ -674,10 +674,10 @@ export default function ProfilePage() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || "Failed to import database");
+        throw new Error(data.error || "Gagal to import database");
       }
 
-      await reloadSettings();
+      await reloadPengaturan();
       setDbStatus({ type: "success", message: "Database imported successfully" });
     } catch (err) {
       setDbStatus({ type: "error", message: err.message || "Invalid backup file" });
@@ -702,7 +702,7 @@ export default function ProfilePage() {
     setShutdownOpen(false);
   };
 
-  const handleLogout = async () => {
+  const handleKeluar = async () => {
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
@@ -711,7 +711,7 @@ export default function ProfilePage() {
         navigate(0);
       }
     } catch (err) {
-      console.error("Failed to logout:", err);
+      console.error("Gagal to logout:", err);
     }
   };
 
@@ -812,12 +812,12 @@ export default function ProfilePage() {
                 </p>
               </div>
               <Toggle
-                checked={settings.requireLogin === true}
-                onChange={() => updateRequireLogin(!settings.requireLogin)}
+                checked={settings.requireMasuk === true}
+                onChange={() => updateRequireMasuk(!settings.requireMasuk)}
                 disabled={loading}
               />
             </div>
-            {settings.requireLogin === true && (
+            {settings.requireMasuk === true && (
               <form onSubmit={handlePasswordChange} className="flex flex-col gap-4 pt-4 border-t border-border/50">
                 {settings.hasPassword && (
                   <div className="flex flex-col gap-2">
@@ -881,7 +881,7 @@ export default function ProfilePage() {
               <span className="material-symbols-outlined text-[20px]">lock_open</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold">OIDC Dashboard Login</h3>
+              <h3 className="text-base sm:text-lg font-semibold">OIDC Dashboard Masuk</h3>
               <p className="text-xs text-text-muted">
                 {settings.authMode === "oidc" ? "OIDC active" : settings.authMode === "both" ? "Password + OIDC active" : "Optional SSO via Authentik/Keycloak/Google"}
               </p>
@@ -982,11 +982,11 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="font-medium text-sm sm:text-base">Login Button Label</label>
+                <label className="font-medium text-sm sm:text-base">Masuk Button Label</label>
                 <Input
                   placeholder="Sign in with OIDC"
-                  value={oidcForm.oidcLoginLabel}
-                  onChange={(e) => updateOidcForm("oidcLoginLabel", e.target.value)}
+                  value={oidcForm.oidcMasukLabel}
+                  onChange={(e) => updateOidcForm("oidcMasukLabel", e.target.value)}
                   disabled={loading || oidcLoading}
                 />
               </div>
@@ -998,8 +998,8 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border/50">
-              <Button type="button" variant="primary" loading={oidcLoading} onClick={() => saveOidcSettings()} className="w-full sm:w-auto">
-                Save auth mode
+              <Button type="button" variant="primary" loading={oidcLoading} onClick={() => saveOidcPengaturan()} className="w-full sm:w-auto">
+                Simpan auth mode
               </Button>
               <Button type="button" variant="outline" loading={oidcTestLoading} onClick={testOidcConnection} className="w-full sm:w-auto">
                 Test connection
@@ -1196,7 +1196,7 @@ export default function ProfilePage() {
           </div>
         </Card>
 
-        {/* Automation Settings */}
+        {/* Automation Pengaturan */}
         <Card>
           <button
             type="button"
@@ -1207,7 +1207,7 @@ export default function ProfilePage() {
               <span className="material-symbols-outlined text-[20px]">smart_toy</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold">Automation Settings</h3>
+              <h3 className="text-base sm:text-lg font-semibold">Automation Pengaturan</h3>
               <p className="text-xs text-text-muted">
                 Manage CodeBuddy browser signup & Ammail temporary email configurations.
               </p>
@@ -1223,7 +1223,7 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-text-main flex items-center gap-1.5 border-b border-border/55 pb-1">
                   <span className="material-symbols-outlined text-[16px]">smart_toy</span>
-                  CodeBuddy API Gen Settings
+                  CodeBuddy API Gen Pengaturan
                 </h4>
                 
                 <div className="flex items-start sm:items-center justify-between gap-4">
@@ -1314,7 +1314,7 @@ export default function ProfilePage() {
               <div className="space-y-4 pt-4 border-t border-border/55">
                 <h4 className="font-semibold text-sm text-text-main flex items-center gap-1.5 border-b border-border/55 pb-1">
                   <span className="material-symbols-outlined text-[16px]">mail</span>
-                  Ammail Temp Mail Settings
+                  Ammail Temp Mail Pengaturan
                 </h4>
 
                 <div className="flex flex-col gap-2">
@@ -1366,10 +1366,10 @@ export default function ProfilePage() {
                   type="button"
                   variant="primary"
                   loading={automationLoading}
-                  onClick={() => updateAutomationSettings()}
+                  onClick={() => updateAutomationPengaturan()}
                   className="w-full sm:w-auto"
                 >
-                  Save Settings
+                  Simpan Pengaturan
                 </Button>
                 <Button
                   type="button"
@@ -1400,7 +1400,7 @@ export default function ProfilePage() {
           )}
         </Card>
 
-        {/* Observability Settings */}
+        {/* Observability Pengaturan */}
         <Card>
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
@@ -1438,9 +1438,9 @@ export default function ProfilePage() {
             variant="outline"
             fullWidth
             icon="logout"
-            onClick={handleLogout}
+            onClick={handleKeluar}
           >
-            Logout
+            Keluar
           </Button>
         </div>
 
@@ -1466,7 +1466,7 @@ export default function ProfilePage() {
         title="Close Proxy"
         message="Are you sure you want to close the proxy server?"
         confirmText="Close"
-        cancelText="Cancel"
+        cancelText="Batal"
         variant="danger"
         loading={isShuttingDown}
       />
