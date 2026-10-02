@@ -22,6 +22,47 @@ function walk(dir, test, out = []) {
   return out;
 }
 
+
+async function scanRemoteGithub() {
+  const repo = process.env.GITHUB_REPOSITORY || "rizki-habibi/max-router";
+  const result = [];
+  try {
+    const headers = { Accept: "application/vnd.github+json", "User-Agent": "Max-Router-Diagnostics" };
+    const listRes = await fetch("https://api.github.com/repos/" + repo + "/contents/.github/workflows", { headers });
+    if (!listRes.ok) return [issue("YML-REMOTE", "YML / CI", "warning", "Workflow GitHub tidak dapat dibaca", "GitHub API mengembalikan HTTP " + listRes.status, repo, "Periksa nama repository atau GitHub API rate limit.")];
+    const files = (await listRes.json()).filter(x => /\.(yml|yaml)$/i.test(x.name));
+    for (const file of files) {
+      const raw = await fetch(file.download_url, { headers: { "User-Agent": "Max-Router-Diagnostics" } });
+      if (!raw.ok) {
+        result.push(issue("YML-REMOTE-404", "YML / CI", "error", "Workflow gagal dibaca", file.path, "HTTP " + raw.status, "Periksa file workflow di GitHub."));
+        continue;
+      }
+      const source = await raw.text();
+      const lines = source.split(/\r?\n/);
+      lines.forEach((line, index) => {
+        if (/\t/.test(line)) result.push(issue("YML-REMOTE-001", "YML / CI", "error", "Tab ditemukan dalam YAML", file.path, "Baris " + (index + 1), "Ganti tab dengan spasi."));
+        if (/\$\{\{[^}]*$/.test(line)) result.push(issue("YML-REMOTE-002", "YML / CI", "error", "Expression GitHub Actions tidak tertutup", file.path, "Baris " + (index + 1), "Periksa expression GitHub Actions."));
+      });
+    }
+
+    const runsRes = await fetch("https://api.github.com/repos/" + repo + "/actions/runs?per_page=10", { headers });
+    if (runsRes.ok) {
+      const runs = await runsRes.json();
+      for (const run of runs.workflow_runs || []) {
+        if (["failure", "cancelled", "timed_out", "action_required"].includes(run.conclusion)) {
+          result.push(issue("CI-RUN-" + run.id, "GitHub Actions", "error",
+            "Workflow gagal: " + run.name,
+            "Conclusion: " + run.conclusion + " · " + (run.head_branch || "unknown"),
+            run.html_url || "", "Buka workflow run dan periksa job/log yang gagal."));
+        }
+      }
+    }
+  } catch (error) {
+    result.push(issue("YML-REMOTE-500", "YML / CI", "warning", "Pemeriksaan GitHub gagal", error?.message || String(error), repo, "Periksa koneksi GitHub API."));
+  }
+  return result;
+}
+
 function scanYml() {
   const result = [];
   const files = walk(WORKFLOWS, f => /\.(yml|yaml)$/i.test(f));
@@ -94,13 +135,13 @@ function scanEnvironment() {
 export async function GET_handler(req,res) {
   const started = Date.now();
   try {
-    const [database,application] = await Promise.all([scanDatabase(),scanApplication(req)]);
+    const [database,application,remoteGithub] = await Promise.all([scanDatabase(),scanApplication(req),scanRemoteGithub()]);
     const routeCount = walk(path.join(BACKEND_ROOT,"src","routes"),f => /\/route\.(ts|js)$/i.test(f)).length;
-    const findings = [...scanYml(),...database.result,...application.result,...scanEnvironment()];
+    const findings = [...scanYml(),...remoteGithub,...database.result,...application.result,...scanEnvironment()];
     if (!routeCount) findings.push(issue("ROUTE-001","Backend","error","Route module tidak ditemukan","Tidak ada route.ts/route.js yang terdeteksi."));
     const summary = findings.reduce((acc,item) => { acc[item.severity]=(acc[item.severity]||0)+1; return acc; },{error:0,warning:0,info:0});
     res.set("Cache-Control","no-store");
-    return res.json({ok:summary.error===0,scannedAt:new Date().toISOString(),durationMs:Date.now()-started,summary,findings,database:database.meta,routes:{count:routeCount},probes:application.probes,capabilities:{yml:fs.existsSync(WORKFLOWS),database:true,backend:true,uiAssets:true,environment:true}});
+    return res.json({ok:summary.error===0,scannedAt:new Date().toISOString(),durationMs:Date.now()-started,summary,findings,database:database.meta,routes:{count:routeCount},probes:application.probes,capabilities:{yml:fs.existsSync(WORKFLOWS) || true,database:true,backend:true,uiAssets:true,environment:true,githubActions:true}});
   } catch (error) {
     return res.status(500).json({ok:false,summary:{error:1,warning:0,info:0},findings:[issue("DIAG-500","System","error","Diagnostic engine gagal",error?.message || String(error),"","Periksa runtime logs.")]});
   }
