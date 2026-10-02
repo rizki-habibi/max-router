@@ -1,7 +1,6 @@
 /**
  * OAuth Configuration Constants
  */
-import { platform, arch } from "os";
 
 // Claude OAuth Configuration (Authorization Code Flow with PKCE)
 export const CLAUDE_CONFIG = {
