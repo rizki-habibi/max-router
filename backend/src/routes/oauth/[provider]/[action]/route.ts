@@ -8,7 +8,6 @@ import {
 } from "../../../../lib/oauth/providers.js";
 import { createProviderConnection } from "../../../../models/index.js";
 import { generatePKCE } from "../../../../lib/oauth/utils/pkce.js";
-import { buildAntigravityAuthUrl, exchangeAntigravityTokens } from "../../../../lib/oauth/antigravity-pkce.js";
 import {
   startCodexProxy,
   stopCodexProxy,
@@ -20,11 +19,6 @@ import {
   registerXaiSession,
   getXaiSessionStatus,
   clearXaiSession,
-  startAntigravityProxy,
-  stopAntigravityProxy,
-  registerAntigravitySession,
-  getAntigravitySessionStatus,
-  clearAntigravitySession,
 } from "../../../../lib/oauth/utils/server.js";
 
 async function completeXaiManualCode(code, state) {
@@ -84,55 +78,29 @@ export async function GET_handler(req, res, { params }) {
       const reservedParams = new Set(["redirect_uri"]);
       const meta = {};
       searchParams.forEach((value, key) => { if (!reservedParams.has(key)) meta[key] = value; });
-      if (provider === "antigravity") {
-        const { codeVerifier, codeChallenge, state } = generatePKCE();
-        return res.json({
-          authUrl: buildAntigravityAuthUrl(redirectUri, state, codeChallenge),
-          state,
-          codeVerifier,
-          codeChallenge,
-          redirectUri,
-          flowType: "authorization_code_pkce",
-          fixedPort: 51121,
-          callbackPath: "/oauth-callback",
-        });
-      }
-
       const authData = await generateAuthData(provider, redirectUri, Object.keys(meta).length ? meta : undefined);
       return res.json(authData);
     }
 
     if (action === "start-proxy") {
-      if (!["codex", "xai", "antigravity"].includes(provider)) {
-        return res.status(400).json({ error: "Proxy only supported for codex/xai/antigravity" });
+      if (!["codex", "xai"].includes(provider)) {
+        return res.status(400).json({ error: "Proxy only supported for codex/xai" });
       }
       const appPort = searchParams.get("app_port");
-      if (!appPort) {
-        return res.status(400).json({ error: "Missing app_port" });
-      }
+      if (!appPort) return res.status(400).json({ error: "Missing app_port" });
       const state = searchParams.get("state");
       const codeVerifier = searchParams.get("code_verifier");
       const redirectUri = searchParams.get("redirect_uri");
-      const result = provider === "xai"
-        ? await startXaiProxy(Number(appPort))
-        : provider === "antigravity"
-        ? await startAntigravityProxy(Number(appPort))
-        : await startCodexProxy(Number(appPort));
+      const result = provider === "xai" ? await startXaiProxy(Number(appPort)) : await startCodexProxy(Number(appPort));
       let serverSide = false;
-      if (result.success && state && redirectUri) {
-        if (provider === "xai" && codeVerifier) {
-          serverSide = registerXaiSession({ state, codeVerifier, redirectUri });
-        } else if (provider === "antigravity") {
-          serverSide = codeVerifier ? registerAntigravitySession({ state, codeVerifier, redirectUri }) : false;
-        } else if (provider === "codex" && codeVerifier) {
-          serverSide = registerCodexSession({ state, codeVerifier, redirectUri });
-        }
+      if (result.success && state && redirectUri && codeVerifier) {
+        serverSide = provider === "xai" ? registerXaiSession({ state, codeVerifier, redirectUri }) : registerCodexSession({ state, codeVerifier, redirectUri });
       }
       return res.json({ ...result, serverSide });
     }
 
     if (action === "poll-status") {
-      if (!["codex", "xai", "antigravity"].includes(provider)) {
+      if (!["codex", "xai"].includes(provider)) {
         return res.status(400).json({ error: "Poll only supported for codex/xai/antigravity" });
       }
       const state = searchParams.get("state");
@@ -141,14 +109,12 @@ export async function GET_handler(req, res, { params }) {
       }
       const session = provider === "xai"
         ? getXaiSessionStatus(state)
-        : provider === "antigravity"
-        ? getAntigravitySessionStatus(state)
+       
         : getCodexSessionStatus(state);
       if (!session) return res.json({ status: "unknown" });
       if (session.status === "done" || session.status === "error") {
         const payload = { ...session };
         if (provider === "xai") clearXaiSession(state);
-        else if (provider === "antigravity") clearAntigravitySession(state);
         else clearCodexSession(state);
         return res.json(payload);
       }
@@ -156,11 +122,10 @@ export async function GET_handler(req, res, { params }) {
     }
 
     if (action === "stop-proxy") {
-      if (!["codex", "xai", "antigravity"].includes(provider)) {
+      if (!["codex", "xai"].includes(provider)) {
         return res.status(400).json({ error: "Proxy only supported for codex/xai/antigravity" });
       }
       if (provider === "xai") stopXaiProxy();
-      else if (provider === "antigravity") stopAntigravityProxy();
       else stopCodexProxy();
       return res.json({ success: true });
     }
@@ -271,11 +236,7 @@ export async function POST_handler(req, res, { params }) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      // Antigravity uses Google OAuth PKCE. Keep this exchange independent from the
-      // legacy provider handler so the verifier is always sent to Google's token endpoint.
-      const tokenData = provider === "antigravity"
-        ? await exchangeAntigravityTokens(code, redirectUri, codeVerifier)
-        : await exchangeTokens(provider, code, redirectUri, codeVerifier, state, meta);
+      const tokenData = await exchangeTokens(provider, code, redirectUri, codeVerifier, state, meta);
 
       // Save to database
       const connection = await createProviderConnection({
