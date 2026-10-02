@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
 import ThemeToggle from "@/shared/components/ThemeToggle";
-import { useHeaderSearchStore } from "@/store/headerSearchStore";
+import { useHeaderCariStore } from "@/store/headerCariStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
@@ -26,7 +26,7 @@ const getPageInfo = (pathname) => {
       title: provider?.name || providerId,
       description: "",
       breadcrumbs: [
-        { label: "Media Providers", href: `/dashboard/media-providers/${kindId}` },
+        { label: "Penyedia Media", href: `/dashboard/media-providers/${kindId}` },
         { label: kindConfig?.label || kindId, href: `/dashboard/media-providers/${kindId}` },
         { label: provider?.name || providerId, image: providerId === "codebuddy" || providerId === "cb" ? "/providers/codebuddy.svg" : `/providers/${providerId}.png` },
       ],
@@ -40,7 +40,7 @@ const getPageInfo = (pathname) => {
     const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
     return {
       title: kindConfig?.label || kindId,
-      description: `Manage your ${kindConfig?.label || kindId} providers`,
+      description: `Kelola ${kindConfig?.label || kindId} providers`,
       icon: kindConfig?.icon || "perm_media",
       breadcrumbs: [],
     };
@@ -56,7 +56,7 @@ const getPageInfo = (pathname) => {
         title: providerInfo.name,
         description: "",
         breadcrumbs: [
-          { label: "Providers", href: "/dashboard/providers" },
+          { label: "Penyedia", href: "/dashboard/providers" },
           {
             label: providerInfo.name,
             image: providerInfo.id === "codebuddy" || providerInfo.id === "cb" ? "/providers/codebuddy.svg" : `/providers/${providerInfo.id}.png`,
@@ -84,14 +84,14 @@ const getPageInfo = (pathname) => {
     return {
       title: "Penggunaan & Analitik",
       description:
-        "Monitor your API usage, token consumption, and request logs",
+        "Pantau penggunaan API, konsumsi token, dan log permintaan",
       icon: "bar_chart",
       breadcrumbs: [],
     };
   if (pathname.includes("/auth-files"))
     return {
       title: "Berkas Autentikasi",
-      description: "Map provider credentials stored in the local database",
+      description: "Kelola kredensial penyedia yang tersimpan di basis data lokal",
       icon: "vpn_key",
       breadcrumbs: [],
     };
@@ -348,7 +348,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
             </div>
           )}
         </div>
-        <HeaderSearch />
+        <HeaderCari />
         <ThemeToggle />
         <HeaderMenu onLogout={handleLogout} isLoggedIn={isLoggedIn} />
       </div>
@@ -356,11 +356,11 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
   );
 }
 
-function HeaderSearch() {
-  const visible = useHeaderSearchStore((s) => s.visible);
-  const query = useHeaderSearchStore((s) => s.query);
-  const placeholder = useHeaderSearchStore((s) => s.placeholder);
-  const setQuery = useHeaderSearchStore((s) => s.setQuery);
+function HeaderCari() {
+  const visible = useHeaderCariStore((s) => s.visible);
+  const query = useHeaderCariStore((s) => s.query);
+  const placeholder = useHeaderCariStore((s) => s.placeholder);
+  const setQuery = useHeaderCariStore((s) => s.setQuery);
 
   if (!visible) return null;
 
