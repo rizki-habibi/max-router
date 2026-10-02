@@ -184,7 +184,7 @@ export default function McpMarketplaceModal({ isOpen, onClose, onAdd, addedNames
                           : "bg-primary/10 border border-primary/40 text-primary hover:bg-primary/20"
                       }`}
                     >
-                      {added ? "Added" : expanded ? "Cancel" : "+ Add"}
+                      {added ? "Ditambahkan" : expanded ? "Batal" : "+ Tambah"}
                     </button>
                   </div>
                   {expanded && (
