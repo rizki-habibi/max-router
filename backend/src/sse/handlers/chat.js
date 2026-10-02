@@ -188,17 +188,12 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
     const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
 
     // Ensure real project ID is available for providers that need it (P0 fix: cold miss)
-    if ((provider === "antigravity" || provider === "gemini-cli") && !refreshedCredentials.projectId) {
+    if (provider === "gemini-cli" && !refreshedCredentials.projectId) {
       const pid = await getProjectIdForConnection(credentials.connectionId, refreshedCredentials.accessToken);
       if (pid) {
         refreshedCredentials.projectId = pid;
         // Persist to DB in background so subsequent requests have it immediately
         updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch(() => { });
-      } else if (provider === "antigravity") {
-        const message = "Antigravity account belum memiliki Google Cloud project ID. Reconnect/provision akun Antigravity terlebih dahulu; Max Router tidak boleh mengirim project ID acak.";
-        log.error("AUTH", message);
-        await markAccountUnavailable(credentials.connectionId, HTTP_STATUS.BAD_GATEWAY, message, provider, model);
-        return errorResponse(HTTP_STATUS.BAD_GATEWAY, message);
       }
     }
 
