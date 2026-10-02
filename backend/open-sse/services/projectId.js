@@ -8,7 +8,8 @@
  */
 
 import { CLOUD_CODE_API, LOAD_CODE_ASSIST_HEADERS, LOAD_CODE_ASSIST_METADATA } from "../config/appConstants.js";
-import { ANTIGRAVITY_ENDPOINTS, ANTIGRAVITY_LOAD_ENDPOINTS } from "../../src/lib/constants/antigravity.js";
+const GOOGLE_CODE_ASSIST_LOAD_ENDPOINTS = ["https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist"];
+
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 // connectionId -> { projectId: string, fetchedAt: number }
@@ -171,7 +172,7 @@ async function fetchProjectId(accessToken, signal) {
 
     // Try production first, then daily/sandbox. Different Antigravity
     // versions/accounts can be pinned to different Cloud Code backends.
-    for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
+    for (const baseUrl of GOOGLE_CODE_ASSIST_LOAD_ENDPOINTS) {
         if (signal?.aborted) return null;
         const url = `${baseUrl}/${"v1internal"}:loadCodeAssist`;
         try {
@@ -301,7 +302,7 @@ async function createGoogleCloudProject(accessToken, signal) {
 }
 
 async function bindProjectAndReload(accessToken, projectId, tierID, signal) {
-    for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
+    for (const baseUrl of GOOGLE_CODE_ASSIST_LOAD_ENDPOINTS) {
         if (signal?.aborted) return null;
         try {
             const headers = { ...LOAD_CODE_ASSIST_HEADERS, Authorization: `Bearer ${accessToken}`, Accept: "*/*", "x-request-source": "local" };
@@ -343,7 +344,7 @@ async function bindProjectAndReload(accessToken, projectId, tierID, signal) {
 }
 
 async function reloadProjectId(accessToken, signal) {
-    for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
+    for (const baseUrl of GOOGLE_CODE_ASSIST_LOAD_ENDPOINTS) {
         if (signal?.aborted) return null;
         try {
             const response = await fetch(`${baseUrl}/v1internal:loadCodeAssist`, {
@@ -382,7 +383,7 @@ async function onboardUser(accessToken, tierID, externalSignal) {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         if (externalSignal?.aborted) return null;
-        for (const baseUrl of ANTIGRAVITY_LOAD_ENDPOINTS) {
+        for (const baseUrl of GOOGLE_CODE_ASSIST_LOAD_ENDPOINTS) {
             try {
                 const response = await fetch(`${baseUrl}/v1internal:onboardUser`, {
                     method: "POST",
