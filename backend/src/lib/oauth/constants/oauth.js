@@ -1,6 +1,84 @@
+/**
+ * OAuth Configuration Constants
+ */
 import { platform, arch } from "os";
 
-// OpenAI OAuth Configuration (Authorization Code Flow with PKCE)
+// Claude OAuth Configuration (Authorization Code Flow with PKCE)
+export const CLAUDE_CONFIG = {
+  clientId: "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
+  authorizeUrl: "https://claude.ai/oauth/authorize",
+  tokenUrl: "https://api.anthropic.com/v1/oauth/token",
+  scopes: ["org:create_api_key", "user:profile", "user:inference"],
+  codeChallengeMethod: "S256",
+};
+
+// Codex (OpenAI) OAuth Configuration (Authorization Code Flow with PKCE)
+export const CODEX_CONFIG = {
+  clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
+  authorizeUrl: "https://auth.openai.com/oauth/authorize",
+  tokenUrl: "https://auth.openai.com/oauth/token",
+  scope: "openid profile email offline_access",
+  codeChallengeMethod: "S256",
+  // Additional OpenAI-specific params
+  extraParams: {
+    id_token_add_organizations: "true",
+    codex_cli_simplified_flow: "true",
+    originator: "codex_cli_rs",
+  },
+};
+
+// Gemini (Google) OAuth Configuration (Standard OAuth2)
+export const GEMINI_CONFIG = {
+  clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+  clientSecret: "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",
+  authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+  tokenUrl: "https://oauth2.googleapis.com/token",
+  userInfoUrl: "https://www.googleapis.com/oauth2/v1/userinfo",
+  scopes: [
+    "https://www.googleapis.com/auth/cloud-platform",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+  ],
+};
+
+// Qwen OAuth Configuration (Device Code Flow with PKCE)
+export const QWEN_CONFIG = {
+  clientId: "f0304373b74a44d2b584a3fb70ca9e56",
+  deviceCodeUrl: "https://chat.qwen.ai/api/v1/oauth2/device/code",
+  tokenUrl: "https://chat.qwen.ai/api/v1/oauth2/token",
+  scope: "openid profile email model.completion",
+  codeChallengeMethod: "S256",
+};
+
+// Qoder OAuth Configuration (Device Token Flow with PKCE).
+// Device tokens are long-lived (~30 days for access, ~360 for refresh).
+// The upstream refresh endpoint at center.qoder.sh returns 403 for our
+// flow — we accept that and surface it to the user as "re-login" instead
+// of attempting to silently rotate.
+export const QODER_CONFIG = {
+  openApiBaseUrl: "https://openapi.qoder.sh",
+  centerBaseUrl: "https://center.qoder.sh",
+  chatBaseUrl: "https://api3.qoder.sh",
+  deviceTokenUrl: "https://openapi.qoder.sh/api/v1/deviceToken/poll",
+  refreshUrl: "https://center.qoder.sh/algo/api/v3/user/refresh_token",
+  userInfoUrl: "https://openapi.qoder.sh/api/v1/userinfo",
+  quotaUsageUrl: "https://openapi.qoder.sh/api/v2/quota/usage",
+  loginUrl: "https://qoder.com/device/selectAccounts",
+};
+
+// iFlow OAuth Configuration (Authorization Code)
+export const IFLOW_CONFIG = {
+  clientId: "10009311001",
+  clientSecret: "4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW",
+  authorizeUrl: "https://iflow.cn/oauth",
+  tokenUrl: "https://iflow.cn/oauth/token",
+  userInfoUrl: "https://iflow.cn/api/oauth/getUserInfo",
+  extraParams: {
+    loginMethod: "phone",
+    type: "phone",
+  },
+};
+
 export const OPENAI_CONFIG = {
   clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
   authorizeUrl: "https://auth.openai.com/oauth/authorize",
@@ -132,24 +210,6 @@ export const CODEBUDDY_CONFIG = {
   pollInterval: 5000,
 };
 
-
-// Gemini CLI OAuth Configuration.
-// Credentials are supplied through environment variables so the router does not
-// carry a provider-specific client secret in source control.
-export const GEMINI_CONFIG = {
-  clientId: process.env.GEMINI_CLIENT_ID || "",
-  clientSecret: process.env.GEMINI_CLIENT_SECRET || "",
-  authorizeUrl: "https://accounts.google.com/o/oauth2/auth",
-  tokenUrl: "https://oauth2.googleapis.com/token",
-  userInfoUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
-  scopes: [
-    "openid",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-    "https://www.googleapis.com/auth/cloud-platform",
-  ],
-};
-
 // OAuth timeout (5 minutes)
 export const OAUTH_TIMEOUT = 300000;
 
@@ -171,5 +231,3 @@ export const PROVIDERS = {
   GITLAB: "gitlab",
   CODEBUDDY: "codebuddy",
 };
-
-export function getOAuthClientMetadata() { return { ideType: 10, platform: 3, pluginType: 2 }; }
