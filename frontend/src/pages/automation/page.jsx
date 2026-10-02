@@ -24,8 +24,8 @@ export default function AutomationDashboard() {
     <div className="space-y-6">
       {/* Tab Switcher */}
       <div className="flex border-b border-border-subtle pb-px gap-6 flex-wrap">
-        {tabBtn("codebuddy", "smart_toy", "Automation")}
-        {tabBtn("ammail", "mail", "Ammail Temp Mail")}
+        {tabBtn("codebuddy", "smart_toy", "Otomatisasi")}
+        {tabBtn("ammail", "mail", "Surat Sementara Ammail")}
       </div>
 
       {activeTab === "codebuddy" && <CodeBuddyTab />}
@@ -67,7 +67,7 @@ function CodeBuddyTab() {
   const [addGoogleStatus, setAddGoogleStatus] = useState("");
   const [targetProvider, setTargetProvider] = useState("cloudflare");
   
-  // Settings
+  // Pengaturan
   const [browserHeadless, setBrowserHeadless] = useState(true);
   const [debugMode, setDebugMode] = useState(false);
   const [leaveCanvaTeam, setLeaveCanvaTeam] = useState(false);
@@ -77,8 +77,8 @@ function CodeBuddyTab() {
   const [proxyModalText, setProxyModalText] = useState("");
   const [leonardoInviteLink, setLeonardoInviteLink] = useState("");
   const [codebuddy2CaptchaApiKey, setCodebuddy2CaptchaApiKey] = useState("");
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [openSettings, setOpenSettings] = useState({
+  const [savingPengaturan, setSavingPengaturan] = useState(false);
+  const [openPengaturan, setOpenPengaturan] = useState({
     general: true,
     leonardo: false,
     weavy: false,
@@ -93,7 +93,7 @@ function CodeBuddyTab() {
   const [cfSetupResult, setCfSetupResult] = useState(null);
 
   const toggleSection = (section) => {
-    setOpenSettings((prev) => ({ ...prev, [section]: !prev[section] }));
+    setOpenPengaturan((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
 
@@ -141,10 +141,10 @@ function CodeBuddyTab() {
       const savedGenerateCount = localStorage.getItem("automation_generate_count");
       if (savedGenerateCount) setGenerateCount(parseInt(savedGenerateCount) || 5);
 
-      const savedOpenSettings = localStorage.getItem("automation_open_settings");
-      if (savedOpenSettings) {
+      const savedOpenPengaturan = localStorage.getItem("automation_open_settings");
+      if (savedOpenPengaturan) {
         try {
-          setOpenSettings((prev) => ({ ...prev, ...JSON.parse(savedOpenSettings) }));
+          setOpenPengaturan((prev) => ({ ...prev, ...JSON.parse(savedOpenPengaturan) }));
         } catch (e) {
           console.error("Failed to parse saved automation open settings", e);
         }
@@ -159,7 +159,7 @@ function CodeBuddyTab() {
   useEffect(() => { if (mounted) localStorage.setItem("automation_concurrency", String(concurrency)); }, [concurrency, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem("automation_auto_email", autoGenerateEmail ? "1" : "0"); }, [autoGenerateEmail, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem("automation_generate_count", String(generateCount)); }, [generateCount, mounted]);
-  useEffect(() => { if (mounted) localStorage.setItem("automation_open_settings", JSON.stringify(openSettings)); }, [openSettings, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem("automation_open_settings", JSON.stringify(openPengaturan)); }, [openPengaturan, mounted]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -182,7 +182,7 @@ function CodeBuddyTab() {
       .catch(() => {});
   }, []);
 
-  const loadState = async (includeSettings = false) => {
+  const loadState = async (includePengaturan = false) => {
     try {
       const res = await fetch("/api/automation/codebuddy");
       const data = await res.json();
@@ -217,7 +217,7 @@ function CodeBuddyTab() {
           }
         }
         // Only update settings on initial load, not during polling
-        if (includeSettings) {
+        if (includePengaturan) {
           const s = data.settings || {};
           setAuto9Router(s.auto_9router === "1" || s.auto_9router === true);
           setBrowserHeadless(!!s.browser_headless);
@@ -293,8 +293,8 @@ function CodeBuddyTab() {
     }
   }, [debugMode, activeJobId]);
 
-  const handleSaveSettings = async () => {
-    setSavingSettings(true);
+  const handleSavePengaturan = async () => {
+    setSavingPengaturan(true);
     try {
       const res = await fetch("/api/automation/codebuddy", {
         method: "POST",
@@ -312,23 +312,23 @@ function CodeBuddyTab() {
         })
       });
       if (res.ok) {
-        setAddGoogleStatus("Settings saved successfully.");
+        setAddGoogleStatus("Pengaturan berhasil disimpan.");
         setTimeout(() => setAddGoogleStatus(""), 3000);
         await loadState(true); // reload settings from DB to confirm
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setSavingSettings(false);
+      setSavingPengaturan(false);
     }
   };
 
   const handleAddGoogle = async () => {
     if (!addGoogleText.trim()) {
-      setAddGoogleStatus("Please enter at least one email:password line.");
+      setAddGoogleStatus("Masukkan setidaknya satu baris email:kata sandi.");
       return;
     }
-    setAddGoogleStatus("Adding accounts...");
+    setAddGoogleStatus("Menambahkan akun...");
     try {
       const res = await fetch("/api/automation/codebuddy", {
         method: "POST",
@@ -351,15 +351,15 @@ function CodeBuddyTab() {
         );
         loadState();
       } else {
-        setAddGoogleStatus(`Error: ${data.error}`);
+        setAddGoogleStatus(`Kesalahan: ${data.error}`);
       }
     } catch (e) {
-      setAddGoogleStatus(`Failed: ${e.message}`);
+      setAddGoogleStatus(`Gagal: ${e.message}`);
     }
   };
 
   const handleAutoGenerateEmail = async () => {
-    setAddGoogleStatus("Generating emails...");
+    setAddGoogleStatus("Membuat alamat email...");
     try {
       const res = await fetch("/api/automation/codebuddy", {
         method: "POST",
@@ -375,14 +375,14 @@ function CodeBuddyTab() {
       });
       const data = await res.json();
       if (res.ok) {
-        setAddGoogleStatus(`✓ Generated ${data.created?.length || 0} temp mail accounts and started signup job.`);
+        setAddGoogleStatus(`✓ Berhasil membuat ${data.created?.length || 0} akun surat sementara dan memulai tugas pendaftaran.`);
         loadState();
       } else {
-        setAddGoogleStatus(`Error: ${data.error || "Failed to generate emails"}`);
+        setAddGoogleStatus(`Kesalahan: ${data.error || "Failed to generate emails"}`);
       }
     } catch (e) {
       console.error(e);
-      setAddGoogleStatus("Failed to contact server.");
+      setAddGoogleStatus("Gagal menghubungi server.");
     }
   };
 
@@ -399,10 +399,10 @@ function CodeBuddyTab() {
         setActiveJobId(data.job_id);
         loadState();
       } else {
-        setAddGoogleStatus(`Failed: ${data.error}`);
+        setAddGoogleStatus(`Gagal: ${data.error}`);
       }
     } catch (e) {
-      setAddGoogleStatus(`Failed: ${e.message}`);
+      setAddGoogleStatus(`Gagal: ${e.message}`);
     }
   };
 
@@ -456,7 +456,7 @@ function CodeBuddyTab() {
         alert(`✓ ${data.message || "Added successfully!"}`);
         loadState();
       } else {
-        alert(`Failed: ${data.error}`);
+        alert(`Gagal: ${data.error}`);
       }
     } catch (e) {
       console.error(e);
@@ -477,7 +477,7 @@ function CodeBuddyTab() {
         alert(data.message);
         loadState();
       } else {
-        alert(`Failed: ${data.error}`);
+        alert(`Gagal: ${data.error}`);
       }
     } catch (e) {
       console.error(e);
@@ -485,8 +485,8 @@ function CodeBuddyTab() {
   };
 
   const handleSingleDelete = async (id) => {
-    if (!confirm("Delete this account?")) return;
-    const deleteFrom9router = confirm("Also delete this account connection from 9Router?");
+    if (!confirm("Hapus akun ini?")) return;
+    const deleteFrom9router = confirm("Hapus juga koneksi akun ini dari 9Router?");
     const deletedAcc = accounts.find(a => a.id === id);
     try {
       await fetch(`/api/automation/codebuddy/${id}`, {
@@ -505,9 +505,9 @@ function CodeBuddyTab() {
   };
 
   const handleBulkDelete = async (statuses, ids = null) => {
-    const label = ids ? `${ids.length} selected accounts` : `all accounts with status: ${statuses.join(", ")}`;
+    const label = ids ? `${ids.length} akun yang dipilih` : `semua akun dengan status: ${statuses.join(", ")}`;
     if (!confirm(`Delete ${label}?`)) return;
-    const deleteFrom9router = confirm("Also delete these account connections from 9Router?");
+    const deleteFrom9router = confirm("Hapus juga koneksi akun ini dari 9Router?");
     const deletedEmailsList = accounts
       .filter(a => ids ? ids.includes(a.id) : (a.provider === targetProvider && statuses.includes(a.api_key_status)))
       .map(a => a.email.toLowerCase());
@@ -558,11 +558,11 @@ function CodeBuddyTab() {
           <Card padding="md" className="space-y-4">
             <h2 className="text-sm font-bold text-text-main flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">person_add</span>
-            {(targetProvider === "leonardo" || targetProvider === "weavy" || targetProvider === "cloudflare") && autoGenerateEmail ? "Generate Temp Accounts" : "Add Accounts"}
+            {(targetProvider === "leonardo" || targetProvider === "weavy" || targetProvider === "cloudflare") && autoGenerateEmail ? "Buat Akun Sementara" : "Tambah Akun"}
           </h2>
           
           <div className="flex flex-col gap-1.5 pb-1">
-            <label className="text-xs font-semibold text-text-main">Target Provider Connection</label>
+            <label className="text-xs font-semibold text-text-main">Koneksi Penyedia Tujuan</label>
             <div className="flex items-center gap-2">
               <img src={targetProvider === "weavy" ? "/providers/weavy.jpeg" : targetProvider === "kimi-coding" ? "/providers/kimi.png" : `/providers/${targetProvider}.png`} alt={targetProvider} className="size-5 rounded object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
               <select
@@ -608,7 +608,7 @@ function CodeBuddyTab() {
               </div>
               {ammailDomains.length >= 1 && (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-text-muted">Email domain:</span>
+                  <span className="text-xs text-text-muted">Domain email:</span>
                   <select
                     value={selectedAmmailDomain}
                     onChange={(e) => setSelectedAmmailDomain(e.target.value)}
@@ -659,13 +659,13 @@ function CodeBuddyTab() {
         <Card padding="md" className="space-y-4">
           <h2 className="text-sm font-bold text-text-main flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px]">settings</span>
-            Automation Settings
+            Automation Pengaturan
           </h2>
           <div className="space-y-4">
-            {/* 1. General Settings */}
+            {/* 1. Pengaturan Umum */}
             <div className="space-y-2">
-              {renderSectionHeader("General Settings", "dns", openSettings.general, () => toggleSection("general"))}
-              {openSettings.general && (
+              {renderSectionHeader("Pengaturan Umum", "dns", openPengaturan.general, () => toggleSection("general"))}
+              {openPengaturan.general && (
                 <div className="pl-6 pr-2 py-2 space-y-3">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
@@ -689,15 +689,15 @@ function CodeBuddyTab() {
               )}
             </div>
 
-            {/* Leonardo & Weavy Settings Removed */}
+            {/* Leonardo & Weavy Pengaturan Removed */}
 
-            {/* 4. Outbound Proxy Settings */}
+            {/* 4. Pengaturan Proksi Keluar */}
             <div className="space-y-2">
-              {renderSectionHeader("Outbound Proxy Settings", "vpn_lock", openSettings.proxy, () => toggleSection("proxy"))}
-              {openSettings.proxy && (
+              {renderSectionHeader("Pengaturan Proksi Keluar", "vpn_lock", openPengaturan.proxy, () => toggleSection("proxy"))}
+              {openPengaturan.proxy && (
                 <div className="pl-6 pr-2 py-2 space-y-3">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-xs font-medium text-text-main">Enable Outbound Proxy</span>
+                    <span className="text-xs font-medium text-text-main">Aktifkan Proksi Keluar</span>
                     <Toggle checked={proxyEnabled} onChange={setProxyEnabled} />
                   </div>
                   {proxyEnabled && (
@@ -725,7 +725,7 @@ function CodeBuddyTab() {
                                     const data = await res.json();
                                     results[p] = data;
                                   } catch {
-                                    results[p] = { ok: false, error: "Request failed" };
+                                    results[p] = { ok: false, error: "Permintaan gagal" };
                                   }
                                   setProxyTestResults({ ...results });
                                 }
@@ -738,7 +738,7 @@ function CodeBuddyTab() {
                                   : "bg-surface-2 border-border-subtle hover:border-green-500 text-green-400 hover:text-green-300"
                               }`}
                             >
-                              {testingProxies ? "⏳ Testing..." : "🧪 Test"}
+                              {testingProxies ? "⏳ Menguji..." : "🧪 Test"}
                             </button>
                           )}
                           <button
@@ -773,8 +773,8 @@ function CodeBuddyTab() {
               )}
             </div>
 
-            <Button variant="secondary" size="sm" fullWidth onClick={handleSaveSettings} disabled={savingSettings}>
-              {savingSettings ? "Saving..." : "Save Settings"}
+            <Button variant="secondary" size="sm" fullWidth onClick={handleSavePengaturan} disabled={savingPengaturan}>
+              {savingPengaturan ? "Menyimpan..." : "Simpan Pengaturan"}
             </Button>
           </div>
         </Card>
@@ -800,7 +800,7 @@ function CodeBuddyTab() {
                 )}
                 <div>
                   <h3 className="text-sm font-semibold text-text-main">
-                    {activeJobId ? "Job Running" : (activeJob?.status === "stopped" ? "Job Stopped" : "Job Completed")}
+                    {activeJobId ? "Tugas Berjalan" : (activeJob?.status === "stopped" ? "Tugas Dihentikan" : "Tugas Selesai")}
                   </h3>
                   {activeJob && (
                     <p className="text-[11px] text-text-muted mt-0.5">
@@ -890,7 +890,7 @@ function CodeBuddyTab() {
                                 if (acc) {
                                   handleSingleRun(acc.id);
                                 } else {
-                                  alert("Account not found.");
+                                  alert("Akun tidak ditemukan.");
                                 }
                               }}
                               disabled={!!activeJobId}
@@ -955,7 +955,7 @@ function CodeBuddyTab() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <input
               type="text"
-              placeholder="Search email..."
+              placeholder="Cari email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="text-xs p-2 rounded-lg border border-border-subtle bg-surface focus:outline-none focus:border-primary w-48"
@@ -997,12 +997,12 @@ function CodeBuddyTab() {
                 }}
                 disabled={!!activeJobId}
                 className="text-brand-400 hover:text-brand-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-              >▶ Run Selected</button>
+              >▶ Jalankan yang Dipilih</button>
               <span className="text-text-muted">·</span>
               <button
                 onClick={() => handleBulkDelete(null, [...selectedIds])}
                 className="text-red-400 hover:text-red-300 font-semibold"
-              >🗑 Delete Selected</button>
+              >🗑 Hapus yang Dipilih</button>
               <button
                 onClick={() => setSelectedIds(new Set())}
                 className="ml-auto text-text-muted hover:text-text-main"
@@ -1170,7 +1170,7 @@ function CodeBuddyTab() {
             <div className="flex items-center gap-2">
               {!vncReady && (
                 <span className="text-[10px] text-text-muted">
-                  {activeJobId ? "Starting..." : "Run a job to see the browser"}
+                  {activeJobId ? "Memulai..." : "Jalankan tugas untuk melihat peramban"}
                 </span>
               )}
               {vncReady && (
@@ -1205,7 +1205,7 @@ function CodeBuddyTab() {
                 <div className="text-center space-y-2">
                   <span className="material-symbols-outlined text-[32px] text-text-muted">desktop_windows</span>
                   <p className="text-xs text-text-muted">
-                    {activeJobId ? "Starting browser preview..." : "Run a job with Debug Mode to see live browser"}
+                    {activeJobId ? "Memulai pratinjau peramban..." : "Jalankan tugas dengan Mode Debug untuk melihat peramban secara langsung"}
                   </p>
                 </div>
               </div>
@@ -1335,8 +1335,8 @@ function AmmailTab() {
   const [otps, setOtps] = useState([]);
   const [htmlZoom, setHtmlZoom] = useState(1.0);
   
-  // Modals / Settings config
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  // Modals / Pengaturan config
+  const [showPengaturanModal, setShowPengaturanModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
@@ -1354,11 +1354,11 @@ function AmmailTab() {
   const modalOpenRef = useRef(false);
 
   useEffect(() => {
-    modalOpenRef.current = showSettingsModal;
-    if (!showSettingsModal) {
+    modalOpenRef.current = showPengaturanModal;
+    if (!showPengaturanModal) {
       setTestResult(null);
     }
-  }, [showSettingsModal]);
+  }, [showPengaturanModal]);
 
   const [activeFolder, setActiveFolder] = useState("all"); // all | unread | read | otp
   const [selectedInboxAddress, setSelectedInboxAddress] = useState("");
@@ -1366,7 +1366,7 @@ function AmmailTab() {
   const [selectedOtpDetails, setSelectedOtpDetails] = useState(null);
   const [bodyPaneMode, setBodyPaneMode] = useState("html"); // html | text
   const [searchQuery, setSearchQuery] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setSegarkaning] = useState(false);
 
   const [composerAlias, setComposerAlias] = useState("");
   const [composerDomain, setComposerDomain] = useState("");
@@ -1418,7 +1418,7 @@ function AmmailTab() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSaveSettings = async () => {
+  const handleSavePengaturan = async () => {
     try {
       const res = await fetch("/api/automation/ammail", {
         method: "POST",
@@ -1437,7 +1437,7 @@ function AmmailTab() {
         })
       });
       if (res.ok) {
-        setShowSettingsModal(false);
+        setShowPengaturanModal(false);
         loadState();
       }
     } catch (e) {
@@ -1463,10 +1463,10 @@ function AmmailTab() {
         setTestResult({ ok: true, message: "Worker connection succeeded!" });
         loadState();
       } else {
-        setTestResult({ ok: false, message: `Connection failed: ${data.error}` });
+        setTestResult({ ok: false, message: `Koneksi gagal: ${data.error}` });
       }
     } catch (e) {
-      setTestResult({ ok: false, message: `Error: ${e.message}` });
+      setTestResult({ ok: false, message: `Kesalahan: ${e.message}` });
     } finally {
       setLoading(false);
     }
@@ -1474,7 +1474,7 @@ function AmmailTab() {
 
   const handleAutoDeploy = async () => {
     if (!cfAccountId || !cfApiToken || !cfDomain) {
-      alert("Account ID, API Token, and Domain are required!");
+      alert("ID Akun, Token API, dan Domain wajib diisi!");
       return;
     }
     setLoading(true);
@@ -1493,7 +1493,7 @@ function AmmailTab() {
       });
       const data = await res.json();
       if (res.ok) {
-        setTestResult({ ok: true, message: "Success! The Worker has been deployed to Cloudflare and is ready." });
+        setTestResult({ ok: true, message: "Berhasil! Worker telah diterapkan ke Cloudflare dan siap digunakan." });
         setBaseUrl(data.base_url || "");
         setApiKey(data.api_key || "");
         setDefaultDomain(data.default_domain || "");
@@ -1504,7 +1504,7 @@ function AmmailTab() {
         setTestResult({ ok: false, message: `Deployment failed: ${data.error}` });
       }
     } catch (e) {
-      setTestResult({ ok: false, message: `Error: ${e.message}` });
+      setTestResult({ ok: false, message: `Kesalahan: ${e.message}` });
     } finally {
       setLoading(false);
     }
@@ -1522,10 +1522,10 @@ function AmmailTab() {
         alert("Webhook registered successfully!");
         loadState();
       } else {
-        alert(`Failed: ${data.error}`);
+        alert(`Gagal: ${data.error}`);
       }
     } catch (e) {
-      alert(`Error: ${e.message}`);
+      alert(`Kesalahan: ${e.message}`);
     }
   };
 
@@ -1558,7 +1558,7 @@ function AmmailTab() {
   };
 
   const handleDeleteInbox = async (alias) => {
-    if (!confirm(`Delete inbox ${alias}?`)) return;
+    if (!confirm(`Hapus kotak masuk ${alias}?`)) return;
     try {
       const res = await fetch("/api/automation/ammail", {
         method: "POST",
@@ -1598,7 +1598,7 @@ function AmmailTab() {
 
   const handleDeleteOtp = async (e, id) => {
     e.stopPropagation();
-    if (!confirm("Delete this email?")) return;
+    if (!confirm("Hapus email ini?")) return;
     try {
       await fetch(`/api/automation/ammail/otps/${id}`, {
         method: "POST",
@@ -1616,7 +1616,7 @@ function AmmailTab() {
   };
 
   const handleEmptyFolder = async () => {
-    if (!confirm(`Delete all emails in folder ${activeFolder}?`)) return;
+    if (!confirm(`Hapus semua email di folder ${activeFolder}?`)) return;
     try {
       await fetch("/api/automation/ammail", {
         method: "POST",
@@ -1695,7 +1695,7 @@ function AmmailTab() {
     <div className="border border-border-subtle rounded-2xl overflow-hidden bg-vibrancy backdrop-blur-xl flex flex-col h-[calc(100vh-210px)] min-h-[500px] shadow-[var(--shadow-warm)]">
       {initialLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
-          <Loading size="lg" label="Loading Temporary Mail settings..." />
+          <Loading size="lg" label="Memuat pengaturan Surat Sementara..." />
         </div>
       ) : !configured ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
@@ -1708,8 +1708,8 @@ function AmmailTab() {
               Please enter your Ammail Cloudflare worker credentials and endpoint in settings to enable temp emails.
             </p>
           </div>
-          <Button variant="primary" onClick={() => setShowSettingsModal(true)}>
-            ⚙ Configure Settings
+          <Button variant="primary" onClick={() => setShowPengaturanModal(true)}>
+            ⚙ Configure Pengaturan
           </Button>
         </div>
       ) : (
@@ -1725,9 +1725,9 @@ function AmmailTab() {
                 {connectionOk ? "Connected" : "Disconnected"}
               </span>
               <button
-                onClick={() => setShowSettingsModal(true)}
+                onClick={() => setShowPengaturanModal(true)}
                 className="text-text-muted hover:text-text-main cursor-pointer"
-                title="Settings"
+                title="Pengaturan"
               >
                 <span className="material-symbols-outlined text-[18px]">settings</span>
               </button>
@@ -1744,7 +1744,7 @@ function AmmailTab() {
                   <button
                     onClick={() => {
                       setBaseUrl(cfWorkersDevUrl);
-                      setShowSettingsModal(true);
+                      setShowPengaturanModal(true);
                       setDeployMode("manual");
                     }}
                     className="text-primary hover:underline text-[9px] font-semibold block mt-1 text-left"
@@ -1839,7 +1839,7 @@ function AmmailTab() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search inboxes..."
+                  placeholder="Cari kotak masuk..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg border border-border-subtle bg-surface focus:outline-none focus:border-primary text-text-main"
@@ -1909,7 +1909,7 @@ function AmmailTab() {
                               handleDeleteInbox(inbox.alias);
                             }}
                             className="size-6 flex items-center justify-center rounded-md text-text-muted hover:text-red-400 hover:bg-red-500/15 transition-all duration-150"
-                            title="Delete inbox"
+                            title="Hapus kotak masuk"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
                               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1936,11 +1936,11 @@ function AmmailTab() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => {
-                    setRefreshing(true);
-                    loadState().finally(() => setRefreshing(false));
+                    setSegarkaning(true);
+                    loadState().finally(() => setSegarkaning(false));
                   }}
                   className={`p-1.5 hover:bg-surface rounded-lg cursor-pointer text-text-muted transition-colors duration-150 ${refreshing ? "animate-spin" : ""}`}
-                  title="Refresh"
+                  title="Segarkan"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4">
                     <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -1959,7 +1959,7 @@ function AmmailTab() {
                       ? "text-red-500 hover:bg-red-500/10"
                       : "text-text-muted/30 cursor-not-allowed"
                   }`}
-                  title="Delete selected email"
+                  title="Hapus email yang dipilih"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
                     <path d="M3 6h18"></path>
@@ -2009,7 +2009,7 @@ function AmmailTab() {
                     <button
                       onClick={(e) => handleDeleteOtp(e, o.id)}
                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 transition-all p-1 hover:bg-red-500/10 rounded cursor-pointer"
-                      title="Delete email"
+                      title="Hapus email"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
                         <path d="M3 6h18"></path>
@@ -2031,7 +2031,7 @@ function AmmailTab() {
               </div>
             ) : selectedOtpDetails === null ? (
               <div className="flex-1 flex items-center justify-center text-text-muted text-xs">
-                <span className="animate-spin mr-2">⏳</span> Loading email details...
+                <span className="animate-spin mr-2">⏳</span> Memuat rincian email...
               </div>
             ) : (
               <div className="flex-1 flex flex-col min-h-0">
@@ -2168,7 +2168,7 @@ function AmmailTab() {
                     <div className="w-full h-full relative overflow-auto custom-scrollbar">
                       <iframe
                         srcDoc={getInjectedHtml(selectedOtpDetails.body_html)}
-                        title="Email Preview"
+                        title="Pratinjau Email"
                         sandbox="allow-popups allow-popups-to-escape-sandbox"
                         style={{
                           transform: `scale(${htmlZoom})`,
@@ -2191,13 +2191,13 @@ function AmmailTab() {
         </div>
       )}
 
-      {/* Settings Modal */}
-      {showSettingsModal && (
+      {/* Pengaturan Modal */}
+      {showPengaturanModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm p-4 pt-[6vh] overflow-y-auto">
           <div className="bg-neutral-900 border border-white/10 rounded-2xl w-full max-w-md text-white max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center p-5 border-b border-white/5 shrink-0">
-              <h3 className="text-base font-bold">Ammail Settings</h3>
-              <button onClick={() => setShowSettingsModal(false)} className="text-white/60 hover:text-white cursor-pointer flex items-center">
+              <h3 className="text-base font-bold">Ammail Pengaturan</h3>
+              <button onClick={() => setShowPengaturanModal(false)} className="text-white/60 hover:text-white cursor-pointer flex items-center">
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
@@ -2264,7 +2264,7 @@ function AmmailTab() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-white/60 block mb-1">Default Domain</label>
+                      <label className="text-[11px] text-white/60 block mb-1">Domain Bawaan</label>
                       <input
                         type="text"
                         placeholder="yourdomain.com"
@@ -2288,7 +2288,7 @@ function AmmailTab() {
 
                   <div className="space-y-3">
                     <Button variant="secondary" size="sm" fullWidth onClick={handleTestConnection} disabled={loading}>
-                      {loading ? "Testing..." : "⚡ Test Connection"}
+                      {loading ? "Menguji..." : "⚡ Uji Koneksi"}
                     </Button>
 
                     {testResult && (
@@ -2301,11 +2301,11 @@ function AmmailTab() {
                     )}
 
                     <div className="flex gap-2 pt-1">
-                      <Button variant="secondary" size="sm" fullWidth onClick={() => setShowSettingsModal(false)}>
+                      <Button variant="secondary" size="sm" fullWidth onClick={() => setShowPengaturanModal(false)}>
                         Cancel
                       </Button>
-                      <Button variant="primary" size="sm" fullWidth onClick={handleSaveSettings}>
-                        Save Settings
+                      <Button variant="primary" size="sm" fullWidth onClick={handleSavePengaturan}>
+                        Simpan Pengaturan
                       </Button>
                     </div>
                   </div>
@@ -2315,7 +2315,7 @@ function AmmailTab() {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-[11px] text-white/60 block">Cloudflare Account ID</label>
+                        <label className="text-[11px] text-white/60 block">ID Akun Cloudflare</label>
                         <a
                           href="https://dash.cloudflare.com"
                           target="_blank"
@@ -2327,7 +2327,7 @@ function AmmailTab() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Paste your Account ID"
+                        placeholder="Tempel ID Akun Anda"
                         value={cfAccountId}
                         onChange={(e) => setCfAccountId(e.target.value)}
                         className="w-full text-xs p-2.5 rounded-lg border border-white/10 bg-white/5 focus:outline-none focus:border-primary text-white"
@@ -2336,7 +2336,7 @@ function AmmailTab() {
 
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-[11px] text-white/60 block">Cloudflare API Token (Workers & D1)</label>
+                        <label className="text-[11px] text-white/60 block">Token API Cloudflare (Workers & D1)</label>
                         <a
                           href="https://dash.cloudflare.com/profile/api-tokens"
                           target="_blank"
@@ -2356,7 +2356,7 @@ function AmmailTab() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-white/60 block mb-1">Domain Worker (for example: mail.domainanda.com)</label>
+                      <label className="text-[11px] text-white/60 block mb-1">Domain Worker (contoh: mail.domainanda.com)</label>
                       <input
                         type="text"
                         placeholder="mail.domainanda.com"
@@ -2409,7 +2409,7 @@ function AmmailTab() {
                     )}
 
                     <div className="flex gap-2 pt-1">
-                      <Button variant="secondary" size="sm" fullWidth onClick={() => setShowSettingsModal(false)}>
+                      <Button variant="secondary" size="sm" fullWidth onClick={() => setShowPengaturanModal(false)}>
                         Cancel
                       </Button>
                       <Button variant="primary" size="sm" fullWidth onClick={handleAutoDeploy} disabled={loading}>
@@ -2455,7 +2455,7 @@ function AmmailTab() {
                         <strong className="text-white/80">Email Routing:</strong> Enable Cloudflare Email Routing for your domain and route all incoming email to the Worker.
                       </li>
                       <li>
-                        <strong className="text-white/80">Connect:</strong> Enter the <strong className="text-white">Worker Base URL</strong> (for example: <code className="text-amber-200">https://mail.domain.com</code>) and <strong className="text-white">API Key</strong> in the form above, then click <strong className="text-white">Test Connection</strong>.
+                        <strong className="text-white/80">Connect:</strong> Enter the <strong className="text-white">Worker Base URL</strong> (for example: <code className="text-amber-200">https://mail.domain.com</code>) and <strong className="text-white">API Key</strong> in the form above, then click <strong className="text-white">Uji Koneksi</strong>.
                       </li>
                       <li>
                         <strong className="text-white/80">Enable Webhook:</strong> After the connection succeeds and settings are saved, click <strong className="text-white">Register Webhook</strong> below to enable real-time email synchronization.
