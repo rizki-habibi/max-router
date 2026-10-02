@@ -56,8 +56,8 @@ export default function CompatibleChatPage() {
     <div className="flex h-[calc(100vh-8rem)] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
-          <h1 className="text-lg font-semibold">Compatible Chat</h1>
-          <p className="text-xs text-text-muted">Chat langsung melalui provider kompatibel dan key yang sudah terdaftar.</p>
+          <h1 className="text-lg font-semibold">Chat Kompatibel</h1>
+          <p className="text-xs text-text-muted">Chat langsung melalui provider kompatibel dan kunci yang sudah terdaftar.</p>
         </div>
         <select
           value={model}
@@ -82,7 +82,7 @@ export default function CompatibleChatPage() {
         )}
         {messages.map((message, index) => (
           <div key={index} className={message.role === "user" ? "ml-auto max-w-[80%] rounded-2xl bg-primary px-4 py-3 text-sm text-white" : "max-w-[85%] rounded-2xl bg-bg px-4 py-3 text-sm"}>
-            <div className="mb-1 text-[10px] font-semibold uppercase opacity-60">{message.role === "error" ? "Error" : message.role}</div>
+            <div className="mb-1 text-[10px] font-semibold uppercase opacity-60">{message.role === "error" ? "Kesalahan" : message.role === "assistant" ? "Asisten" : "Anda"}</div>
             <div className="whitespace-pre-wrap break-words">{message.content}</div>
           </div>
         ))}
@@ -105,7 +105,7 @@ export default function CompatibleChatPage() {
             disabled={!model || busy}
           />
           <button type="submit" disabled={!canSend} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
-            {busy ? "..." : "Kirim"}
+            {busy ? "Mengirim..." : "Kirim"}
           </button>
         </div>
       </form>
