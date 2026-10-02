@@ -11,7 +11,7 @@ import {
   Modal,
   Toggle,
 } from "@/shared/components";
-import ProviderIcon from "@/shared/components/ProviderIcon";
+import PenyediaIcon from "@/shared/components/PenyediaIcon";
 import {
   FREE_PROVIDERS,
   FREE_TIER_PROVIDERS,
@@ -25,7 +25,7 @@ import ModelAvailabilityBadge from "./components/ModelAvailabilityBadge";
 
 const VALIDATION_TIMEOUT_MS = 15000;
 
-async function fetchProviderNodeValidation(payload) {
+async function fetchPenyediaNodeValidation(payload) {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
   try {
@@ -52,8 +52,8 @@ function getStatusDisplay(connected, error, errorCode) {
   }
   if (error > 0) {
     const errText = errorCode
-      ? `${error} Error (${errorCode})`
-      : `${error} Error`;
+      ? `${error} Kesalahan (${errorCode})`
+      : `${error} Kesalahan`;
     parts.push(
       <Badge key="error" variant="error" size="sm" dot>
         {errText}
@@ -61,7 +61,7 @@ function getStatusDisplay(connected, error, errorCode) {
     );
   }
   if (parts.length === 0) {
-    return <span className="text-text-muted">No connections</span>;
+    return <span className="text-text-muted">Belum ada koneksi</span>;
   }
   return parts;
 }
@@ -110,15 +110,15 @@ function getConnectionErrorTag(connection) {
 
 const APIKEY_INITIAL_VISIBLE = 20;
 
-export default function ProvidersPage() {
+export default function PenyediasPage() {
   const [connections, setConnections] = useState([]);
-  const [providerNodes, setProviderNodes] = useState([]);
+  const [providerNodes, setPenyediaNodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAllApikey, setShowAllApikey] = useState(false);
-  const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
+  const [showAddKompatibelModal, setShowAddKompatibelModal] = useState(false);
 
-  const [testingMode, setTestingMode] = useState(null);
-  const [testResults, setTestResults] = useState(null);
+  const [testingMode, setUjiingMode] = useState(null);
+  const [testResults, setUjiResults] = useState(null);
   const notify = useNotificationStore();
   const searchQuery = useHeaderSearchStore((s) => s.query);
   const registerSearch = useHeaderSearchStore((s) => s.register);
@@ -135,8 +135,8 @@ export default function ProvidersPage() {
 
   const sortByPriority = (entries, authType) =>
     [...entries].sort(([ka, a], [kb, b]) => {
-      const sa = getProviderStats(ka, authType);
-      const sb = getProviderStats(kb, authType);
+      const sa = getPenyediaStats(ka, authType);
+      const sb = getPenyediaStats(kb, authType);
       const ca = sa.connected > 0 ? 1 : 0;
       const cb = sb.connected > 0 ? 1 : 0;
       if (ca !== cb) return cb - ca;
@@ -145,8 +145,8 @@ export default function ProvidersPage() {
 
   const sortItemsByPriority = (items, authType) =>
     [...items].sort((a, b) => {
-      const sa = getProviderStats(a.id, authType);
-      const sb = getProviderStats(b.id, authType);
+      const sa = getPenyediaStats(a.id, authType);
+      const sb = getPenyediaStats(b.id, authType);
       const ca = sa.connected > 0 ? 1 : 0;
       const cb = sb.connected > 0 ? 1 : 0;
       if (ca !== cb) return cb - ca;
@@ -164,7 +164,7 @@ export default function ProvidersPage() {
         const nodesData = await nodesRes.json();
         if (connectionsRes.ok)
           setConnections(connectionsData.connections || []);
-        if (nodesRes.ok) setProviderNodes(nodesData.nodes || []);
+        if (nodesRes.ok) setPenyediaNodes(nodesData.nodes || []);
       } catch (error) {
         console.log("Error fetching data:", error);
       } finally {
@@ -174,7 +174,7 @@ export default function ProvidersPage() {
     fetchData();
   }, []);
 
-  const getProviderStats = (providerId, authType) => {
+  const getPenyediaStats = (providerId, authType) => {
     const providerConnections = connections.filter(
       (c) => c.provider === providerId && (c.authType === authType || (providerId === "codebuddy" && c.authType === "apikey")),
     );
@@ -218,7 +218,7 @@ export default function ProvidersPage() {
   };
 
   // Toggle all connections for a provider on/off
-  const handleToggleProvider = async (providerId, authType, newActive) => {
+  const handleTogglePenyedia = async (providerId, authType, newActive) => {
     const providerConns = connections.filter(
       (c) => c.provider === providerId && c.authType === authType,
     );
@@ -240,10 +240,10 @@ export default function ProvidersPage() {
     );
   };
 
-  const handleBatchTest = async (mode, providerId = null) => {
+  const handleBatchUji = async (mode, providerId = null) => {
     if (testingMode) return;
-    setTestingMode(mode === "provider" ? providerId : mode);
-    setTestResults(null);
+    setUjiingMode(mode === "provider" ? providerId : mode);
+    setUjiResults(null);
     try {
       const res = await fetch("/api/providers/test-batch", {
         method: "POST",
@@ -251,25 +251,25 @@ export default function ProvidersPage() {
         body: JSON.stringify({ mode, providerId }),
       });
       const data = await res.json();
-      setTestResults(data);
+      setUjiResults(data);
       if (data.summary) {
         const { passed, failed, total } = data.summary;
         if (failed === 0) notify.success(`Semua ${total} pengujian berhasil`);
         else notify.warning(`${passed}/${total} berhasil, ${failed} gagal`);
       }
     } catch (error) {
-      setTestResults({ error: "Test request failed" });
-      notify.error("Provider test failed");
+      setUjiResults({ error: "Permintaan pengujian gagal" });
+      notify.error("Pengujian penyedia gagal");
     } finally {
-      setTestingMode(null);
+      setUjiingMode(null);
     }
   };
 
-  const compatibleProviders = providerNodes
+  const compatiblePenyedias = providerNodes
     .filter((node) => node.type === "openai-compatible")
     .map((node) => ({
       id: node.id,
-      name: node.name || "Provider Kompatibel",
+      name: node.name || "Penyedia Kompatibel",
       color: "#10A37F",
       textIcon: "OC",
       iconUrl: node.iconUrl || node.providerSpecificData?.iconUrl,
@@ -277,11 +277,11 @@ export default function ProvidersPage() {
     }))
     .filter((p) => matchSearch(p.name));
 
-  const anthropicCompatibleProviders = providerNodes
+  const anthropicKompatibelPenyedias = providerNodes
     .filter((node) => node.type === "anthropic-compatible")
     .map((node) => ({
       id: node.id,
-      name: node.name || "Provider Kompatibel",
+      name: node.name || "Penyedia Kompatibel",
       color: "#D97757",
       textIcon: "AC",
       iconUrl: node.iconUrl || node.providerSpecificData?.iconUrl,
@@ -314,8 +314,8 @@ export default function ProvidersPage() {
     freeEntries.length > 0 ||
     freeTierEntries.length > 0 ||
     apikeyEntries.length > 0 ||
-    compatibleProviders.length > 0 ||
-    anthropicCompatibleProviders.length > 0;
+    compatiblePenyedias.length > 0 ||
+    anthropicKompatibelPenyedias.length > 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
@@ -328,41 +328,41 @@ export default function ProvidersPage() {
         </div>
       )}
 
-      {/* Provider Kompatibel — dynamic */}
+      {/* Penyedia Kompatibel — dynamic */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Provider Kompatibel{" "}
+            Penyedia Kompatibel{" "}
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:flex sm:w-auto">
             <Button
               size="sm"
               icon="add"
-              onClick={() => setShowAddCompatibleModal(true)}
+              onClick={() => setShowAddKompatibelModal(true)}
               className="w-full sm:w-auto"
             >
               Tambah Kompatibel
             </Button>
           </div>
         </div>
-        {compatibleProviders.length === 0 &&
-        anthropicCompatibleProviders.length === 0 ? (
+        {compatiblePenyedias.length === 0 &&
+        anthropicKompatibelPenyedias.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
             <span className="material-symbols-outlined text-[18px]">extension</span>
             <span>Belum ada provider kompatibel — tambahkan endpoint OpenAI-compatible atau Anthropic Messages-compatible.</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {[...compatibleProviders, ...anthropicCompatibleProviders].map(
+            {[...compatiblePenyedias, ...anthropicKompatibelPenyedias].map(
               (info) => (
-                <ApiKeyProviderCard
+                <ApiKeyPenyediaCard
                   key={info.id}
                   providerId={info.id}
                   provider={info}
-                  stats={getProviderStats(info.id, "apikey")}
+                  stats={getPenyediaStats(info.id, "apikey")}
                   authType="compatible"
                   onToggle={(active) =>
-                    handleToggleProvider(info.id, "apikey", active)
+                    handleTogglePenyedia(info.id, "apikey", active)
                   }
                 />
               ),
@@ -371,136 +371,136 @@ export default function ProvidersPage() {
         )}
       </div>
 
-      {/* OAuth Providers */}
+      {/* OAuth Penyedias */}
       {oauthEntries.length > 0 && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            OAuth Providers
+            OAuth Penyedias
           </h2>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <ModelAvailabilityBadge />
             <button
-              onClick={() => handleBatchTest("oauth")}
+              onClick={() => handleBatchUji("oauth")}
               disabled={!!testingMode}
               className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
                 testingMode === "oauth"
                   ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                   : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
               }`}
-              title="Test all OAuth connections"
-              aria-label="Test all OAuth connections"
+              title="Uji semua koneksi OAuth"
+              aria-label="Uji semua koneksi OAuth"
             >
               <span
                 className={`material-symbols-outlined text-[14px]${testingMode === "oauth" ? " animate-spin" : ""}`}
               >
                 play_arrow
               </span>
-              {testingMode === "oauth" ? "Testing..." : "Test All"}
+              {testingMode === "oauth" ? "Menguji..." : "Uji Semua"}
             </button>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {oauthEntries.map(([key, info]) => (
-            <ProviderCard
+            <PenyediaCard
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "oauth")}
+              stats={getPenyediaStats(key, "oauth")}
               authType="oauth"
-              onToggle={(active) => handleToggleProvider(key, "oauth", active)}
+              onToggle={(active) => handleTogglePenyedia(key, "oauth", active)}
             />
           ))}
         </div>
       </div>
       )}
 
-      {/* Free Tier Providers */}
+      {/* Free Tier Penyedias */}
       {(freeEntries.length > 0 || freeTierEntries.length > 0) && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Free Tier Providers
+            Free Tier Penyedias
           </h2>
           <button
-            onClick={() => handleBatchTest("free")}
+            onClick={() => handleBatchUji("free")}
             disabled={!!testingMode}
             className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
               testingMode === "free"
                 ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
             }`}
-            title="Test all Free connections"
-            aria-label="Test all Free provider connections"
+            title="Uji semua koneksi gratis"
+            aria-label="Uji semua koneksi penyedia gratis"
           >
             <span
               className={`material-symbols-outlined text-[14px]${testingMode === "free" ? " animate-spin" : ""}`}
             >
               play_arrow
             </span>
-            {testingMode === "free" ? "Testing..." : "Test All"}
+            {testingMode === "free" ? "Menguji..." : "Uji Semua"}
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {freeEntries.map(([key, info]) => (
-            <ProviderCard
+            <PenyediaCard
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "oauth")}
+              stats={getPenyediaStats(key, "oauth")}
               authType="free"
-              onToggle={(active) => handleToggleProvider(key, "oauth", active)}
+              onToggle={(active) => handleTogglePenyedia(key, "oauth", active)}
             />
           ))}
           {freeTierEntries.map(([key, info]) => (
-            <ApiKeyProviderCard
+            <ApiKeyPenyediaCard
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "apikey")}
+              stats={getPenyediaStats(key, "apikey")}
               authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+              onToggle={(active) => handleTogglePenyedia(key, "apikey", active)}
             />
           ))}
         </div>
       </div>
       )}
 
-      {/* API Key Providers — fixed list */}
+      {/* Kunci API Penyedias — fixed list */}
       {apikeyEntries.length > 0 && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            API Key Providers{" "}
+            Kunci API Penyedias{" "}
           </h2>
           <button
-            onClick={() => handleBatchTest("apikey")}
+            onClick={() => handleBatchUji("apikey")}
             disabled={!!testingMode}
             className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
               testingMode === "apikey"
                 ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
             }`}
-            title="Test all API Key connections"
-            aria-label="Test all API Key connections"
+            title="Uji semua koneksi kunci API"
+            aria-label="Uji semua koneksi kunci API"
           >
             <span
               className={`material-symbols-outlined text-[14px]${testingMode === "apikey" ? " animate-spin" : ""}`}
             >
               play_arrow
             </span>
-            {testingMode === "apikey" ? "Testing..." : "Test All"}
+            {testingMode === "apikey" ? "Menguji..." : "Uji Semua"}
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {visibleApikeyEntries.map(([key, info]) => (
-            <ApiKeyProviderCard
+            <ApiKeyPenyediaCard
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "apikey")}
+              stats={getPenyediaStats(key, "apikey")}
               authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+              onToggle={(active) => handleTogglePenyedia(key, "apikey", active)}
             />
           ))}
         </div>
@@ -516,16 +516,16 @@ export default function ProvidersPage() {
       </div>
       )}
 
-      <AddCompatibleModal
-        isOpen={showAddCompatibleModal}
-        onClose={() => setShowAddCompatibleModal(false)}
+      <AddKompatibelModal
+        isOpen={showAddKompatibelModal}
+        onClose={() => setShowAddKompatibelModal(false)}
         onCreated={async () => {
           const [connectionsRes, nodesRes] = await Promise.all([
             fetch("/api/providers"),
             fetch("/api/provider-nodes"),
           ]);
           if (connectionsRes.ok) setConnections((await connectionsRes.json()).connections || []);
-          if (nodesRes.ok) setProviderNodes((await nodesRes.json()).nodes || []);
+          if (nodesRes.ok) setPenyediaNodes((await nodesRes.json()).nodes || []);
         }}
       />
 
@@ -533,7 +533,7 @@ export default function ProvidersPage() {
       {testResults && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center px-3 pt-[6vh] sm:pt-[10vh]"
-          onClick={() => setTestResults(null)}
+          onClick={() => setUjiResults(null)}
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
@@ -541,9 +541,9 @@ export default function ProvidersPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3 border-b border-border bg-surface/95 backdrop-blur-sm rounded-t-xl">
-              <h3 className="font-semibold">Test Results</h3>
+              <h3 className="font-semibold">Hasil Pengujian</h3>
               <button
-                onClick={() => setTestResults(null)}
+                onClick={() => setUjiResults(null)}
                 className="p-1 rounded-lg hover:bg-bg text-text-muted hover:text-text-main transition-colors"
                 aria-label="Tutup hasil pengujian"
               >
@@ -551,7 +551,7 @@ export default function ProvidersPage() {
               </button>
             </div>
             <div className="p-5">
-              <ProviderTestResultsView results={testResults} />
+              <PenyediaUjiResultsView results={testResults} />
             </div>
           </div>
         </div>
@@ -560,7 +560,7 @@ export default function ProvidersPage() {
   );
 }
 
-function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
+function PenyediaCard({ providerId, provider, stats, authType, onToggle }) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats;
   const isNoAuth = !!provider.noAuth;
 
@@ -573,8 +573,8 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
   const dotLabels = {
     free: "Free",
     oauth: "OAuth",
-    apikey: "API Key",
-    compatible: "Compatible",
+    apikey: "Kunci API",
+    compatible: "Kompatibel",
   };
 
   return (
@@ -591,7 +591,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                 backgroundColor: `${provider.color?.length > 7 ? provider.color : provider.color + "15"}`,
               }}
             >
-              <ProviderIcon
+              <PenyediaIcon
                 src={provider.iconUrl || (provider.id === "codebuddy" || provider.id === "cb" ? "/providers/codebuddy.svg" : `/providers/${provider.id}.png`)}
                 alt={provider.name}
                 size={30}
@@ -615,7 +615,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                     </span>
                   </Badge>
                 ) : isNoAuth ? (
-                  <Badge variant="success" size="sm" dot>Ready</Badge>
+                  <Badge variant="success" size="sm" dot>Siap</Badge>
                 ) : (
                   <>
                     {getStatusDisplay(connected, error, errorCode)}
@@ -641,7 +641,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                   size="sm"
                   checked={!allDisabled}
                   onChange={() => {}}
-                  title={allDisabled ? "Enable provider" : "Disable provider"}
+                  title={allDisabled ? "Aktifkan penyedia" : "Nonaktifkan penyedia"}
                 />
               </div>
             )}
@@ -652,7 +652,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
   );
 }
 
-ProviderCard.propTypes = {
+PenyediaCard.propTypes = {
   providerId: PropTypes.string.isRequired,
   provider: PropTypes.shape({
     id: PropTypes.string.isRequired,
@@ -670,7 +670,7 @@ ProviderCard.propTypes = {
   onToggle: PropTypes.func,
 };
 
-function ApiKeyProviderCard({
+function ApiKeyPenyediaCard({
   providerId,
   provider,
   stats,
@@ -678,8 +678,8 @@ function ApiKeyProviderCard({
   onToggle,
 }) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats;
-  const isCompatible = providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
-  const isAnthropicCompatible = providerId.startsWith(
+  const isKompatibel = providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
+  const isAnthropicKompatibel = providerId.startsWith(
     ANTHROPIC_COMPATIBLE_PREFIX,
   );
 
@@ -692,19 +692,19 @@ function ApiKeyProviderCard({
   const dotLabels = {
     free: "Free",
     oauth: "OAuth",
-    apikey: "API Key",
-    compatible: "Compatible",
+    apikey: "Kunci API",
+    compatible: "Kompatibel",
   };
 
   const getIconPath = () => {
     if (provider.id === "codebuddy" || provider.id === "cb") {
       return "/providers/codebuddy.svg";
     }
-    if (isCompatible)
+    if (isKompatibel)
       return provider.apiType === "responses"
         ? "/providers/oai-r.png"
         : "/providers/oai-cc.png";
-    if (isAnthropicCompatible) return "/providers/anthropic-m.png";
+    if (isAnthropicKompatibel) return "/providers/anthropic-m.png";
     return `/providers/${provider.id}.png`;
   };
 
@@ -722,7 +722,7 @@ function ApiKeyProviderCard({
                 backgroundColor: `${provider.color?.length > 7 ? provider.color : provider.color + "15"}`,
               }}
             >
-              <ProviderIcon
+              <PenyediaIcon
                 src={getIconPath()}
                 alt={provider.name}
                 size={30}
@@ -748,14 +748,14 @@ function ApiKeyProviderCard({
                 ) : (
                   <>
                     {getStatusDisplay(connected, error, errorCode)}
-                    {isCompatible && (
+                    {isKompatibel && (
                       <Badge variant="default" size="sm">
                         {provider.apiType === "responses"
                           ? "Responses"
                           : "Chat"}
                       </Badge>
                     )}
-                    {isAnthropicCompatible && (
+                    {isAnthropicKompatibel && (
                       <Badge variant="default" size="sm">
                         Messages
                       </Badge>
@@ -782,7 +782,7 @@ function ApiKeyProviderCard({
                   size="sm"
                   checked={!allDisabled}
                   onChange={() => {}}
-                  title={allDisabled ? "Enable provider" : "Disable provider"}
+                  title={allDisabled ? "Aktifkan penyedia" : "Nonaktifkan penyedia"}
                 />
               </div>
             )}
@@ -793,7 +793,7 @@ function ApiKeyProviderCard({
   );
 }
 
-ApiKeyProviderCard.propTypes = {
+ApiKeyPenyediaCard.propTypes = {
   providerId: PropTypes.string.isRequired,
   provider: PropTypes.shape({
     id: PropTypes.string.isRequired,
@@ -812,7 +812,7 @@ ApiKeyProviderCard.propTypes = {
   onToggle: PropTypes.func,
 };
 
-function AddCompatibleModal({ isOpen, onClose, onCreated }) {
+function AddKompatibelModal({ isOpen, onClose, onCreated }) {
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [iconUrl, setIconUrl] = useState("");
@@ -850,7 +850,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
     setMessage("");
     setValidation(null);
     try {
-      const data = await fetchProviderNodeValidation({
+      const data = await fetchPenyediaNodeValidation({
         baseUrl: baseUrl.trim(),
         apiKeys: keys,
       });
@@ -908,7 +908,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
         groupIndex += 1;
         const detectedType = group[0].detectedType || "openai-compatible";
         const detectedBaseUrl = group[0].baseUrl;
-        const providerName = name.trim() || "Provider Kompatibel";
+        const providerName = name.trim() || "Penyedia Kompatibel";
         const prefix = slugify(providerName) + (groups.size > 1 ? "-" + groupIndex : "");
 
         const nodeRes = await fetch("/api/provider-nodes", {
@@ -957,7 +957,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
   const statusClass = (result) => result.valid ? "text-green-500" : "text-red-500";
 
   return (
-    <Modal isOpen={isOpen} title="Tambah Provider Kompatibel" onClose={onClose}>
+    <Modal isOpen={isOpen} title="Tambah Penyedia Kompatibel" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <Input
           label="Nama"
@@ -980,7 +980,7 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
           hint="Gunakan URL HTTPS resmi provider."
         />
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">API Key (satu atau semua)</label>
+          <label className="text-sm font-medium">Kunci API (satu atau semua)</label>
           <textarea
             value={apiKeys}
             onChange={(e) => setApiKeys(e.target.value)}
@@ -1092,13 +1092,13 @@ function AddCompatibleModal({ isOpen, onClose, onCreated }) {
   );
 }
 
-AddCompatibleModal.propTypes = {
+AddKompatibelModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onCreated: PropTypes.func.isRequired,
 };
 
-function ProviderTestResultsView({ results }) {
+function PenyediaUjiResultsView({ results }) {
   if (results.error && !results.results) {
     return (
       <div className="text-center py-6">
@@ -1116,8 +1116,8 @@ function ProviderTestResultsView({ results }) {
     {
       oauth: "OAuth",
       free: "Free",
-      apikey: "API Key",
-      provider: "Provider",
+      apikey: "Kunci API",
+      provider: "Penyedia",
       all: "All",
     }[mode] || mode;
 
@@ -1125,7 +1125,7 @@ function ProviderTestResultsView({ results }) {
     <div className="flex min-w-0 flex-col gap-3">
       {summary && (
         <div className="flex flex-wrap items-center gap-2 text-xs mb-1 sm:gap-3">
-          <span className="text-text-muted">{modeLabel} Test</span>
+          <span className="text-text-muted">{modeLabel} Uji</span>
           <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
             {summary.passed} passed
           </span>
@@ -1182,7 +1182,7 @@ function ProviderTestResultsView({ results }) {
   );
 }
 
-ProviderTestResultsView.propTypes = {
+PenyediaUjiResultsView.propTypes = {
   results: PropTypes.shape({
     mode: PropTypes.string,
     results: PropTypes.array,
