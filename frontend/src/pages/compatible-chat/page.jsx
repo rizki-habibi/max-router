@@ -65,7 +65,7 @@ export default function CompatibleChatPage() {
           className="max-w-[48%] rounded-lg border border-border bg-bg px-3 py-2 text-xs"
           disabled={!models.length || busy}
         >
-          {!models.length && <option value="">Belum ada model</option>}
+          {!models.length && <option value="">{modelsLoading ? "Memuat model..." : "Belum ada model"}</option>}
           {models.map((item) => <option key={item.id} value={item.id}>{item.id}</option>)}
         </select>
       </div>
@@ -73,10 +73,30 @@ export default function CompatibleChatPage() {
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
         {!messages.length && (
           <div className="flex h-full items-center justify-center text-center">
-            <div>
-              <span className="material-symbols-outlined mb-3 text-4xl text-primary">chat</span>
-              <h2 className="font-semibold">Mulai percakapan</h2>
-              <p className="mt-1 text-sm text-text-muted">Tambahkan provider kompatibel terlebih dahulu jika daftar model masih kosong.</p>
+            <div className="max-w-md">
+              {modelsError ? (
+                <>
+                  <span className="material-symbols-outlined mb-3 text-4xl text-danger">error</span>
+                  <h2 className="font-semibold">Model gagal dimuat</h2>
+                  <p className="mt-1 text-sm text-text-muted">{modelsError}</p>
+                  <button
+                    type="button"
+                    onClick={loadModels}
+                    disabled={modelsLoading}
+                    className="mt-4 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-bg disabled:opacity-50"
+                  >
+                    {modelsLoading ? "Memuat..." : "Coba lagi"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined mb-3 text-4xl text-primary">chat</span>
+                  <h2 className="font-semibold">{modelsLoading ? "Memuat model..." : "Mulai percakapan"}</h2>
+                  <p className="mt-1 text-sm text-text-muted">
+                    {modelsLoading ? "Sedang mengambil daftar model dari router." : "Tambahkan provider kompatibel terlebih dahulu jika daftar model masih kosong."}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}
