@@ -4,7 +4,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
-import { Card, Button, Modal, Input, CardSkeleton, ModelSelectModal, Toggle, KonfirmasiModal } from "@/shared/components";
+import { Card, Button, Modal, Input, CardSkeleton, ModelSelectModal, Toggle, ConfirmModal } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
 
@@ -201,10 +201,10 @@ export default function CombosPage() {
       />
 
       {/* Konfirmasi Hapus Modal */}
-      <KonfirmasiModal
+      <ConfirmModal
         isOpen={!!confirmState}
         onClose={() => setKonfirmasiState(null)}
-        onKonfirmasi={confirmState?.onKonfirmasi}
+        onConfirm={confirmState?.onKonfirmasi}
         title={confirmState?.title || "Konfirmasi"}
         message={confirmState?.message}
         variant="danger"
