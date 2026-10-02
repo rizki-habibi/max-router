@@ -1766,7 +1766,7 @@ export default function ProviderDetailPage() {
         isOpen={showAgRiskModal}
         onClose={() => setShowAgRiskModal(false)}
         onConfirm={handleAgRiskConfirm}
-        title="Risk Notice"
+        title="Pemberitahuan Risiko"
         message={providerInfo?.deprecationNotice}
         confirmText="Saya Mengerti, Lanjutkan"
         cancelText="Batal"
