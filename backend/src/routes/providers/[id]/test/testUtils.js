@@ -11,7 +11,6 @@ import {
 } from "open-sse/services/oauthCredentialManager.js";
 import {
   GEMINI_CONFIG,
-  ANTIGRAVITY_CONFIG,
   KIRO_CONFIG,
   QWEN_CONFIG,
   CLAUDE_CONFIG,
@@ -55,13 +54,6 @@ const OAUTH_TEST_CONFIG = {
     refreshable: true,
   },
   "gemini-cli": {
-    url: "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
-    method: "GET",
-    authHeader: "Authorization",
-    authPrefix: "Bearer ",
-    refreshable: true,
-  },
-  antigravity: {
     url: "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
     method: "GET",
     authHeader: "Authorization",
@@ -127,8 +119,8 @@ async function refreshOAuthToken(connection) {
   if (!refreshToken) return null;
 
   try {
-    if (provider === "gemini-cli" || provider === "antigravity") {
-      const config = provider === "gemini-cli" ? GEMINI_CONFIG : ANTIGRAVITY_CONFIG;
+    if (provider === "gemini-cli") {
+      const config = GEMINI_CONFIG;
       const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
