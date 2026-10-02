@@ -2,17 +2,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import { Card, Button, Input, Modal, CardSkeleton, Toggle, ConfirmModal } from "@/shared/components";
-import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import { useSalinToClipboard } from "@/shared/hooks/useSalinToClipboard";
 import { getCurrentLocale, onLocaleChange } from "@/i18n/runtime";
 
 // Locales that unlock wenyan (classical Chinese) caveman levels
 const WENYAN_LOCALES = ["zh-CN", "zh-TW"];
 
 const TUNNEL_BENEFITS = [
-  { icon: "public", title: "Access Anywhere", desc: "Use your API from any network" },
-  { icon: "group", title: "Share Endpoint", desc: "Share URL with team members" },
-  { icon: "code", title: "Use in Cursor/Cline", desc: "Connect AI tools remotely" },
-  { icon: "lock", title: "Encrypted", desc: "End-to-end TLS via Cloudflare" },
+  { icon: "public", title: "Akses dari Mana Saja", desc: "Gunakan API dari jaringan mana pun" },
+  { icon: "group", title: "Bagikan Titik Akses", desc: "Bagikan URL kepada anggota tim" },
+  { icon: "code", title: "Gunakan di Cursor/Cline", desc: "Hubungkan alat AI dari jarak jauh" },
+  { icon: "lock", title: "Terenkripsi", desc: "End-to-end TLS via Cloudflare" },
 ];
 
 const TUNNEL_PING_INTERVAL_MS = 2000;
@@ -53,12 +53,12 @@ async function clientPingAny(...urls) {
 }
 
 const CAVEMAN_LEVELS = [
-  { id: "lite", label: "Lite", desc: "Drop filler, keep grammar" },
-  { id: "full", label: "Full", desc: "Drop articles, fragments OK" },
-  { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
+  { id: "lite", label: "Lite", desc: "Hapus kata pengisi, pertahankan tata bahasa" },
+  { id: "full", label: "Full", desc: "Hapus kata sandang, potongan kalimat diperbolehkan" },
+  { id: "ultra", label: "Ultra", desc: "Gaya singkat, kompresi maksimum" },
   { id: "wenyan-lite", label: "文 Lite", desc: "Classical Chinese, light compression", wenyan: true },
-  { id: "wenyan", label: "文 Full", desc: "Maximum 文言文, 80-90% reduction", wenyan: true },
-  { id: "wenyan-ultra", label: "文 Ultra", desc: "Extreme classical compression", wenyan: true },
+  { id: "wenyan", label: "文 Full", desc: "文言文 maksimum, pengurangan 80–90%", wenyan: true },
+  { id: "wenyan-ultra", label: "文 Ultra", desc: "Kompresi bahasa klasik ekstrem", wenyan: true },
 ];
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
@@ -117,7 +117,7 @@ export default function APIPageClient({ machineId }) {
   const tunnelClientReachableRef = useRef(false);
   const tsClientReachableRef = useRef(false);
   // Track whether reachable=true was ever observed in this session.
-  // Distinguishes "Checking..." (initial cold cache) from "Reconnecting..." (lost connection).
+  // Distinguishes "Memeriksa..." (initial cold cache) from "Menghubungkan kembali..." (lost connection).
   const tunnelEverReachableRef = useRef(false);
   const tsEverReachableRef = useRef(false);
   const [tunnelEverReachable, setTunnelEverReachable] = useState(false);
@@ -153,13 +153,13 @@ export default function APIPageClient({ machineId }) {
     }
   }, [isWenyanLocale, cavemanLevel]);
 
-  const { copied, copy } = useCopyToClipboard();
+  const { copied, copy } = useSalinToClipboard();
 
   // Security gate: block remote exposure while password login is unconfigured or disabled.
   const isLoginUnsafe = !requireLogin || !hasPassword;
   const unsafeReason = !requireLogin
-    ? "Enable \"Require login\" and set a custom password before activating the tunnel."
-    : "Configure a dashboard password before activating the tunnel.";
+    ? "Aktifkan \"Wajib masuk\" dan atur kata sandi sebelum mengaktifkan terowongan."
+    : "Atur kata sandi panel sebelum mengaktifkan terowongan.";
 
   // Auto-scroll install log
   useEffect(() => {
@@ -293,7 +293,7 @@ export default function APIPageClient({ machineId }) {
         updateReachable(null, tsClientReachableRef, tsMissRef, setTsReachable, tsEverReachableRef, setTsEverReachable);
       }
     } catch (error) {
-      console.log("Error loading settings:", error);
+      console.log("Gagal memuat pengaturan:", error);
     } finally {
       setTunnelChecking(false);
     }
@@ -308,7 +308,7 @@ export default function APIPageClient({ machineId }) {
       });
       if (res.ok) setTunnelDashboardAccess(value);
     } catch (error) {
-      console.log("Error updating tunnelDashboardAccess:", error);
+      console.log("Gagal memperbarui akses panel melalui terowongan:", error);
     }
   };
 
@@ -321,7 +321,7 @@ export default function APIPageClient({ machineId }) {
       });
       if (res.ok) setRequireApiKey(value);
     } catch (error) {
-      console.log("Error updating requireApiKey:", error);
+      console.log("Gagal memperbarui kewajiban kunci API:", error);
     }
   };
 
@@ -334,7 +334,7 @@ export default function APIPageClient({ machineId }) {
       });
       if (res.ok) setRtkEnabledState(value);
     } catch (error) {
-      console.log("Error updating rtkEnabled:", error);
+      console.log("Gagal memperbarui RTK:", error);
     }
   };
 
@@ -346,7 +346,7 @@ export default function APIPageClient({ machineId }) {
         body: JSON.stringify(patch),
       });
     } catch (error) {
-      console.log("Error updating setting:", error);
+      console.log("Gagal memperbarui pengaturan:", error);
     }
   };
 
@@ -368,7 +368,7 @@ export default function APIPageClient({ machineId }) {
         setKeys(keysData.keys || []);
       }
     } catch (error) {
-      console.log("Error fetching data:", error);
+      console.log("Gagal mengambil data:", error);
     } finally {
       setLoading(false);
     }
@@ -378,7 +378,7 @@ export default function APIPageClient({ machineId }) {
   // Ping tunnel health until reachable. Race multiple URLs (shortlink + direct) — 1 OK is enough.
   const pingTunnelHealth = async (...urls) => {
     setTunnelLoading(true);
-    setTunnelProgress("Waiting for tunnel ready...");
+    setTunnelProgress("Menunggu terowongan siap...");
     const targets = urls.filter(Boolean).map((u) => `${u}/api/health`);
     const start = Date.now();
     while (Date.now() - start < TUNNEL_PING_MAX_MS) {
@@ -401,7 +401,7 @@ export default function APIPageClient({ machineId }) {
           if (statusRes.ok) {
             const status = await statusRes.json();
             if (!status.tunnel?.enabled) {
-              setTunnelStatus({ type: "error", message: "Tunnel process stopped unexpectedly." });
+              setTunnelStatus({ type: "error", message: "Proses terowongan berhenti secara tidak terduga." });
               setTunnelLoading(false);
               setTunnelProgress("");
               return false;
@@ -410,7 +410,7 @@ export default function APIPageClient({ machineId }) {
         } catch { /* ignore */ }
       }
     }
-    setTunnelStatus({ type: "error", message: "Tunnel created but not reachable. Please try again." });
+    setTunnelStatus({ type: "error", message: "Terowongan berhasil dibuat tetapi belum dapat dijangkau. Silakan coba lagi." });
     setTunnelLoading(false);
     setTunnelProgress("");
     return false;
@@ -420,7 +420,7 @@ export default function APIPageClient({ machineId }) {
     setShowEnableTunnelModal(false);
     setTunnelLoading(true);
     setTunnelStatus(null);
-    setTunnelProgress("Creating tunnel...");
+    setTunnelProgress("Membuat terowongan...");
 
     // Poll download progress while enable request is pending
     let polling = true;
@@ -433,7 +433,7 @@ export default function APIPageClient({ machineId }) {
             if (s.download?.downloading) {
               setTunnelProgress(`Downloading cloudflared... ${s.download.progress}%`);
             } else if (polling) {
-              setTunnelProgress("Creating tunnel...");
+              setTunnelProgress("Membuat terowongan...");
             }
           }
         } catch { /* ignore */ }
@@ -447,13 +447,13 @@ export default function APIPageClient({ machineId }) {
       polling = false;
       const data = await res.json();
       if (!res.ok) {
-        setTunnelStatus({ type: "error", message: data.error || "Failed to enable tunnel" });
+        setTunnelStatus({ type: "error", message: data.error || "Gagal mengaktifkan terowongan" });
         return;
       }
 
       const url = data.tunnelUrl;
       if (!url) {
-        setTunnelStatus({ type: "error", message: "No tunnel URL returned" });
+        setTunnelStatus({ type: "error", message: "URL terowongan tidak tersedia" });
         return;
       }
 
@@ -479,9 +479,9 @@ export default function APIPageClient({ machineId }) {
         setTunnelEnabled(false);
         setTunnelUrl("");
         setShowDisableTunnelModal(false);
-        setTunnelStatus({ type: "success", message: "Tunnel disabled" });
+        setTunnelStatus({ type: "success", message: "Terowongan dinonaktifkan" });
       } else {
-        setTunnelStatus({ type: "error", message: data.error || "Failed to disable tunnel" });
+        setTunnelStatus({ type: "error", message: data.error || "Gagal menonaktifkan terowongan" });
       }
     } catch (error) {
       setTunnelStatus({ type: "error", message: error.message });
@@ -547,7 +547,7 @@ export default function APIPageClient({ machineId }) {
             handleConnectTailscale();
             return;
           } else if (event === "error") {
-            setTsStatus({ type: "error", message: data.error || "Install failed" });
+            setTsStatus({ type: "error", message: data.error || "Pemasangan gagal" });
           }
         }
       }
@@ -560,7 +560,7 @@ export default function APIPageClient({ machineId }) {
 
   // Ping Tailscale health until reachable
   const pingTsHealth = async (url) => {
-    setTsProgress("Waiting for Tailscale ready...");
+    setTsProgress("Menunggu Tailscale siap...");
     const healthUrl = `${url}/api/health`;
     const start = Date.now();
     while (Date.now() - start < TUNNEL_PING_MAX_MS) {
@@ -600,13 +600,13 @@ export default function APIPageClient({ machineId }) {
         setTsUrl(data.tunnelUrl || "");
         const reachable = await pingTsHealth(data.tunnelUrl);
         setTsEnabled(true);
-        setTsStatus(reachable ? null : { type: "warning", message: "Connected but not reachable yet." });
+        setTsStatus(reachable ? null : { type: "warning", message: "Terhubung tetapi belum dapat dijangkau." });
         return;
       }
 
       if (data.needsLogin && data.authUrl) {
-        requestUserAuth(data.authUrl, "Open Login Page");
-        setTsProgress("Login required — click \"Open Login Page\" to continue");
+        requestUserAuth(data.authUrl, "Buka Halaman Masuk");
+        setTsProgress("Wajib masuk — klik \"Buka Halaman Masuk\" to continue");
         for (let i = 0; i < 40; i++) {
           await new Promise((r) => setTimeout(r, 3000));
           try {
@@ -622,11 +622,11 @@ export default function APIPageClient({ machineId }) {
                   setTsUrl(data2.tunnelUrl || "");
                   const ok2 = await pingTsHealth(data2.tunnelUrl);
                   setTsEnabled(true);
-                  setTsStatus(ok2 ? null : { type: "warning", message: "Connected but not reachable yet." });
+                  setTsStatus(ok2 ? null : { type: "warning", message: "Terhubung tetapi belum dapat dijangkau." });
                 } else if (data2.funnelNotEnabled && data2.enableUrl) {
                   await pollFunnelEnable(data2.enableUrl);
                 } else {
-                  setTsStatus({ type: "error", message: data2.error || "Failed to start funnel" });
+                  setTsStatus({ type: "error", message: data2.error || "Gagal memulai Funnel" });
                 }
                 return;
               }
@@ -634,7 +634,7 @@ export default function APIPageClient({ machineId }) {
           } catch { /* retry */ }
         }
         clearUserAuth();
-        setTsStatus({ type: "error", message: "Login timed out. Please try again." });
+        setTsStatus({ type: "error", message: "Waktu masuk habis. Silakan coba lagi." });
         return;
       }
 
@@ -643,7 +643,7 @@ export default function APIPageClient({ machineId }) {
         return;
       }
 
-      setTsStatus({ type: "error", message: data.error || "Failed to connect" });
+      setTsStatus({ type: "error", message: data.error || "Gagal terhubung" });
     } catch (error) {
       setTsStatus({ type: "error", message: error.message });
     } finally {
@@ -656,7 +656,7 @@ export default function APIPageClient({ machineId }) {
 
   const pollFunnelEnable = async (enableUrl) => {
     requestUserAuth(enableUrl, "Open Funnel Settings");
-    setTsProgress("Click \"Open Funnel Settings\" to enable Funnel...");
+    setTsProgress("Click \"Open Funnel Settings\" untuk mengaktifkan Funnel...");
     for (let i = 0; i < 40; i++) {
       await new Promise((r) => setTimeout(r, 3000));
       try {
@@ -667,7 +667,7 @@ export default function APIPageClient({ machineId }) {
           setTsUrl(data.tunnelUrl || "");
           const ok3 = await pingTsHealth(data.tunnelUrl);
           setTsEnabled(true);
-          setTsStatus(ok3 ? null : { type: "warning", message: "Connected but not reachable yet." });
+          setTsStatus(ok3 ? null : { type: "warning", message: "Terhubung tetapi belum dapat dijangkau." });
           return;
         }
         if (data.funnelNotEnabled) continue;
@@ -692,9 +692,9 @@ export default function APIPageClient({ machineId }) {
         setTsEnabled(false);
         setTsUrl("");
         setShowDisableTsModal(false);
-        setTsStatus({ type: "success", message: "Tailscale disabled" });
+        setTsStatus({ type: "success", message: "Tailscale dinonaktifkan" });
       } else {
-        setTsStatus({ type: "error", message: data.error || "Failed to disable Tailscale" });
+        setTsStatus({ type: "error", message: data.error || "Gagal menonaktifkan Tailscale" });
       }
     } catch (e) {
       setTsStatus({ type: "error", message: e.message });
@@ -733,10 +733,10 @@ export default function APIPageClient({ machineId }) {
         setNewKeyName("");
         setShowAddModal(false);
       } else {
-        setCreateKeyError(data.error || `Failed to create API key (${res.status})`);
+        setCreateKeyError(data.error || `Gagal membuat kunci API (${res.status})`);
       }
     } catch (error) {
-      setCreateKeyError(error instanceof Error ? error.message : "Failed to create API key");
+      setCreateKeyError(error instanceof Error ? error.message : "Gagal membuat kunci API");
     } finally {
       setCreatingKey(false);
     }
@@ -744,8 +744,8 @@ export default function APIPageClient({ machineId }) {
 
   const handleDeleteKey = async (id) => {
     setConfirmState({
-      title: "Delete API Key",
-      message: "Delete this API key?",
+      title: "Hapus Kunci API",
+      message: "Hapus kunci API ini?",
       onConfirm: async () => {
         setConfirmState(null);
         try {
@@ -759,7 +759,7 @@ export default function APIPageClient({ machineId }) {
             });
           }
         } catch (error) {
-          console.log("Error deleting key:", error);
+          console.log("Gagal menghapus kunci:", error);
         }
       }
     });
@@ -776,7 +776,7 @@ export default function APIPageClient({ machineId }) {
         setKeys(prev => prev.map(k => k.id === id ? { ...k, isActive } : k));
       }
     } catch (error) {
-      console.log("Error toggling key:", error);
+      console.log("Gagal mengubah status kunci:", error);
     }
   };
 
@@ -831,7 +831,7 @@ export default function APIPageClient({ machineId }) {
             url={currentEndpoint}
             copyId="local_url"
             copied={copied}
-            onCopy={copy}
+            onSalin={copy}
           />
           {/* Cloudflare Tunnel */}
           <div className="flex items-center gap-2">
@@ -850,7 +850,7 @@ export default function APIPageClient({ machineId }) {
                 <button
                   onClick={() => setShowDisableTunnelModal(true)}
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Disable Tunnel"
+                  title="Nonaktifkan Terowongan"
                 >
                   <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
                 </button>
@@ -859,12 +859,12 @@ export default function APIPageClient({ machineId }) {
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  {tunnelEverReachable ? "Tunnel reconnecting..." : "Tunnel checking..."}
+                  {tunnelEverReachable ? "Terowongan sedang menghubungkan kembali..." : "Memeriksa terowongan..."}
                 </div>
                 <button
                   onClick={() => setShowDisableTunnelModal(true)}
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Disable Tunnel"
+                  title="Nonaktifkan Terowongan"
                 >
                   <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
                 </button>
@@ -873,7 +873,7 @@ export default function APIPageClient({ machineId }) {
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  {tunnelProgress || "Creating tunnel..."}
+                  {tunnelProgress || "Membuat terowongan..."}
                 </div>
                 <button
                   onClick={() => { setTunnelLoading(false); setTunnelProgress(""); }}
@@ -895,7 +895,7 @@ export default function APIPageClient({ machineId }) {
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  Checking...
+                  Memeriksa...
                 </div>
                 <button
                   onClick={() => setTunnelChecking(false)}
@@ -934,7 +934,7 @@ export default function APIPageClient({ machineId }) {
                 <button
                   onClick={() => setShowDisableTsModal(true)}
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Disable Tailscale"
+                  title="Nonaktifkan Tailscale"
                 >
                   <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
                 </button>
@@ -943,12 +943,12 @@ export default function APIPageClient({ machineId }) {
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  {tsEverReachable ? "Tailscale reconnecting..." : "Tailscale checking..."}
+                  {tsEverReachable ? "Tailscale sedang menghubungkan kembali..." : "Memeriksa Tailscale..."}
                 </div>
                 <button
                   onClick={() => setShowDisableTsModal(true)}
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Disable Tailscale"
+                  title="Nonaktifkan Tailscale"
                 >
                   <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
                 </button>
@@ -1022,11 +1022,11 @@ export default function APIPageClient({ machineId }) {
               <SecurityWarning
                 message={
                   !requireLogin
-                    ? "Require login is disabled — anyone can access your dashboard via tunnel."
-                    : "Dashboard password is not configured — set it in Profile settings."
+                    ? "Kewajiban masuk dinonaktifkan — siapa pun dapat mengakses panel melalui terowongan."
+                    : "Kata sandi panel belum diatur — atur di Pengaturan."
                 }
                 action={{
-                  label: !requireLogin ? "Enable" : "Change password",
+                  label: !requireLogin ? "Enable" : "Ubah kata sandi",
                   href: "/dashboard/profile",
                 }}
               />
@@ -1244,7 +1244,7 @@ export default function APIPageClient({ machineId }) {
       {/* Add Key Modal */}
       <Modal
         isOpen={showAddModal}
-        title="Create API Key"
+        title="Buat Kunci API"
         onClose={() => {
           setShowAddModal(false);
           setNewKeyName("");
@@ -1259,7 +1259,7 @@ export default function APIPageClient({ machineId }) {
               setNewKeyName(e.target.value);
               if (createKeyError) setCreateKeyError("");
             }}
-            placeholder="Production Key"
+            placeholder="Kunci Produksi"
           />
           {createKeyError && (
             <p role="alert" className="text-sm text-red-500">
@@ -1317,7 +1317,7 @@ export default function APIPageClient({ machineId }) {
               icon={copied === "created_key" ? "check" : "content_copy"}
               onClick={() => copy(createdKey, "created_key")}
             >
-              {copied === "created_key" ? "Copied!" : "Copy"}
+              {copied === "created_key" ? "Tersalin!" : "Salin"}
             </Button>
           </div>
           <Button onClick={() => setCreatedKey(null)} fullWidth>
@@ -1326,10 +1326,10 @@ export default function APIPageClient({ machineId }) {
         </div>
       </Modal>
 
-      {/* Enable Tunnel Modal */}
+      {/* Aktifkan Terowongan Modal */}
       <Modal
         isOpen={showEnableTunnelModal}
-        title="Enable Tunnel"
+        title="Aktifkan Terowongan"
         onClose={() => setShowEnableTunnelModal(false)}
       >
         <div className="flex flex-col gap-4">
@@ -1373,7 +1373,7 @@ export default function APIPageClient({ machineId }) {
       {/* Disable Cloudflare Tunnel Modal */}
       <Modal
         isOpen={showDisableTunnelModal}
-        title="Disable Tunnel"
+        title="Nonaktifkan Terowongan"
         onClose={() => !tunnelLoading && setShowDisableTunnelModal(false)}
       >
         <div className="flex flex-col gap-4">
@@ -1398,7 +1398,7 @@ export default function APIPageClient({ machineId }) {
           {tsInstalled === null && (
             <p className="text-sm text-text-muted flex items-center gap-2">
               <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              Checking...
+              Memeriksa...
             </p>
           )}
 
@@ -1455,10 +1455,10 @@ export default function APIPageClient({ machineId }) {
         </div>
       </Modal>
 
-      {/* Disable Tailscale Modal */}
+      {/* Nonaktifkan Tailscale Modal */}
       <Modal
         isOpen={showDisableTsModal}
-        title="Disable Tailscale"
+        title="Nonaktifkan Tailscale"
         onClose={() => !tsLoading && setShowDisableTsModal(false)}
       >
         <div className="flex flex-col gap-4">
@@ -1486,7 +1486,7 @@ export default function APIPageClient({ machineId }) {
 }
 
 /** Reusable endpoint row component */
-function EndpointRow({ label, url, copyId, copied, onCopy, badge, actions }) {
+function EndpointRow({ label, url, copyId, copied, onSalin, badge, actions }) {
   return (
     <div className="flex items-center gap-2">
       <span className={`text-xs font-mono px-1.5 py-0.5 rounded shrink-0 min-w-[88px] text-center ${
@@ -1494,7 +1494,7 @@ function EndpointRow({ label, url, copyId, copied, onCopy, badge, actions }) {
         }`}>{label}</span>
       <Input value={url} readOnly className="flex-1 font-mono text-sm" />
       <button
-        onClick={() => onCopy(url, copyId)}
+        onClick={() => onSalin(url, copyId)}
         className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
       >
         <span className="material-symbols-outlined text-[18px]">{copied === copyId ? "check" : "content_copy"}</span>
