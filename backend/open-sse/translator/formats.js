@@ -8,7 +8,6 @@ export const FORMATS = {
   GEMINI_CLI: "gemini-cli",
   VERTEX: "vertex",
   CODEX: "codex",
-  ANTIGRAVITY: "antigravity",
   KIRO: "kiro",
   CURSOR: "cursor",
   OLLAMA: "ollama",
