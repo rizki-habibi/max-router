@@ -229,7 +229,7 @@ export function buildProviderHeaders(provider, credentials, stream = true, body 
         break;
   
       case "gemini-cli":
-        // Antigravity and Gemini CLI use OAuth access token
+        // Gemini CLI uses OAuth access token
         headers["Authorization"] = `Bearer ${credentials.accessToken}`;
         break;
   
