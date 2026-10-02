@@ -11,7 +11,7 @@ const STEPS = [
   { id: 2, label: "Source Body",            file: "2_req_source.json",  lang: "json", desc: "After initial conversion" },
   { id: 3, label: "OpenAI Intermediate",    file: "3_req_openai.json",  lang: "json", desc: "source → openai" },
   { id: 4, label: "Target Request",         file: "4_req_target.json",  lang: "json", desc: "openai → target + URL + headers" },
-  { id: 5, label: "Provider Response",      file: "5_res_provider.txt", lang: "text", desc: "Raw SSE from provider" },
+  { id: 5, label: "Respons Penyedia",      file: "5_res_provider.txt", lang: "text", desc: "SSE mentah dari penyedia" },
   { id: 6, label: "OpenAI Response",        file: "6_res_openai.txt",   lang: "text", desc: "target → openai (response)" },
   { id: 7, label: "Client Response",        file: "7_res_client.txt",   lang: "text", desc: "Final response to client" },
 ];
@@ -153,7 +153,7 @@ export default function TranslatorPage() {
       const model = step4.model || meta?.model;
 
       if (!provider || !model) {
-        alert("Missing provider or model. Please run step 1 first to detect them.");
+        alert("Penyedia atau model belum tersedia. Jalankan langkah 1 terlebih dahulu untuk mendeteksinya.");
         return;
       }
 
@@ -165,7 +165,7 @@ export default function TranslatorPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
-        alert(err.error || "Send failed");
+        alert(err.error || "Pengiriman gagal");
         return;
       }
 
@@ -213,7 +213,7 @@ export default function TranslatorPage() {
   const getAction = (stepId) => {
     if (stepId === 1) return <Button size="sm" icon="arrow_forward" loading={loading["toOpenAI"]} onClick={handleToOpenAI}>→ OpenAI</Button>;
     if (stepId === 3) return <Button size="sm" icon="arrow_forward" loading={loading["toTarget"]} onClick={handleToTarget}>→ Target</Button>;
-    if (stepId === 4) return <Button size="sm" icon="send" loading={loading["send"]} onClick={handleSend}>Send</Button>;
+    if (stepId === 4) return <Button size="sm" icon="send" loading={loading["send"]} onClick={handleSend}>Kirim</Button>;
     return null;
   };
 
@@ -282,7 +282,7 @@ export default function TranslatorPage() {
                     </Suspense>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <Button size="sm" variant="outline" icon="folder_open" loading={loading[`load-${step.id}`]} onClick={() => handleLoad(step.id)}>Load</Button>
+                    <Button size="sm" variant="outline" icon="folder_open" loading={loading[`load-${step.id}`]} onClick={() => handleLoad(step.id)}>Muat</Button>
                     <Button size="sm" variant="outline" icon="data_object" onClick={() => handleFormat(step.id)}>Format</Button>
                     <Button size="sm" variant="outline" icon="content_copy" onClick={() => handleCopy(step.id)}>Copy</Button>
                     {action}
