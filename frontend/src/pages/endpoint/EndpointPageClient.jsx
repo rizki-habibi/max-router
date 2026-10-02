@@ -2,12 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import { Card, Button, Input, Modal, CardSkeleton, Toggle, ConfirmModal } from "@/shared/components";
-import { useSalinToClipboard } from "@/shared/hooks/useSalinToClipboard";
-import { getCurrentLocale, onLocaleChange } from "@/i18n/runtime";
-
-// Locales that unlock wenyan (classical Chinese) caveman levels
-const WENYAN_LOCALES = ["zh-CN", "zh-TW"];
-
+import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 const TUNNEL_BENEFITS = [
   { icon: "public", title: "Akses dari Mana Saja", desc: "Gunakan API dari jaringan mana pun" },
   { icon: "group", title: "Bagikan Titik Akses", desc: "Bagikan URL kepada anggota tim" },
@@ -56,9 +51,6 @@ const CAVEMAN_LEVELS = [
   { id: "lite", label: "Lite", desc: "Hapus kata pengisi, pertahankan tata bahasa" },
   { id: "full", label: "Full", desc: "Hapus kata sandang, potongan kalimat diperbolehkan" },
   { id: "ultra", label: "Ultra", desc: "Gaya singkat, kompresi maksimum" },
-  { id: "wenyan-lite", label: "文 Lite", desc: "Classical Chinese, light compression", wenyan: true },
-  { id: "wenyan", label: "文 Full", desc: "文言文 maksimum, pengurangan 80–90%", wenyan: true },
-  { id: "wenyan-ultra", label: "文 Ultra", desc: "Kompresi bahasa klasik ekstrem", wenyan: true },
 ];
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
@@ -77,7 +69,6 @@ export default function APIPageClient({ machineId }) {
   const [rtkEnabled, setRtkEnabledState] = useState(true);
   const [cavemanEnabled, setCavemanEnabled] = useState(false);
   const [cavemanLevel, setCavemanLevel] = useState("full");
-  const [locale, setLocale] = useState("en");
 
   // Cloudflare Tunnel state
   const [tunnelChecking, setTunnelChecking] = useState(true);
@@ -133,27 +124,7 @@ export default function APIPageClient({ machineId }) {
       setIsRemoteHost(!["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
   }, []);
 
-  // Track app UI locale to gate wenyan caveman levels
-  useEffect(() => {
-    setLocale(getCurrentLocale());
-    return onLocaleChange(() => setLocale(getCurrentLocale()));
-  }, []);
-
-  const isWenyanLocale = WENYAN_LOCALES.includes(locale);
-  const visibleCavemanLevels = isWenyanLocale
-    ? CAVEMAN_LEVELS
-    : CAVEMAN_LEVELS.filter((lvl) => !lvl.wenyan);
-
-  // Reset wenyan level to "ultra" when leaving a Chinese locale
-  useEffect(() => {
-    const current = CAVEMAN_LEVELS.find((lvl) => lvl.id === cavemanLevel);
-    if (current?.wenyan && !isWenyanLocale) {
-      setCavemanLevel("ultra");
-      patchSetting({ cavemanLevel: "ultra" });
-    }
-  }, [isWenyanLocale, cavemanLevel]);
-
-  const { copied, copy } = useSalinToClipboard();
+  const { copied, copy } = useCopyToClipboard();
 
   // Security gate: block remote exposure while password login is unconfigured or disabled.
   const isLoginUnsafe = !requireLogin || !hasPassword;
@@ -1100,7 +1071,7 @@ export default function APIPageClient({ machineId }) {
             {cavemanEnabled && (
               <div className="flex flex-col items-end gap-1">
                 <div className="flex items-center gap-1.5">
-                  {visibleCavemanLevels.map((lvl) => (
+                  {CAVEMAN_LEVELS.map((lvl) => (
                     <button
                       key={lvl.id}
                       onClick={() => handleCavemanLevel(lvl.id)}
