@@ -257,7 +257,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
               <Button onClick={handleBulkSubmit} fullWidth disabled={saving || !bulkText.trim()}>
                 {saving ? "Adding..." : "Add All Keys"}
               </Button>
-              <Button onClick={onClose} variant="ghost" fullWidth>Cancel</Button>
+              <Button onClick={onClose} variant="ghost" fullWidth>Batal</Button>
             </div>
           </div>
         )}
