@@ -118,8 +118,8 @@ const getPageInfo = (pathname) => {
     };
   if (pathname.includes("/profile"))
     return {
-      title: "Pengaturan",
-      description: "Kelola preferensi Anda",
+      title: "Deteksi Integrasi",
+      description: "Periksa koneksi AI, MCP, GitHub, dan repositori secara online",
       icon: "settings",
       breadcrumbs: [],
     };
