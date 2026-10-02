@@ -25,8 +25,8 @@ export default function ThemeToggle({ className, variant = "default" }) {
     <button
       onClick={toggleTheme}
       className={cn(variants[variant], className)}
-      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-      title={`Switch to ${isDark ? "light" : "dark"} mode`}
+      aria-label={`Beralih ke mode ${isDark ? "terang" : "gelap"}`}
+      title={`Beralih ke mode ${isDark ? "terang" : "gelap"}`}
     >
       <span
         className={cn(
