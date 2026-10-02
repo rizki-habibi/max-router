@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [passwordConfigured, setPasswordConfigured] = useState(true);
   const [authMode, setAuthMode] = useState("password");
   const [oidcConfigured, setOidcConfigured] = useState(false);
-  const [oidcLoginLabel, setOidcLoginLabel] = useState("Sign in with OIDC");
+  const [oidcLoginLabel, setOidcLoginLabel] = useState("Masuk dengan OIDC");
   const navigate = useNavigate();
 
   // Countdown for rate-limit
@@ -53,7 +53,7 @@ export default function LoginPage() {
           setPasswordConfigured(data.passwordConfigured !== false);
           setAuthMode(data.authMode || "password");
           setOidcConfigured(data.oidcConfigured === true);
-          setOidcLoginLabel(data.oidcLoginLabel || "Sign in with OIDC");
+          setOidcLoginLabel(data.oidcLoginLabel || "Masuk dengan OIDC");
         } else {
           setHasPassword(true);
         }
@@ -84,12 +84,12 @@ export default function LoginPage() {
         navigate(0);
       } else {
         const data = await res.json();
-        setError(data.error || "Invalid password");
+        setError(data.error || "Kata sandi tidak valid");
         if (data.resetHint) setResetHint(data.resetHint);
         if (data.retryAfter) setRetryAfter(Number(data.retryAfter));
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900 dark:border-zinc-50"></div>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-4">Loading...</p>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-4">Memuat...</p>
         </div>
       </div>
     );
@@ -126,10 +126,10 @@ export default function LoginPage() {
       }
       description={
         authMode === "oidc" && oidcConfigured
-          ? "Sign in with your OIDC provider to access the dashboard"
+          ? "Masuk dengan penyedia OIDC untuk mengakses panel."
           : !passwordConfigured
-            ? "Password login is not configured on this instance"
-            : "Enter your dashboard password to continue"
+            ? "Masuk dengan kata sandi belum dikonfigurasi pada layanan ini."
+            : "Masukkan kata sandi panel untuk melanjutkan."
       }
       password={password}
       setPassword={setPassword}
