@@ -161,7 +161,7 @@ export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, on
           >
             {submitting ? (isEdit ? "Menyimpan..." : "Membuat...") : (isEdit ? "Simpan" : "Buat")}
           </Button>
-          <Button onClick={onClose} variant="ghost" fullWidth>Cancel</Button>
+          <Button onClick={onClose} variant="ghost" fullWidth>Batal</Button>
         </div>
       </div>
     </Modal>
