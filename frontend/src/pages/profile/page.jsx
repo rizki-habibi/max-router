@@ -1,1475 +1,243 @@
+import { useCallback, useEffect, useState } from "react";
+import { Card, Button, Input } from "@/shared/components";
 
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from 'react-router-dom';
-import { Card, Button, Toggle, Input } from "@/shared/components";
-import { ConfirmModal } from "@/shared/components/Modal";
-import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
-import { useTheme } from "@/shared/hooks/useTheme";
-import { cn } from "@/shared/utils/cn";
-import { APP_CONFIG } from "@/shared/constants/config";
-import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
-import { LOCALE_FLAGS } from "@/shared/constants/locales";
+const DEFAULT_REPO = "https://github.com/rizki-habibi/kuro-vtuber-bot";
 
-function getLocaleFromCookie() {
-  if (typeof document === "undefined") return "en";
-  const cookie = document.cookie
-    .split(";")
-    .find((c) => c.trim().startsWith(`${LOCALE_COOKIE}=`));
-  const value = cookie ? decodeURIComponent(cookie.split("=")[1]) : "en";
-  return normalizeLocale(value);
+function normalizeList(data, keys = []) {
+  if (Array.isArray(data)) return data;
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key];
+  }
+  return [];
+}
+
+async function readJson(url, options) {
+  const response = await fetch(url, { cache: "no-store", ...options });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+  return data;
 }
 
 export default function ProfilPage() {
-  const navigate = useNavigate();
-  const { theme, setTheme, isDark } = useTheme();
-  const [locale, setLocale] = useState("en");
-  const [langOpen, setLangOpen] = useState(false);
-  const [shutdownOpen, setShutdownOpen] = useState(false);
-  const [isShuttingDown, setIsShuttingDown] = useState(false);
-  const [settings, setPengaturan] = useState({ fallbackStrategy: "fill-first" });
-  const [loading, setLoading] = useState(true);
-  const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
-  const [passStatus, setPassStatus] = useState({ type: "", message: "" });
-  const [passLoading, setPassLoading] = useState(false);
-  const [dbLoading, setDbLoading] = useState(false);
-  const [dbStatus, setDbStatus] = useState({ type: "", message: "" });
-  const [oidcForm, setOidcForm] = useState({
-    authMode: "password",
-    oidcIssuerUrl: "",
-    oidcClientId: "",
-    oidcScopes: "openid profile email",
-    oidcMasukLabel: "Sign in with OIDC",
-  });
-  const [oidcClientSecret, setOidcClientSecret] = useState("");
-  const [oidcStatus, setOidcStatus] = useState({ type: "", message: "" });
-  const [oidcLoading, setOidcLoading] = useState(false);
-  const [oidcTestLoading, setOidcTestLoading] = useState(false);
-  const [oidcTestStatus, setOidcTestStatus] = useState({ type: "", message: "" });
-  const [oidcRedirectUri, setOidcRedirectUri] = useState("/api/auth/oidc/callback");
-  const [oidcExpanded, setOidcExpanded] = useState(false);
-  const importFileRef = useRef(null);
-  const [proxyForm, setProxyForm] = useState({
-    outboundProxyEnabled: false,
-    outboundProxyUrl: "",
-    outboundNoProxy: "",
-  });
-  const [proxyStatus, setProxyStatus] = useState({ type: "", message: "" });
-  const [proxyLoading, setProxyLoading] = useState(false);
-  const [proxyTestLoading, setProxyTestLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [lastScan, setLastScan] = useState(null);
+  const [message, setMessage] = useState("");
+  const [repoUrl, setRepoUrl] = useState(DEFAULT_REPO);
+  const [repoResult, setRepoResult] = useState(null);
 
-  // Automation settings state
-  const [automationForm, setAutomationForm] = useState({
-    codebuddy_auto_9router: false,
-    codebuddy_leave_canva_team: false,
-    codebuddy_browser_headless: true,
-    codebuddy_proxy_enabled: false,
-    codebuddy_proxy_server: "",
-    codebuddy_proxy_username: "",
-    codebuddy_proxy_password: "",
-    ammail_base_url: "",
-    ammail_api_key: "",
-    ammail_default_domain: "",
-    ammail_webhook_secret: "",
-  });
-  const [automationStatus, setAutomationStatus] = useState({ type: "", message: "" });
-  const [automationLoading, setAutomationLoading] = useState(false);
-  const [ammailTestLoading, setAmmailTestLoading] = useState(false);
-  const [ammailWebhookLoading, setAmmailWebhookLoading] = useState(false);
-  const [automationExpanded, setAutomationExpanded] = useState(false);
+  const scanIntegrasi = useCallback(async () => {
+    setScanning(true);
+    setMessage("");
+    const result = {
+      server: { status: "memeriksa", detail: "Menghubungi layanan Max Router..." },
+      penyedia: { status: "memeriksa", jumlah: 0, detail: "Memeriksa penyedia AI..." },
+      mcp: { status: "memeriksa", jumlah: 0, detail: "Memeriksa sumber MCP..." },
+      github: { status: "memeriksa", detail: "Memeriksa akses GitHub..." },
+    };
 
-  useEffect(() => {
-    setLocale(getLocaleFromCookie());
-  }, [langOpen]);
+    try {
+      const [providers, mcp] = await Promise.allSettled([
+        readJson("/api/providers"),
+        readJson("/api/cli-tools/cowork-mcp-registry"),
+      ]);
 
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        setPengaturan(data);
-        setOidcForm({
-          authMode: data?.authMode || "password",
-          oidcIssuerUrl: data?.oidcIssuerUrl || "",
-          oidcClientId: data?.oidcClientId || "",
-          oidcScopes: data?.oidcScopes || "openid profile email",
-          oidcMasukLabel: data?.oidcMasukLabel || "Sign in with OIDC",
-        });
-        setOidcClientSecret("");
-        if (data?.authMode === "oidc" || data?.authMode === "both") setOidcExpanded(true);
-        setProxyForm({
-          outboundProxyEnabled: data?.outboundProxyEnabled === true,
-          outboundProxyUrl: data?.outboundProxyUrl || "",
-          outboundNoProxy: data?.outboundNoProxy || "",
-        });
-        setAutomationForm({
-          codebuddy_auto_9router: data?.codebuddy_auto_9router === "1",
-          codebuddy_leave_canva_team: data?.codebuddy_leave_canva_team === "1",
-          codebuddy_browser_headless: data?.codebuddy_browser_headless !== "0",
-          codebuddy_proxy_enabled: data?.codebuddy_proxy_enabled === "1",
-          codebuddy_proxy_server: data?.codebuddy_proxy_server || "",
-          codebuddy_proxy_username: data?.codebuddy_proxy_username || "",
-          codebuddy_proxy_password: data?.codebuddy_proxy_password || "",
-          ammail_base_url: data?.ammail_base_url || "",
-          ammail_api_key: data?.ammail_api_key || "",
-          ammail_default_domain: data?.ammail_default_domain || "",
-          ammail_webhook_secret: data?.ammail_webhook_secret || "",
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Gagal to fetch settings:", err);
-        setLoading(false);
-      });
+      if (providers.status === "fulfilled") {
+        const list = normalizeList(providers.value, ["providers", "data"]);
+        result.penyedia = {
+          status: "terhubung",
+          jumlah: list.length,
+          detail: list.length ? `${list.length} penyedia terdeteksi` : "Belum ada penyedia tersimpan",
+        };
+      } else {
+        result.penyedia = { status: "gagal", jumlah: 0, detail: providers.reason?.message || "Penyedia tidak dapat dibaca" };
+      }
+
+      if (mcp.status === "fulfilled") {
+        const list = normalizeList(mcp.value, ["servers", "data"]);
+        result.mcp = {
+          status: "tersedia",
+          jumlah: list.length,
+          detail: list.length ? `${list.length} layanan MCP ditemukan` : "Sumber MCP dapat dijangkau",
+        };
+      } else {
+        result.mcp = { status: "gagal", jumlah: 0, detail: mcp.reason?.message || "Sumber MCP tidak dapat dibaca" };
+      }
+
+      try {
+        const health = await readJson("/api/health");
+        result.server = {
+          status: "online",
+          detail: health?.status ? `Server online: ${health.status}` : "Server Max Router merespons",
+        };
+      } catch {
+        result.server = { status: "online", detail: "Server merespons melalui aplikasi" };
+      }
+
+      try {
+        const github = await readJson("https://api.github.com/repos/rizki-habibi/max-router");
+        result.github = {
+          status: "terhubung",
+          detail: `GitHub dapat membaca ${github.full_name}`,
+        };
+      } catch {
+        result.github = { status: "terbatas", detail: "GitHub tidak dapat diverifikasi dari sesi ini" };
+      }
+    } catch (error) {
+      setMessage(error.message || "Pemeriksaan integrasi gagal.");
+    } finally {
+      setLastScan(result);
+      setScanning(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOidcRedirectUri(`${window.location.origin}/api/auth/oidc/callback`);
-    }
-  }, []);
+    scanIntegrasi();
+  }, [scanIntegrasi]);
 
-  const updateAutomationPengaturan = async (e) => {
-    if (e) e.preventDefault();
-    setAutomationLoading(true);
-    setAutomationStatus({ type: "", message: "" });
-
+  const cekRepo = async () => {
+    setRepoResult({ status: "memeriksa", detail: "Memeriksa repositori..." });
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          codebuddy_auto_9router: automationForm.codebuddy_auto_9router ? "1" : "0",
-          codebuddy_leave_canva_team: automationForm.codebuddy_leave_canva_team ? "1" : "0",
-          codebuddy_browser_headless: automationForm.codebuddy_browser_headless ? "1" : "0",
-          codebuddy_proxy_enabled: automationForm.codebuddy_proxy_enabled ? "1" : "0",
-          codebuddy_proxy_server: automationForm.codebuddy_proxy_server,
-          codebuddy_proxy_username: automationForm.codebuddy_proxy_username,
-          codebuddy_proxy_password: automationForm.codebuddy_proxy_password,
-          ammail_base_url: automationForm.ammail_base_url,
-          ammail_api_key: automationForm.ammail_api_key,
-          ammail_default_domain: automationForm.ammail_default_domain,
-          ammail_webhook_secret: automationForm.ammail_webhook_secret,
-        }),
+      const url = repoUrl.trim();
+      const match = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)\/?$/i);
+      if (!match) {
+        throw new Error("Masukkan URL repositori GitHub yang valid.");
+      }
+      const owner = match[1];
+      const repo = match[2].replace(/\.git$/i, "");
+      const data = await readJson(`https://api.github.com/repos/${owner}/${repo}`);
+      const contents = await readJson(`https://api.github.com/repos/${owner}/${repo}/contents`);
+      const names = Array.isArray(contents) ? contents.map((item) => item.name.toLowerCase()) : [];
+      const petunjuk = [];
+      if (names.includes("package.json")) petunjuk.push("Node.js");
+      if (names.includes("requirements.txt") || names.includes("pyproject.toml")) petunjuk.push("Python");
+      if (names.some((name) => name.includes("docker"))) petunjuk.push("Docker");
+      if (names.some((name) => name.includes("mcp"))) petunjuk.push("MCP");
+      if (names.some((name) => name.includes("discord"))) petunjuk.push("Discord");
+      setRepoResult({
+        status: "ditemukan",
+        detail: data.description || "Repositori dapat dibaca",
+        nama: data.full_name,
+        bahasa: data.language || "Tidak terdeteksi",
+        teknologi: petunjuk.length ? petunjuk.join(", ") : "Perlu analisis berkas lebih lanjut",
+        url: data.html_url,
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        setPengaturan((prev) => ({ ...prev, ...data }));
-        setAutomationStatus({ type: "success", message: "Automation settings saved successfully." });
-      } else {
-        setAutomationStatus({ type: "error", message: data.error || "Gagal to update automation settings" });
-      }
-    } catch (err) {
-      setAutomationStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setAutomationLoading(false);
+    } catch (error) {
+      setRepoResult({ status: "gagal", detail: error.message || "Repositori tidak dapat dibaca" });
     }
   };
 
-  const testAmmailConnection = async () => {
-    setAmmailTestLoading(true);
-    setAutomationStatus({ type: "", message: "" });
-    try {
-      // Simpan settings first
-      const saveRes = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ammail_base_url: automationForm.ammail_base_url,
-          ammail_api_key: automationForm.ammail_api_key,
-          ammail_default_domain: automationForm.ammail_default_domain,
-          ammail_webhook_secret: automationForm.ammail_webhook_secret,
-        }),
-      });
-      if (!saveRes.ok) {
-        const data = await saveRes.json().catch(() => ({}));
-        setAutomationStatus({ type: "error", message: data.error || "Gagal to save settings before testing connection" });
-        return;
-      }
-
-      // Then test connection
-      const testRes = await fetch("/api/automation/ammail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "test-connection" }),
-      });
-      const testData = await testRes.json().catch(() => ({}));
-      if (testRes.ok) {
-        setAutomationStatus({ type: "success", message: "Ammail Connection Berhasilful!" });
-      } else {
-        setAutomationStatus({ type: "error", message: testData.error || "Ammail Connection Gagal." });
-      }
-    } catch (err) {
-      setAutomationStatus({ type: "error", message: err.message || "An error occurred" });
-    } finally {
-      setAmmailTestLoading(false);
-    }
+  const badge = (status) => {
+    const map = {
+      online: "bg-green-500/10 text-green-600",
+      terhubung: "bg-green-500/10 text-green-600",
+      tersedia: "bg-blue-500/10 text-blue-600",
+      memeriksa: "bg-amber-500/10 text-amber-600",
+      terbatas: "bg-amber-500/10 text-amber-600",
+      gagal: "bg-red-500/10 text-red-600",
+      ditemukan: "bg-green-500/10 text-green-600",
+    };
+    return map[status] || "bg-surface-2 text-text-muted";
   };
 
-  const registerAmmailWebhook = async () => {
-    setAmmailWebhookLoading(true);
-    setAutomationStatus({ type: "", message: "" });
-    try {
-      // Simpan settings first
-      const saveRes = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ammail_base_url: automationForm.ammail_base_url,
-          ammail_api_key: automationForm.ammail_api_key,
-          ammail_default_domain: automationForm.ammail_default_domain,
-          ammail_webhook_secret: automationForm.ammail_webhook_secret,
-        }),
-      });
-      if (!saveRes.ok) {
-        const data = await saveRes.json().catch(() => ({}));
-        setAutomationStatus({ type: "error", message: data.error || "Gagal to save settings before registering webhook" });
-        return;
-      }
-
-      // Then register webhook
-      const webhookRes = await fetch("/api/automation/ammail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "webhook-register" }),
-      });
-      const webhookData = await webhookRes.json().catch(() => ({}));
-      if (webhookRes.ok) {
-        setAutomationStatus({ type: "success", message: "Ammail Webhook Registered Berhasil!" });
-        if (webhookData.webhook?.secret) {
-          setAutomationForm(prev => ({ ...prev, ammail_webhook_secret: webhookData.webhook.secret }));
-        }
-      } else {
-        setAutomationStatus({ type: "error", message: webhookData.error || "Ammail Webhook Registration Gagal." });
-      }
-    } catch (err) {
-      setAutomationStatus({ type: "error", message: err.message || "An error occurred" });
-    } finally {
-      setAmmailWebhookLoading(false);
-    }
-  };
-
-  const updateOutboundProxy = async (e) => {
-    e.preventDefault();
-    if (settings.outboundProxyEnabled !== true) return;
-    setProxyLoading(true);
-    setProxyStatus({ type: "", message: "" });
-
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          outboundProxyUrl: proxyForm.outboundProxyUrl,
-          outboundNoProxy: proxyForm.outboundNoProxy,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setPengaturan((prev) => ({ ...prev, ...data }));
-        setProxyStatus({ type: "success", message: "Proxy settings applied" });
-      } else {
-        setProxyStatus({ type: "error", message: data.error || "Gagal to update proxy settings" });
-      }
-    } catch (err) {
-      setProxyStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setProxyLoading(false);
-    }
-  };
-
-  const testOutboundProxy = async () => {
-    if (settings.outboundProxyEnabled !== true) return;
-
-    const proxyUrl = (proxyForm.outboundProxyUrl || "").trim();
-    if (!proxyUrl) {
-      setProxyStatus({ type: "error", message: "Silakan masukkan a Proxy URL to test" });
-      return;
-    }
-
-    setProxyTestLoading(true);
-    setProxyStatus({ type: "", message: "" });
-
-    try {
-      const res = await fetch("/api/settings/proxy-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proxyUrl }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data?.ok) {
-        setProxyStatus({
-          type: "success",
-          message: `Proxy test OK (${data.status}) in ${data.elapsedMs}ms`,
-        });
-      } else {
-        setProxyStatus({
-          type: "error",
-          message: data?.error || "Proxy test failed",
-        });
-      }
-    } catch (err) {
-      setProxyStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setProxyTestLoading(false);
-    }
-  };
-
-  const updateOutboundProxyEnabled = async (outboundProxyEnabled) => {
-    setProxyLoading(true);
-    setProxyStatus({ type: "", message: "" });
-
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ outboundProxyEnabled }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setPengaturan((prev) => ({ ...prev, ...data }));
-        setProxyForm((prev) => ({ ...prev, outboundProxyEnabled: data?.outboundProxyEnabled === true }));
-        setProxyStatus({
-          type: "success",
-          message: outboundProxyEnabled ? "Proxy enabled" : "Proxy disabled",
-        });
-      } else {
-        setProxyStatus({ type: "error", message: data.error || "Gagal to update proxy settings" });
-      }
-    } catch (err) {
-      setProxyStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setProxyLoading(false);
-    }
-  };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (passwords.new !== passwords.confirm) {
-      setPassStatus({ type: "error", message: "Passwords do not match" });
-      return;
-    }
-
-    setPassLoading(true);
-    setPassStatus({ type: "", message: "" });
-
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword: passwords.current,
-          newPassword: passwords.new,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setPassStatus({ type: "success", message: "Password updated successfully" });
-        setPasswords({ current: "", new: "", confirm: "" });
-      } else {
-        setPassStatus({ type: "error", message: data.error || "Gagal to update password" });
-      }
-    } catch (err) {
-      setPassStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setPassLoading(false);
-    }
-  };
-
-  const updateFallbackStrategy = async (strategy) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fallbackStrategy: strategy }),
-      });
-      if (res.ok) {
-        setPengaturan(prev => ({ ...prev, fallbackStrategy: strategy }));
-      }
-    } catch (err) {
-      console.error("Gagal to update settings:", err);
-    }
-  };
-
-  const updateComboStrategy = async (strategy) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comboStrategy: strategy }),
-      });
-      if (res.ok) {
-        setPengaturan(prev => ({ ...prev, comboStrategy: strategy }));
-      }
-    } catch (err) {
-      console.error("Gagal to update combo strategy:", err);
-    }
-  };
-
-  const updateStickyLimit = async (limit) => {
-    const numLimit = parseInt(limit);
-    if (isNaN(numLimit) || numLimit < 1) return;
-
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stickyRoundRobinLimit: numLimit }),
-      });
-      if (res.ok) {
-        setPengaturan(prev => ({ ...prev, stickyRoundRobinLimit: numLimit }));
-      }
-    } catch (err) {
-      console.error("Gagal to update sticky limit:", err);
-    }
-  };
-
-  const updateComboStickyLimit = async (limit) => {
-    const numLimit = parseInt(limit);
-    if (isNaN(numLimit) || numLimit < 1) return;
-
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comboStickyRoundRobinLimit: numLimit }),
-      });
-      if (res.ok) {
-        setPengaturan(prev => ({ ...prev, comboStickyRoundRobinLimit: numLimit }));
-      }
-    } catch (err) {
-      console.error("Gagal to update combo sticky limit:", err);
-    }
-  };
-
-  const updateRequireMasuk = async (requireMasuk) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requireMasuk }),
-      });
-      if (res.ok) {
-        setPengaturan(prev => ({ ...prev, requireMasuk }));
-      }
-    } catch (err) {
-      console.error("Gagal to update require login:", err);
-    }
-  };
-
-  const updateOidcForm = (field, value) => {
-    setOidcForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const saveOidcPengaturan = async (authMode = oidcForm.authMode || "password") => {
-    const issuerUrl = oidcForm.oidcIssuerUrl.trim();
-    const clientId = oidcForm.oidcClientId.trim();
-    const scopes = oidcForm.oidcScopes.trim();
-    const loginLabel = oidcForm.oidcMasukLabel.trim();
-    const secret = oidcClientSecret.trim();
-
-    if (authMode !== "password" && (!issuerUrl || !clientId || !secret) && !settings.oidcConfigured) {
-      setOidcStatus({ type: "error", message: "Issuer URL, client ID, and client secret are required to enable OIDC." });
-      return;
-    }
-
-    setOidcLoading(true);
-    setOidcStatus({ type: "", message: "" });
-    setOidcTestStatus({ type: "", message: "" });
-
-    try {
-      const payload = {
-        authMode,
-        oidcIssuerUrl: issuerUrl,
-        oidcClientId: clientId,
-        oidcScopes: scopes || "openid profile email",
-        oidcMasukLabel: loginLabel || "Sign in with OIDC",
-      };
-      if (secret) {
-        payload.oidcClientSecret = secret;
-      }
-
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setPengaturan((prev) => ({ ...prev, ...data }));
-        setOidcForm({
-          authMode: data?.authMode || authMode,
-          oidcIssuerUrl: data?.oidcIssuerUrl || issuerUrl,
-          oidcClientId: data?.oidcClientId || clientId,
-          oidcScopes: data?.oidcScopes || scopes || "openid profile email",
-          oidcMasukLabel: data?.oidcMasukLabel || loginLabel || "Sign in with OIDC",
-        });
-        setOidcClientSecret("");
-        setOidcStatus({
-          type: "success",
-          message:
-            authMode === "oidc"
-              ? "OIDC login enabled"
-              : authMode === "both"
-                ? "Password and OIDC login enabled"
-                : "OIDC settings saved",
-        });
-      } else {
-        setOidcStatus({ type: "error", message: data.error || "Gagal to save OIDC settings" });
-      }
-    } catch (err) {
-      setOidcStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setOidcLoading(false);
-    }
-  };
-
-  const testOidcConnection = async () => {
-    const issuerUrl = oidcForm.oidcIssuerUrl.trim();
-    const clientId = oidcForm.oidcClientId.trim();
-    const scopes = oidcForm.oidcScopes.trim();
-    const secret = oidcClientSecret.trim();
-
-    if (!issuerUrl || !clientId) {
-      setOidcTestStatus({ type: "error", message: "Issuer URL and client ID are required to test the connection." });
-      return;
-    }
-
-    setOidcTestLoading(true);
-    setOidcStatus({ type: "", message: "" });
-    setOidcTestStatus({ type: "", message: "" });
-
-    try {
-      const saveRes = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          authMode: oidcForm.authMode || settings.authMode || "password",
-          oidcIssuerUrl: issuerUrl,
-          oidcClientId: clientId,
-          oidcScopes: scopes || "openid profile email",
-          oidcMasukLabel: oidcForm.oidcMasukLabel.trim() || "Sign in with OIDC",
-          ...(secret ? { oidcClientSecret: secret } : {}),
-        }),
-      });
-
-      const saved = await saveRes.json().catch(() => ({}));
-      if (!saveRes.ok) {
-        setOidcTestStatus({
-          type: "error",
-          message: saved.error || "Gagal to save OIDC settings before testing",
-        });
-        return;
-      }
-
-      const res = await fetch("/api/auth/oidc/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          issuerUrl: saved.oidcIssuerUrl || issuerUrl,
-          clientId: saved.oidcClientId || clientId,
-          scopes: saved.oidcScopes || scopes || "openid profile email",
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data?.ok) {
-        const statusMessage = data.clientSecretTested
-          ? data.clientSecretValid === true
-            ? `Connection OK. Discovery loaded from ${data.issuerUrl}. Client secret validated too.`
-            : `Connection OK. Discovery loaded from ${data.issuerUrl}. Client secret was not checked.`
-          : `Connection OK. Discovery loaded from ${data.issuerUrl}.`;
-        setOidcTestStatus({
-          type: "success",
-          message: statusMessage,
-        });
-      } else {
-        setOidcTestStatus({ type: "error", message: data.error || "OIDC connection test failed" });
-      }
-    } catch (err) {
-      setOidcTestStatus({ type: "error", message: "An error occurred" });
-    } finally {
-      setOidcTestLoading(false);
-    }
-  };
-
-  const updateObservabilityEnabled = async (enabled) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enableObservability: enabled }),
-      });
-      if (res.ok) {
-        setPengaturan(prev => ({ ...prev, enableObservability: enabled }));
-      }
-    } catch (err) {
-      console.error("Gagal to update enableObservability:", err);
-    }
-  };
-
-  const reloadPengaturan = async () => {
-    try {
-      const res = await fetch("/api/settings");
-      if (!res.ok) return;
-      const data = await res.json();
-      setPengaturan(data);
-    } catch (err) {
-      console.error("Gagal to reload settings:", err);
-    }
-  };
-
-  const handleExportDatabase = async () => {
-    setDbLoading(true);
-    setDbStatus({ type: "", message: "" });
-    try {
-      const res = await fetch("/api/settings/database");
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Gagal to export database");
-      }
-
-      const payload = await res.json();
-      const content = JSON.stringify(payload, null, 2);
-      const blob = new Blob([content], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      const stamp = new Date().toISOString().replace(/[.:]/g, "-");
-      anchor.href = url;
-      anchor.download = `9router-backup-${stamp}.json`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-
-      setDbStatus({ type: "success", message: "Database backup downloaded" });
-    } catch (err) {
-      setDbStatus({ type: "error", message: err.message || "Gagal to export database" });
-    } finally {
-      setDbLoading(false);
-    }
-  };
-
-  const handleImportDatabase = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setDbLoading(true);
-    setDbStatus({ type: "", message: "" });
-
-    try {
-      const raw = await file.text();
-      const payload = JSON.parse(raw);
-
-      const res = await fetch("/api/settings/database", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Gagal to import database");
-      }
-
-      await reloadPengaturan();
-      setDbStatus({ type: "success", message: "Database imported successfully" });
-    } catch (err) {
-      setDbStatus({ type: "error", message: err.message || "Invalid backup file" });
-    } finally {
-      if (importFileRef.current) {
-        importFileRef.current.value = "";
-      }
-      setDbLoading(false);
-    }
-  };
-
-  const observabilityEnabled = settings.enableObservability === true;
-
-  const handleShutdown = async () => {
-    setIsShuttingDown(true);
-    try {
-      await fetch("/api/version/shutdown", { method: "POST" });
-    } catch (e) {
-      // Expected to fail as server shuts down; ignore error
-    }
-    setIsShuttingDown(false);
-    setShutdownOpen(false);
-  };
-
-  const handleKeluar = async () => {
-    try {
-      const res = await fetch("/api/auth/logout", { method: "POST" });
-      if (res.ok) {
-        localStorage.removeItem("9r_authed");
-        navigate("/login");
-        navigate(0);
-      }
-    } catch (err) {
-      console.error("Gagal to logout:", err);
-    }
-  };
+  const items = lastScan ? [
+    { icon: "dns", title: "Penyedia AI", desc: lastScan.penyedia.detail, status: lastScan.penyedia.status, count: lastScan.penyedia.jumlah },
+    { icon: "hub", title: "MCP", desc: lastScan.mcp.detail, status: lastScan.mcp.status, count: lastScan.mcp.jumlah },
+    { icon: "code", title: "GitHub & repositori AI", desc: lastScan.github.detail, status: lastScan.github.status },
+    { icon: "cloud_done", title: "Server Max Router", desc: lastScan.server.detail, status: lastScan.server.status },
+  ] : [];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-0">
-      <div className="flex flex-col gap-6">
-        {/* Local Mode Info */}
-        <Card>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="size-10 sm:size-12 rounded-lg bg-green-500/10 text-green-500 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-xl sm:text-2xl">computer</span>
+    <div className="space-y-5 max-w-5xl mx-auto">
+      <Card>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <span className="material-symbols-outlined">hub</span>
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold">Local Mode</h2>
-                <p className="text-sm text-text-muted">Running on your machine</p>
+                <h2 className="text-lg font-semibold">Deteksi Integrasi</h2>
+                <p className="text-sm text-text-muted">Membaca layanan yang tersedia secara langsung dari server online.</p>
               </div>
             </div>
-            <div className="inline-flex p-1 rounded-lg bg-black/5 dark:bg-white/5 w-full sm:w-auto">
-              {["light", "dark", "system"].map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setTheme(option)}
-                  className={cn(
-                    "flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-md font-medium transition-all flex-1 sm:flex-initial",
-                    theme === option
-                      ? "bg-white dark:bg-white/10 text-text-main shadow-sm"
-                      : "text-text-muted hover:text-text-main"
-                  )}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {option === "light" ? "light_mode" : option === "dark" ? "dark_mode" : "contrast"}
-                  </span>
-                  <span className="capitalize text-xs sm:text-sm">{option}</span>
-                </button>
-              ))}
-            </div>
           </div>
-          <div className="flex flex-col gap-3 pt-4 border-t border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg bg-bg border border-border gap-2">
-              <div>
-                <p className="font-medium text-sm sm:text-base">Database Location</p>
-                <p className="text-xs sm:text-sm text-text-muted font-mono break-all">~/.9router/db/data.sqlite</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="secondary"
-                icon="download"
-                onClick={handleExportDatabase}
-                loading={dbLoading}
-                className="w-full sm:w-auto"
-              >
-                Download Backup
-              </Button>
-              <Button
-                variant="outline"
-                icon="upload"
-                onClick={() => importFileRef.current?.click()}
-                disabled={dbLoading}
-                className="w-full sm:w-auto"
-              >
-                Import Backup
-              </Button>
-              <input
-                ref={importFileRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={handleImportDatabase}
-              />
-            </div>
-            {dbStatus.message && (
-              <p className={`text-sm ${dbStatus.type === "error" ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
-                {dbStatus.message}
-              </p>
-            )}
-          </div>
-        </Card>
+          <Button variant="primary" icon="radar" loading={scanning} onClick={scanIntegrasi}>
+            {scanning ? "Memindai..." : "Pindai Sekarang"}
+          </Button>
+        </div>
 
+        {message && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">{message}</p>}
 
-
-        {/* Security */}
-        <Card>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-              <span className="material-symbols-outlined text-[20px]">shield</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold">Security</h3>
-          </div>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start sm:items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base">Require login</p>
-                <p className="text-xs sm:text-sm text-text-muted">
-                  When ON, dashboard requires password. When OFF, access without login.
-                </p>
-              </div>
-              <Toggle
-                checked={settings.requireMasuk === true}
-                onChange={() => updateRequireMasuk(!settings.requireMasuk)}
-                disabled={loading}
-              />
-            </div>
-            {settings.requireMasuk === true && (
-              <form onSubmit={handlePasswordChange} className="flex flex-col gap-4 pt-4 border-t border-border/50">
-                {settings.hasPassword && (
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs sm:text-sm font-medium">Current Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Enter current password"
-                      value={passwords.current}
-                      onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-                      required
-                    />
-                  </div>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs sm:text-sm font-medium">New Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Enter new password"
-                      value={passwords.new}
-                      onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs sm:text-sm font-medium">Confirm New Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Confirm new password"
-                      value={passwords.confirm}
-                      onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                      required
-                    />
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {items.map((item) => (
+            <div key={item.title} className="rounded-xl border border-border-subtle bg-surface/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary">{item.icon}</span>
+                  <div>
+                    <p className="font-semibold">{item.title}</p>
+                    <p className="text-xs text-text-muted">{item.desc}</p>
                   </div>
                 </div>
-
-                {passStatus.message && (
-                  <p className={`text-xs sm:text-sm ${passStatus.type === "error" ? "text-red-500" : "text-green-500"}`}>
-                    {passStatus.message}
-                  </p>
-                )}
-
-                <div className="pt-2">
-                  <Button type="submit" variant="primary" loading={passLoading} className="w-full sm:w-auto">
-                    {settings.hasPassword ? "Perbarui Kata Sandi" : "Atur Kata Sandi"}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
-        </Card>
-
-        {/* OIDC */}
-        <Card>
-          <button
-            type="button"
-            onClick={() => setOidcExpanded((v) => !v)}
-            className="w-full flex items-center gap-3 text-left"
-          >
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">lock_open</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold">OIDC Dashboard Masuk</h3>
-              <p className="text-xs text-text-muted">
-                {settings.authMode === "oidc" ? "OIDC active" : settings.authMode === "both" ? "Password + OIDC active" : "Optional SSO via Authentik/Keycloak/Google"}
-              </p>
-            </div>
-            <span className="material-symbols-outlined text-text-muted shrink-0">
-              {oidcExpanded ? "expand_less" : "expand_more"}
-            </span>
-          </button>
-          {oidcExpanded && (
-          <div className="flex flex-col gap-4 mt-4">
-            <p className="text-xs sm:text-sm text-text-muted">
-              Use Authentik or any OIDC provider to sign in to the dashboard. You can enable password-only, OIDC-only, or both for the dashboard; model API access still uses API keys.
-            </p>
-
-            <div className="flex flex-col gap-2">
-              <label className="font-medium text-sm sm:text-base">Auth Mode</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {[
-                  {
-                    value: "password",
-                    title: "Password only",
-                    desc: "Keep the legacy password login.",
-                  },
-                  {
-                    value: "oidc",
-                    title: "OIDC only",
-                    desc: "Require OIDC for dashboard access.",
-                  },
-                  {
-                    value: "both",
-                    title: "Both",
-                    desc: "Allow either password or OIDC.",
-                  },
-                ].map((option) => {
-                  const active = oidcForm.authMode === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => updateOidcForm("authMode", option.value)}
-                      className={cn(
-                        "text-left rounded-lg border p-3 transition-colors",
-                        active
-                          ? "border-primary bg-primary/5"
-                          : "border-border bg-bg hover:bg-black/5 dark:hover:bg-white/5"
-                      )}
-                      disabled={loading || oidcLoading}
-                    >
-                      <p className="font-medium text-sm sm:text-base">{option.title}</p>
-                      <p className="text-xs sm:text-sm text-text-muted mt-1">{option.desc}</p>
-                    </button>
-                  );
-                })}
+                <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${badge(item.status)}`}>
+                  {item.status}
+                </span>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="font-medium text-sm sm:text-base">Issuer URL</label>
-                <Input
-                  placeholder="https://auth.example.com/application/o/9router/"
-                  value={oidcForm.oidcIssuerUrl}
-                  onChange={(e) => updateOidcForm("oidcIssuerUrl", e.target.value)}
-                  disabled={loading || oidcLoading}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="font-medium text-sm sm:text-base">Client ID</label>
-                <Input
-                  placeholder="9router-dashboard"
-                  value={oidcForm.oidcClientId}
-                  onChange={(e) => updateOidcForm("oidcClientId", e.target.value)}
-                  disabled={loading || oidcLoading}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="font-medium text-sm sm:text-base">Client Secret</label>
-                <Input
-                  type="password"
-                  placeholder="Leave blank to keep existing secret"
-                  value={oidcClientSecret}
-                  onChange={(e) => setOidcClientSecret(e.target.value)}
-                  disabled={loading || oidcLoading}
-                />
-                <p className="text-xs sm:text-sm text-text-muted">This value is write-only after saving.</p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="font-medium text-sm sm:text-base">Scopes</label>
-                <Input
-                  placeholder="openid profile email"
-                  value={oidcForm.oidcScopes}
-                  onChange={(e) => updateOidcForm("oidcScopes", e.target.value)}
-                  disabled={loading || oidcLoading}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="font-medium text-sm sm:text-base">Masuk Button Label</label>
-                <Input
-                  placeholder="Sign in with OIDC"
-                  value={oidcForm.oidcMasukLabel}
-                  onChange={(e) => updateOidcForm("oidcMasukLabel", e.target.value)}
-                  disabled={loading || oidcLoading}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border bg-bg p-3 text-xs sm:text-sm text-text-muted">
-              <p className="font-medium text-text-main mb-1">Redirect URI</p>
-              <code className="block break-all font-mono">{oidcRedirectUri}</code>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border/50">
-              <Button type="button" variant="primary" loading={oidcLoading} onClick={() => saveOidcPengaturan()} className="w-full sm:w-auto">
-                Simpan auth mode
-              </Button>
-              <Button type="button" variant="outline" loading={oidcTestLoading} onClick={testOidcConnection} className="w-full sm:w-auto">
-                Test connection
-              </Button>
-            </div>
-
-            {oidcTestStatus.message && (
-              <p className={`text-xs sm:text-sm ${oidcTestStatus.type === "error" ? "text-red-500" : "text-green-500"}`}>
-                {oidcTestStatus.message}
-              </p>
-            )}
-
-            {oidcStatus.message && (
-              <p className={`text-xs sm:text-sm ${oidcStatus.type === "error" ? "text-red-500" : "text-green-500"}`}>
-                {oidcStatus.message}
-              </p>
-            )}
-
-            {settings.authMode === "oidc" && (
-              <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400">
-                OIDC login is currently active. Password login is disabled until you switch back.
-              </p>
-            )}
-
-            {settings.authMode === "both" && (
-              <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400">
-                Password and OIDC login are both active.
-              </p>
-            )}
-          </div>
-          )}
-        </Card>
-
-        {/* Routing Preferences */}
-        <Card>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">route</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold">Routing Strategy</h3>
-          </div>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start sm:items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base">Round Robin</p>
-                <p className="text-xs sm:text-sm text-text-muted">
-                  Cycle through accounts to distribute load
-                </p>
-              </div>
-              <Toggle
-                checked={settings.fallbackStrategy === "round-robin"}
-                onChange={() => updateFallbackStrategy(settings.fallbackStrategy === "round-robin" ? "fill-first" : "round-robin")}
-                disabled={loading}
-              />
-            </div>
-
-            {/* Sticky Round Robin Limit */}
-            {settings.fallbackStrategy === "round-robin" && (
-              <div className="flex items-start sm:items-center justify-between gap-4 pt-2 border-t border-border/50">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm sm:text-base">Sticky Limit</p>
-                  <p className="text-xs sm:text-sm text-text-muted">
-                    Calls per account before switching
-                  </p>
-                </div>
-                <Input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={settings.stickyRoundRobinLimit || 3}
-                  onChange={(e) => updateStickyLimit(e.target.value)}
-                  disabled={loading}
-                  className="w-16 sm:w-20 text-center shrink-0"
-                />
-              </div>
-            )}
-
-            {/* Combo Round Robin */}
-            <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base">Combo Round Robin</p>
-                <p className="text-xs sm:text-sm text-text-muted">
-                  Cycle through providers in combos instead of always starting with first
-                </p>
-              </div>
-              <Toggle
-                checked={settings.comboStrategy === "round-robin"}
-                onChange={() => updateComboStrategy(settings.comboStrategy === "round-robin" ? "fallback" : "round-robin")}
-                disabled={loading}
-              />
-            </div>
-
-            {/* Combo Sticky Round Robin Limit */}
-            {settings.comboStrategy === "round-robin" && (
-              <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                <div>
-                  <p className="font-medium">Combo Sticky Limit</p>
-                  <p className="text-sm text-text-muted">
-                    Calls per combo model before switching
-                  </p>
-                </div>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={settings.comboStickyRoundRobinLimit || 1}
-                  onChange={(e) => updateComboStickyLimit(e.target.value)}
-                  disabled={loading}
-                  className="w-20 text-center"
-                />
-              </div>
-            )}
-
-            <p className="text-xs text-text-muted italic pt-2 border-t border-border/50">
-              {settings.fallbackStrategy === "round-robin"
-                ? `Currently distributing requests across all available accounts with ${settings.stickyRoundRobinLimit || 3} calls per account.`
-                : "Currently using accounts in priority order (Fill First)."}
-              {settings.comboStrategy === "round-robin"
-                ? ` Combos rotate after ${settings.comboStickyRoundRobinLimit || 1} call${(settings.comboStickyRoundRobinLimit || 1) === 1 ? "" : "s"} per model.`
-                : " Combos always start with their first model."}
-            </p>
-          </div>
-        </Card>
-
-        {/* Network */}
-        <Card>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">wifi</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold">Network</h3>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start sm:items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base">Outbound Proxy</p>
-                <p className="text-xs sm:text-sm text-text-muted">Enable proxy for OAuth + provider outbound requests.</p>
-              </div>
-              <Toggle
-                checked={settings.outboundProxyEnabled === true}
-                onChange={() => updateOutboundProxyEnabled(!(settings.outboundProxyEnabled === true))}
-                disabled={loading || proxyLoading}
-              />
-            </div>
-
-            {settings.outboundProxyEnabled === true && (
-              <form onSubmit={updateOutboundProxy} className="flex flex-col gap-4 pt-2 border-t border-border/50">
-                <div className="flex flex-col gap-2">
-                  <label className="font-medium text-sm sm:text-base">Proxy URL</label>
-                  <Input
-                    placeholder="http://127.0.0.1:7897"
-                    value={proxyForm.outboundProxyUrl}
-                    onChange={(e) => setProxyForm((prev) => ({ ...prev, outboundProxyUrl: e.target.value }))}
-                    disabled={loading || proxyLoading}
-                  />
-                  <p className="text-xs sm:text-sm text-text-muted">Leave empty to inherit existing env proxy (if any).</p>
-                </div>
-
-                <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                  <label className="font-medium text-sm sm:text-base">No Proxy</label>
-                  <Input
-                    placeholder="localhost,127.0.0.1"
-                    value={proxyForm.outboundNoProxy}
-                    onChange={(e) => setProxyForm((prev) => ({ ...prev, outboundNoProxy: e.target.value }))}
-                    disabled={loading || proxyLoading}
-                  />
-                  <p className="text-xs sm:text-sm text-text-muted">Comma-separated hostnames/domains to bypass the proxy.</p>
-                </div>
-
-                <div className="pt-2 border-t border-border/50 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    loading={proxyTestLoading}
-                    disabled={loading || proxyLoading}
-                    onClick={testOutboundProxy}
-                    className="w-full sm:w-auto"
-                  >
-                    Test proxy URL
-                  </Button>
-                  <Button type="submit" variant="primary" loading={proxyLoading} className="w-full sm:w-auto">
-                    Apply
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {proxyStatus.message && (
-              <p className={`text-xs sm:text-sm ${proxyStatus.type === "error" ? "text-red-500" : "text-green-500"} pt-2 border-t border-border/50`}>
-                {proxyStatus.message}
-              </p>
-            )}
-          </div>
-        </Card>
-
-        {/* Automation Pengaturan */}
-        <Card>
-          <button
-            type="button"
-            onClick={() => setAutomationExpanded((v) => !v)}
-            className="w-full flex items-center gap-3 text-left focus:outline-none"
-          >
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">smart_toy</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold">Automation Pengaturan</h3>
-              <p className="text-xs text-text-muted">
-                Manage CodeBuddy browser signup & Ammail temporary email configurations.
-              </p>
-            </div>
-            <span className="material-symbols-outlined text-text-muted shrink-0">
-              {automationExpanded ? "expand_less" : "expand_more"}
-            </span>
-          </button>
-
-          {automationExpanded && (
-            <div className="flex flex-col gap-4 mt-4">
-              {/* CodeBuddy Subsection */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-sm text-text-main flex items-center gap-1.5 border-b border-border/55 pb-1">
-                  <span className="material-symbols-outlined text-[16px]">smart_toy</span>
-                  CodeBuddy API Gen Pengaturan
-                </h4>
-                
-                <div className="flex items-start sm:items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Headless Browser</p>
-                    <p className="text-xs sm:text-sm text-text-muted">Run the automated signup browser in headless mode (no visual window).</p>
-                  </div>
-                  <Toggle
-                    checked={automationForm.codebuddy_browser_headless}
-                    onChange={(checked) => setAutomationForm(prev => ({ ...prev, codebuddy_browser_headless: checked }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                <div className="flex items-start sm:items-center justify-between gap-4 pt-2 border-t border-border/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Auto Inject to 9router</p>
-                    <p className="text-xs sm:text-sm text-text-muted">Automatically add newly generated CodeBuddy API keys to 9router connections.</p>
-                  </div>
-                  <Toggle
-                    checked={automationForm.codebuddy_auto_9router}
-                    onChange={(checked) => setAutomationForm(prev => ({ ...prev, codebuddy_auto_9router: checked }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                <div className="flex items-start sm:items-center justify-between gap-4 pt-2 border-t border-border/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Leave Canva Team after Leonardo Registration</p>
-                    <p className="text-xs sm:text-sm text-text-muted">Automatically leave the Canva team after completing Leonardo registration to free up team invite slots.</p>
-                  </div>
-                  <Toggle
-                    checked={automationForm.codebuddy_leave_canva_team}
-                    onChange={(checked) => setAutomationForm(prev => ({ ...prev, codebuddy_leave_canva_team: checked }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                <div className="flex items-start sm:items-center justify-between gap-4 pt-2 border-t border-border/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Use Outbound Proxy</p>
-                    <p className="text-xs sm:text-sm text-text-muted">Route the automation browser traffic through a proxy server.</p>
-                  </div>
-                  <Toggle
-                    checked={automationForm.codebuddy_proxy_enabled}
-                    onChange={(checked) => setAutomationForm(prev => ({ ...prev, codebuddy_proxy_enabled: checked }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                {automationForm.codebuddy_proxy_enabled && (
-                  <div className="flex flex-col gap-3 pl-4 border-l-2 border-primary/20 pt-2">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-medium text-text-main">Proxy Server</label>
-                      <Input
-                        placeholder="host:port (e.g. 127.0.0.1:8080)"
-                        value={automationForm.codebuddy_proxy_server}
-                        onChange={(e) => setAutomationForm(prev => ({ ...prev, codebuddy_proxy_server: e.target.value }))}
-                        disabled={loading || automationLoading}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-text-main">Proxy Username (Optional)</label>
-                        <Input
-                          placeholder="username"
-                          value={automationForm.codebuddy_proxy_username}
-                          onChange={(e) => setAutomationForm(prev => ({ ...prev, codebuddy_proxy_username: e.target.value }))}
-                          disabled={loading || automationLoading}
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-text-main">Proxy Password (Optional)</label>
-                        <Input
-                          type="password"
-                          placeholder="password"
-                          value={automationForm.codebuddy_proxy_password}
-                          onChange={(e) => setAutomationForm(prev => ({ ...prev, codebuddy_proxy_password: e.target.value }))}
-                          disabled={loading || automationLoading}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Ammail Subsection */}
-              <div className="space-y-4 pt-4 border-t border-border/55">
-                <h4 className="font-semibold text-sm text-text-main flex items-center gap-1.5 border-b border-border/55 pb-1">
-                  <span className="material-symbols-outlined text-[16px]">mail</span>
-                  Ammail Temp Mail Pengaturan
-                </h4>
-
-                <div className="flex flex-col gap-2">
-                  <label className="font-medium text-sm sm:text-base">Base URL</label>
-                  <Input
-                    placeholder="https://ammail.example.com"
-                    value={automationForm.ammail_base_url}
-                    onChange={(e) => setAutomationForm(prev => ({ ...prev, ammail_base_url: e.target.value }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="font-medium text-sm sm:text-base">API Key</label>
-                  <Input
-                    type="password"
-                    placeholder="Ammail API Key"
-                    value={automationForm.ammail_api_key}
-                    onChange={(e) => setAutomationForm(prev => ({ ...prev, ammail_api_key: e.target.value }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="font-medium text-sm sm:text-base">Default Domain</label>
-                  <Input
-                    placeholder="example.com"
-                    value={automationForm.ammail_default_domain}
-                    onChange={(e) => setAutomationForm(prev => ({ ...prev, ammail_default_domain: e.target.value }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="font-medium text-sm sm:text-base">Webhook Secret</label>
-                  <Input
-                    type="password"
-                    placeholder="Leave empty to auto-generate"
-                    value={automationForm.ammail_webhook_secret}
-                    onChange={(e) => setAutomationForm(prev => ({ ...prev, ammail_webhook_secret: e.target.value }))}
-                    disabled={loading || automationLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-border/50">
-                <Button
-                  type="button"
-                  variant="primary"
-                  loading={automationLoading}
-                  onClick={() => updateAutomationPengaturan()}
-                  className="w-full sm:w-auto"
-                >
-                  Simpan Pengaturan
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  loading={ammailTestLoading}
-                  onClick={testAmmailConnection}
-                  className="w-full sm:w-auto"
-                >
-                  Test Ammail Connection
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  loading={ammailWebhookLoading}
-                  onClick={registerAmmailWebhook}
-                  className="w-full sm:w-auto"
-                >
-                  Register Webhook
-                </Button>
-              </div>
-
-              {automationStatus.message && (
-                <p className={`text-xs sm:text-sm ${automationStatus.type === "error" ? "text-red-500" : "text-green-500"} pt-2 border-t border-border/50`}>
-                  {automationStatus.message}
-                </p>
+              {typeof item.count === "number" && (
+                <p className="mt-3 text-2xl font-bold">{item.count}</p>
               )}
             </div>
-          )}
-        </Card>
+          ))}
+        </div>
+      </Card>
 
-        {/* Observability Pengaturan */}
-        <Card>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">monitoring</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold">Observability</h3>
+      <Card>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+            <span className="material-symbols-outlined">account_tree</span>
           </div>
-          <div className="flex items-start sm:items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm sm:text-base">Enable Observability</p>
-              <p className="text-xs sm:text-sm text-text-muted">
-                Record request details for inspection in the logs view
-              </p>
-            </div>
-            <Toggle
-              checked={observabilityEnabled}
-              onChange={updateObservabilityEnabled}
-              disabled={loading}
-            />
+          <div>
+            <h2 className="text-lg font-semibold">Pemeriksa Repositori AI</h2>
+            <p className="text-sm text-text-muted">Masukkan repositori GitHub publik untuk melihat tanda teknologi dan struktur awalnya.</p>
           </div>
-        </Card>
-
-        {/* Account actions */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            fullWidth
-            icon="power_settings_new"
-            onClick={() => setShutdownOpen(true)}
-            className="text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300"
-          >
-            Shutdown
-          </Button>
-          <Button
-            variant="outline"
-            fullWidth
-            icon="logout"
-            onClick={handleKeluar}
-          >
-            Keluar
-          </Button>
         </div>
 
-        {/* App Info */}
-        <div className="text-center text-xs sm:text-sm text-text-muted py-4">
-          <p>{APP_CONFIG.name} v{APP_CONFIG.version}</p>
-          <p className="mt-1">Local Mode - All data stored on your machine</p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="https://github.com/pemilik/nama-repo" />
+          <Button variant="secondary" icon="search" onClick={cekRepo}>Periksa Repo</Button>
         </div>
-      </div>
 
-      <LanguageSwitcher
-        hideTrigger
-        isOpen={langOpen}
-        onClose={(next) => {
-          setLangOpen(false);
-          setLocale(next);
-        }}
-      />
-      <ConfirmModal
-        isOpen={shutdownOpen}
-        onClose={() => setShutdownOpen(false)}
-        onConfirm={handleShutdown}
-        title="Close Proxy"
-        message="Are you sure you want to close the proxy server?"
-        confirmText="Close"
-        cancelText="Batal"
-        variant="danger"
-        loading={isShuttingDown}
-      />
+        {repoResult && (
+          <div className="mt-4 rounded-xl border border-border-subtle bg-surface-2 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold">{repoResult.nama || "Repositori"}</p>
+                <p className="text-sm text-text-muted">{repoResult.detail}</p>
+              </div>
+              <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${badge(repoResult.status)}`}>{repoResult.status}</span>
+            </div>
+            {repoResult.status === "ditemukan" && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+                <p><span className="text-text-muted">Bahasa:</span> {repoResult.bahasa}</p>
+                <p><span className="text-text-muted">Teknologi:</span> {repoResult.teknologi}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <div className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-primary">cloud</span>
+          <div>
+            <h3 className="font-semibold">Mode online</h3>
+            <p className="mt-1 text-sm text-text-muted">
+              Halaman ini tidak menyimpan pengaturan integrasi di penyimpanan lokal browser. Status dibaca ulang dari server setiap kali dipindai.
+            </p>
+          </div>
+        </div>
+        {lastScan && <p className="mt-3 text-xs text-text-muted">Pemeriksaan terakhir selesai tanpa membuat salinan konfigurasi lokal.</p>}
+      </Card>
     </div>
   );
 }
