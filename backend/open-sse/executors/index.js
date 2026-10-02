@@ -1,4 +1,3 @@
-import { AntigravityExecutor } from "./antigravity.js";
 import { AzureExecutor } from "./azure.js";
 import { GeminiCLIExecutor } from "./gemini-cli.js";
 import { GithubExecutor } from "./github.js";
@@ -19,7 +18,6 @@ import { XiaomiTokenplanExecutor } from "./xiaomi-tokenplan.js";
 import { DefaultExecutor } from "./default.js";
 
 const executors = {
-  antigravity: new AntigravityExecutor(),
   azure: new AzureExecutor(),
   "gemini-cli": new GeminiCLIExecutor(),
   github: new GithubExecutor(),
