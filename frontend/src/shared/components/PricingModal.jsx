@@ -61,18 +61,18 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
         onClose();
       } else {
         const error = await response.json();
-        alert(`Failed to save pricing: ${error.error}`);
+        alert(`Gagal menyimpan harga: ${error.error}`);
       }
     } catch (error) {
-      console.error("Failed to save pricing:", error);
-      alert("Failed to save pricing");
+      console.error("Gagal menyimpan harga:", error);
+      alert("Gagal menyimpan harga");
     } finally {
       setSaving(false);
     }
   };
 
   const handleReset = async () => {
-    if (!confirm("Reset all pricing to defaults? This cannot be undone.")) return;
+    if (!confirm("Kembalikan semua harga ke nilai bawaan? Tindakan ini tidak dapat dibatalkan.")) return;
 
     try {
       const response = await fetch("/api/pricing", { method: "DELETE" });
@@ -97,7 +97,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
       <div className="bg-bg-base border border-border rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Pricing Configuration</h2>
+          <h2 className="text-xl font-semibold">Konfigurasi Harga</h2>
           <button
             onClick={onClose}
             className="text-text-muted hover:text-text text-2xl leading-none"
@@ -109,14 +109,14 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
           {loading ? (
-            <div className="text-center py-8 text-text-muted">Loading pricing data...</div>
+            <div className="text-center py-8 text-text-muted">Memuat data harga...</div>
           ) : (
             <div className="space-y-6">
               {/* Instructions */}
               <div className="bg-bg-subtle border border-border rounded-lg p-3 text-sm">
-                <p className="font-medium mb-1">Pricing Rates Format</p>
+                <p className="font-medium mb-1">Format Tarif Harga</p>
                 <p className="text-text-muted">
-                  All rates are in <strong>dollars per million tokens</strong> ($/1M tokens).
+                  All rates are in <strong>dolar per satu juta token</strong> ($/1M tokens).
                   Example: Input rate of 2.50 means $2.50 per 1,000,000 input tokens.
                 </p>
               </div>
@@ -168,7 +168,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
 
               {allProviders.length === 0 && (
                 <div className="text-center py-8 text-text-muted">
-                  No pricing data available
+                  Belum ada data harga
                 </div>
               )}
             </div>
@@ -182,7 +182,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
             className="px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded border border-red-500/20 transition-colors"
             disabled={saving}
           >
-            Reset to Defaults
+            Kembalikan ke Bawaan
           </button>
           <div className="flex gap-2">
             <button
@@ -190,14 +190,14 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
               className="px-4 py-2 text-sm text-text-muted hover:text-text border border-border rounded transition-colors"
               disabled={saving}
             >
-              Cancel
+              Batal
             </button>
             <button
               onClick={handleSave}
               className="px-4 py-2 text-sm bg-primary text-white rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
               disabled={saving}
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Menyimpan..." : "Simpan Perubahan"}
             </button>
           </div>
         </div>
