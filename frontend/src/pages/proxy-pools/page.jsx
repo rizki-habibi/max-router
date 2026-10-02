@@ -130,7 +130,7 @@ export default function ProxyPoolsPage() {
         notify.success(editingProxyPool ? "Proxy pool updated" : "Proxy pool created");
       } else {
         const data = await res.json();
-        notify.error(data.error || "Failed to save proxy pool");
+        notify.error(data.error || "Gagal menyimpan kumpulan proksi");
       }
     } catch (error) {
       console.log("Error saving proxy pool:", error);
@@ -1039,7 +1039,7 @@ export default function ProxyPoolsPage() {
               onClick={handleSimpan}
               disabled={!formData.name.trim() || !formData.proxyUrl.trim() || saving}
             >
-              {saving ? "Saving..." : "Simpan"}
+              {saving ? "Menyimpan..." : "Simpan"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeFormModal} disabled={saving}>
               Batal
