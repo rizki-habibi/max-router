@@ -52,7 +52,6 @@ export function detectFormat(body) {
   if (body.input && (Array.isArray(body.input) || typeof body.input === "string") && !body.messages) {
     return "openai-responses";
   }
-  }
 
   // Gemini format: has contents array
   if (body.contents && Array.isArray(body.contents)) {
