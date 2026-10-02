@@ -24,14 +24,14 @@ export async function OPTIONS() {
 export async function POST_handler(req, res) {
   await ensureInitialized();
   
-  const clonedReq = request.clone();
+  const clonedReq = req.clone ? req.clone() : new Request(`${req.protocol || 'http'}://${req.get?.('host') || 'localhost'}${req.originalUrl || req.url || '/'}`, { method: req.method, headers: new Headers(req.headers), body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined });
   let modelName = "llama3.2";
   try {
     const body = await clonedReq.json();
     modelName = body.model || "llama3.2";
   } catch {}
 
-  const response = await handleChat(request);
+  const response = await handleChat(clonedReq);
   return transformToOllama(response, modelName);
 }
 
