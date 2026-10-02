@@ -38,6 +38,12 @@ export const LOAD_CODE_ASSIST_METADATA = {
   pluginType: 2,
 };
 
+export function getPlatformUserAgent() {
+  const os = process.platform;
+  const arch = process.arch;
+  return `gemini-cli/9router ${os}/${arch}`;
+}
+
 export const CLIENT_METADATA = {
   ideType: 10,
   platform: process.platform === "win32" ? 5 : process.platform === "darwin" ? 2 : 3,
