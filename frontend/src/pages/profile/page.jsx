@@ -862,7 +862,7 @@ export default function ProfilPage() {
 
                 <div className="pt-2">
                   <Button type="submit" variant="primary" loading={passLoading} className="w-full sm:w-auto">
-                    {settings.hasPassword ? "Update Password" : "Set Password"}
+                    {settings.hasPassword ? "Perbarui Kata Sandi" : "Atur Kata Sandi"}
                   </Button>
                 </div>
               </form>
