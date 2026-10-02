@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
 import ThemeToggle from "@/shared/components/ThemeToggle";
-import { useHeaderCariStore } from "@/store/headerCariStore";
+import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
@@ -348,7 +348,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
             </div>
           )}
         </div>
-        <HeaderCari />
+        <HeaderSearch />
         <ThemeToggle />
         <HeaderMenu onLogout={handleLogout} isLoggedIn={isLoggedIn} />
       </div>
@@ -356,11 +356,11 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
   );
 }
 
-function HeaderCari() {
-  const visible = useHeaderCariStore((s) => s.visible);
-  const query = useHeaderCariStore((s) => s.query);
-  const placeholder = useHeaderCariStore((s) => s.placeholder);
-  const setQuery = useHeaderCariStore((s) => s.setQuery);
+function HeaderSearch() {
+  const visible = useHeaderSearchStore((s) => s.visible);
+  const query = useHeaderSearchStore((s) => s.query);
+  const placeholder = useHeaderSearchStore((s) => s.placeholder);
+  const setQuery = useHeaderSearchStore((s) => s.setQuery);
 
   if (!visible) return null;
 
