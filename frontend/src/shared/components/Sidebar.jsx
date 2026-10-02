@@ -130,7 +130,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                   onClick={() => setShowUpdateModal(true)}
                   className="px-2 py-1 rounded bg-green-600 hover:bg-green-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white text-[11px] font-semibold transition-colors cursor-pointer"
                 >
-                  Update now
+                  Perbarui sekarang
                 </button>
                 <button
                   onClick={() => copy(INSTALL_CMD)}
@@ -176,7 +176,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
           {/* System section */}
           <div className="pt-3 mt-2 space-y-0.5">
             <p className={cn("px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2", collapsed ? "hidden" : "")}>
-              System
+              Sistem
             </p>
 
 
@@ -285,9 +285,9 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         onClose={() => setShowUpdateModal(false)}
         onConfirm={handleUpdate}
         title="Perbarui 9Router V3"
-        message={`Show install command for v${updateInfo?.latestVersion || ""}? You can copy it and shutdown to install manually.`}
+        message={`Tampilkan perintah pemasangan untuk v${updateInfo?.latestVersion || ""}? Perintah dapat disalin lalu server dimatikan untuk pemasangan manual.`}
         confirmText="Tampilkan Perintah"
-        cancelText="Cancel"
+        cancelText="Batal"
         variant="primary"
       />
 
@@ -366,7 +366,7 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
       ) : (
         <div className="flex gap-2">
           <Button variant="secondary" onClick={onCancel} disabled={isCountingDown}>
-            Cancel
+            Batal
           </Button>
           <Button variant="primary" fullWidth onClick={onCopyAndShutdown} disabled={isCountingDown}>
             {copied ? "✓ Tersalin — mematikan..." : isCountingDown ? `Mematikan dalam ${countdown} detik` : "Salin & Matikan"}
