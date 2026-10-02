@@ -24,7 +24,7 @@ export function Spinner({ size = "md", className }) {
 }
 
 // Full page loading
-export function PageLoading({ message = "Loading..." }) {
+export function PageLoading({ message = "Memuat..." }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg">
       <Spinner size="xl" />
