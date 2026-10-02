@@ -1,5 +1,4 @@
 import { PROVIDERS } from "../config/providers.js";
-import { ANTIGRAVITY_ENDPOINTS } from "./../../src/lib/constants/antigravity.js";
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.js";
 
 const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
@@ -53,10 +52,6 @@ export function detectFormat(body) {
   if (body.input && (Array.isArray(body.input) || typeof body.input === "string") && !body.messages) {
     return "openai-responses";
   }
-
-  // Antigravity format: Gemini wrapped in body.request
-  if (body.request?.contents && body.userAgent === "antigravity") {
-    return "antigravity";
   }
 
   // Gemini format: has contents array
@@ -179,12 +174,6 @@ export function buildProviderUrl(provider, model, stream = true, options = {}) {
       return `${config.baseUrl}:${action}`;
     }
 
-    case "antigravity": {
-      return stream
-        ? `${ANTIGRAVITY_ENDPOINTS.streamGenerateContent}?alt=sse`
-        : ANTIGRAVITY_ENDPOINTS.generateContent;
-    }
-
     case "codex":
       return config.baseUrl;
 
@@ -239,7 +228,6 @@ export function buildProviderHeaders(provider, credentials, stream = true, body 
         }
         break;
   
-      case "antigravity":
       case "gemini-cli":
         // Antigravity and Gemini CLI use OAuth access token
         headers["Authorization"] = `Bearer ${credentials.accessToken}`;
