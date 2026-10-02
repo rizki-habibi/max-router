@@ -154,3 +154,5 @@ export const PROVIDERS = {
   GITLAB: "gitlab",
   CODEBUDDY: "codebuddy",
 };
+
+export function getOAuthClientMetadata() { return { ideType: 10, platform: 3, pluginType: 2 }; }
