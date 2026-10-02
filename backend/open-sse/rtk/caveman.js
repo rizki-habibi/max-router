@@ -18,10 +18,7 @@ export function injectCaveman(body, format, level) {
     case FORMATS.GEMINI:
     case FORMATS.GEMINI_CLI:
     case FORMATS.VERTEX:
-    case FORMATS.ANTIGRAVITY:
-      // Antigravity wraps Gemini shape in body.request → injectGeminiSystem handles it
-      injectGeminiSystem(body, prompt);
-      return;
+
     default:
       // OpenAI and OpenAI-shaped formats (responses/codex/cursor/kiro/ollama)
       injectMessagesSystem(body, prompt);
