@@ -38,6 +38,12 @@ export const LOAD_CODE_ASSIST_METADATA = {
   pluginType: 2,
 };
 
+export const CLIENT_METADATA = {
+  ideType: 10,
+  platform: process.platform === "win32" ? 5 : process.platform === "darwin" ? 2 : 3,
+  pluginType: 2,
+};
+
 export const INTERNAL_REQUEST_HEADER = { name: "x-request-source", value: "local" };
 
 // Suffix added to client tools when forwarding to Claude provider (anti-ban cloaking)
