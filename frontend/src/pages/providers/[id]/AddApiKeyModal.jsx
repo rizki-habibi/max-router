@@ -255,7 +255,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
             )}
             <div className="flex gap-2">
               <Button onClick={handleBulkSubmit} fullWidth disabled={saving || !bulkText.trim()}>
-                {saving ? "Adding..." : "Add All Keys"}
+                {saving ? "Menambahkan..." : "Tambah Semua Kunci"}
               </Button>
               <Button onClick={onClose} variant="ghost" fullWidth>Batal</Button>
             </div>
