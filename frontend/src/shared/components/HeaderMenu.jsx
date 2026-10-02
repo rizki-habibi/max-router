@@ -80,18 +80,18 @@ export default function HeaderMenu({ onLogout, isLoggedIn = true }) {
           <div className="absolute right-0 top-full mt-2 w-60 bg-surface border border-black/10 dark:border-white/10 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden py-1">
             <MenuItem
               icon="history"
-              label="Change Log"
+              label="Catatan Perubahan"
               onClick={() => { close(); setChangelogOpen(true); }}
             />
             <MenuItem
               icon={isDark ? "light_mode" : "dark_mode"}
-              label="Theme"
+              label="Tema"
               onClick={() => { toggleTheme(); close(); }}
             />
             {isLoggedIn && (
               <MenuItem
                 icon="power_settings_new"
-                label="Shutdown"
+                label="Matikan Server"
                 danger
                 onClick={() => { close(); setShutdownOpen(true); }}
               />
@@ -99,14 +99,14 @@ export default function HeaderMenu({ onLogout, isLoggedIn = true }) {
             {isLoggedIn ? (
               <MenuItem
                 icon="logout"
-                label="Logout"
+                label="Keluar"
                 danger
                 onClick={() => { close(); onLogout(); }}
               />
             ) : (
               <MenuItem
                 icon="login"
-                label="Login"
+                label="Masuk"
                 onClick={() => { close(); window.location.href = "/login?force=true"; }}
               />
             )}
@@ -119,10 +119,10 @@ export default function HeaderMenu({ onLogout, isLoggedIn = true }) {
         isOpen={shutdownOpen}
         onClose={() => setShutdownOpen(false)}
         onConfirm={handleShutdown}
-        title="Close Proxy"
-        message="Are you sure you want to close the proxy server?"
-        confirmText="Close"
-        cancelText="Cancel"
+        title="Matikan Proksi"
+        message="Yakin ingin mematikan server proksi?"
+        confirmText="Matikan"
+        cancelText="Batal"
         variant="danger"
         loading={isShuttingDown}
       />
