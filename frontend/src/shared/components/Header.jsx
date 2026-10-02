@@ -68,21 +68,21 @@ const getPageInfo = (pathname) => {
 
   if (pathname.includes("/providers") && !pathname.includes("/media-providers"))
     return {
-      title: "Providers",
-      description: "Manage your AI provider connections",
+      title: "Penyedia",
+      description: "Kelola koneksi penyedia AI",
       icon: "dns",
       breadcrumbs: [],
     };
   if (pathname.includes("/combos"))
     return {
-      title: "Combos",
-      description: "Model combos with fallback",
+      title: "Gabungan",
+      description: "Gabungan model dengan cadangan",
       icon: "layers",
       breadcrumbs: [],
     };
   if (pathname.includes("/usage"))
     return {
-      title: "Usage & Analytics",
+      title: "Penggunaan & Analitik",
       description:
         "Monitor your API usage, token consumption, and request logs",
       icon: "bar_chart",
@@ -90,57 +90,57 @@ const getPageInfo = (pathname) => {
     };
   if (pathname.includes("/auth-files"))
     return {
-      title: "Auth Files",
+      title: "Berkas Autentikasi",
       description: "Map provider credentials stored in the local database",
       icon: "vpn_key",
       breadcrumbs: [],
     };
   if (pathname.includes("/quota"))
     return {
-      title: "Quota Tracker",
-      description: "Track and manage your API quota limits",
+      title: "Pelacak Kuota",
+      description: "Pantau dan kelola batas kuota API",
       icon: "data_usage",
       breadcrumbs: [],
     };
   if (pathname.includes("/proxy-pools"))
     return {
-      title: "Proxy Pools",
-      description: "Manage your proxy pool configurations",
+      title: "Kumpulan Proksi",
+      description: "Kelola konfigurasi kumpulan proksi",
       icon: "lan",
       breadcrumbs: [],
     };
   if (pathname.includes("/endpoint"))
     return {
       title: "Endpoint",
-      description: "API endpoint configuration",
+      description: "Konfigurasi endpoint API",
       icon: "api",
       breadcrumbs: [],
     };
   if (pathname.includes("/profile"))
     return {
-      title: "Settings",
-      description: "Manage your preferences",
+      title: "Pengaturan",
+      description: "Kelola preferensi Anda",
       icon: "settings",
       breadcrumbs: [],
     };
   if (pathname.includes("/translator"))
     return {
-      title: "Translator",
-      description: "Debug translation flow between formats",
+      title: "Penerjemah",
+      description: "Debug alur konversi antarformat",
       icon: "translate",
       breadcrumbs: [],
     };
   if (pathname.includes("/console-log"))
     return {
-      title: "Console Log",
-      description: "Live server console output",
+      title: "Log Konsol",
+      description: "Keluaran konsol server secara langsung",
       icon: "monitor",
       breadcrumbs: [],
     };
   if (pathname === "/dashboard")
     return {
       title: "Endpoint",
-      description: "API endpoint configuration",
+      description: "Konfigurasi endpoint API",
       icon: "api",
       breadcrumbs: [],
     };
@@ -204,7 +204,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
   };
 
   return (
-    <header className="shrink-0 flex items-center justify-between gap-3 px-4 lg:px-8 pt-3 pb-2 border-b border-border-subtle bg-surface/60 backdrop-blur-xl lg:bg-transparent lg:backdrop-blur-none z-20">
+    <header className="shrink-0 flex items-center justify-between gap-2 px-3 sm:px-4 lg:px-8 pt-2 sm:pt-3 pb-2 border-b border-border-subtle bg-surface/60 backdrop-blur-xl lg:bg-transparent lg:backdrop-blur-none z-20">
       {/* Mobile menu button */}
       <div className="flex items-center gap-3 lg:hidden shrink-0">
         {showMenuButton && (
