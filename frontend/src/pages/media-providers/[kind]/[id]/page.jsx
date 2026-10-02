@@ -67,20 +67,20 @@ const KIND_EXAMPLE_CONFIG = {
   webSearch: {
     inputLabel: "Query",
     inputPlaceholder: "What is the latest news about AI?",
-    defaultInput: "What is the latest news about AI?",
+    defaultMasukan: "What is the latest news about AI?",
     bodyKey: "query",
     defaultResponse: `{\n  "results": [\n    { "title": "...", "url": "...", "snippet": "..." }\n  ]\n}`,
     extraFields: [
       { key: "search_type", label: "Type", type: "select", default: "web", options: ["web", "news"] },
       { key: "max_results", label: "Max results", type: "number", default: 5, min: 1, max: 100 },
       { key: "country", label: "Country", type: "text", default: "" },
-      { key: "language", label: "Language", type: "text", default: "" },
+      { key: "language", label: "Bahasa", type: "text", default: "" },
     ],
   },
   webFetch: {
     inputLabel: "URL",
     inputPlaceholder: "https://example.com",
-    defaultInput: "https://example.com",
+    defaultMasukan: "https://example.com",
     bodyKey: "url",
     defaultResponse: `{\n  "content": "...",\n  "title": "...",\n  "url": "..."\n}`,
     extraFields: [
@@ -91,7 +91,7 @@ const KIND_EXAMPLE_CONFIG = {
   image: {
     inputLabel: "Prompt",
     inputPlaceholder: "A cute cat wearing a hat",
-    defaultInput: "A cute cat wearing a hat",
+    defaultMasukan: "A cute cat wearing a hat",
     bodyKey: "prompt",
     defaultResponse: `{\n  "data": [\n    { "url": "...", "b64_json": "..." }\n  ]\n}`,
     extraFields: [
@@ -108,7 +108,7 @@ const KIND_EXAMPLE_CONFIG = {
   imageToText: {
     inputLabel: "Image URL",
     inputPlaceholder: "https://example.com/image.png",
-    defaultInput: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
+    defaultMasukan: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
     bodyKey: "url",
     extraBody: { prompt: "Describe this image in detail" },
     defaultResponse: `{\n  "text": "A cat sitting on a windowsill...",\n  "model": "..."\n}`,
@@ -116,7 +116,7 @@ const KIND_EXAMPLE_CONFIG = {
   video: {
     inputLabel: "Prompt",
     inputPlaceholder: "A serene lake at sunset",
-    defaultInput: "A serene lake at sunset",
+    defaultMasukan: "A serene lake at sunset",
     bodyKey: "prompt",
     defaultResponse: `{\n  "data": [\n    { "url": "..." }\n  ]\n}`,
     extraFields: [
@@ -131,7 +131,7 @@ const KIND_EXAMPLE_CONFIG = {
   music: {
     inputLabel: "Prompt",
     inputPlaceholder: "A calm piano melody",
-    defaultInput: "A calm piano melody",
+    defaultMasukan: "A calm piano melody",
     bodyKey: "prompt",
     defaultResponse: `{\n  "data": [\n    { "url": "...", "format": "mp3" }\n  ]\n}`,
   },
@@ -144,7 +144,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
   const embeddingModels = isCustom ? [] : getModelsByProviderId(providerId).filter((m) => m.type === "embedding");
 
   const [selectedModel, setSelectedModel] = useState(embeddingModels[0]?.id ?? "");
-  const [input, setInput] = useState("The quick brown fox jumps over the lazy dog");
+  const [input, setMasukan] = useState("The quick brown fox jumps over the lazy dog");
   const [dimensions, setDimensions] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [useTunnel, setUseTunnel] = useState(false);
@@ -286,18 +286,18 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
           />
         </Row>
 
-        {/* Input */}
-        <Row label="Input">
+        {/* Masukan */}
+        <Row label="Masukan">
           <div className="relative">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setMasukan(e.target.value)}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             />
             {input && (
               <button
                 type="button"
-                onClick={() => setInput("")}
+                onClick={() => setMasukan("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
               >
                 <span className="material-symbols-outlined text-[14px]">close</span>
@@ -396,7 +396,7 @@ function TtsExampleCard({ providerId }) {
   });
 
   // Form state
-  const [input, setInput]               = useState("Hello, this is a text to speech test.");
+  const [input, setMasukan]               = useState("Hello, this is a text to speech test.");
   const [apiKey, setApiKey]             = useState("");
   const [useTunnel, setUseTunnel]       = useState(false);
   const [localEndpoint, setLocalEndpoint]   = useState("");
@@ -517,7 +517,7 @@ function TtsExampleCard({ providerId }) {
     if (voices.length) {
       setSelectedVoice(voices[0].id);
       setSelectedVoiceName(voices[0].name);
-      if (config.hasVoiceIdInput) setVoiceId(voices[0].id);
+      if (config.hasVoiceIdMasukan) setVoiceId(voices[0].id);
     }
   };
 
@@ -530,7 +530,7 @@ function TtsExampleCard({ providerId }) {
 
   const endpoint = useTunnel ? tunnelEndpoint : localEndpoint;
   // For ElevenLabs/config-driven: prefer manual voiceId (if any), else fall back to selectedVoice
-  const activeVoiceId = config.hasVoiceIdInput ? (voiceId || selectedVoice) : selectedVoice;
+  const activeVoiceId = config.hasVoiceIdMasukan ? (voiceId || selectedVoice) : selectedVoice;
   const modelFull = (() => {
     if (config.hasModelSelector && selectedModel && activeVoiceId) return `${providerAlias}/${selectedModel}/${activeVoiceId}`;
     if (config.hasModelSelector && selectedModel) return `${providerAlias}/${selectedModel}`;
@@ -616,7 +616,7 @@ function TtsExampleCard({ providerId }) {
           </Row>
           <Row label="API Key">
             <span className="px-3 py-1.5 text-sm font-mono text-text-main bg-sidebar rounded-lg truncate block">
-              {apiKey ? `${apiKey.slice(0, 8)}${"•".repeat(Math.min(20, apiKey.length - 8))}` : <span className="text-text-muted italic">No key configured</span>}
+              {apiKey ? `${apiKey.slice(0, 8)}${"•".repeat(Math.min(20, apiKey.length - 8))}` : <span className="text-text-muted italic">Kunci belum dikonfigurasi</span>}
             </span>
           </Row>
 
@@ -639,7 +639,7 @@ function TtsExampleCard({ providerId }) {
 
           {/* Language hint dropdown (Gemini) — sends body.language to guide pronunciation */}
           {config.hasLanguageHint && (
-            <Row label="Language">
+            <Row label="Bahasa">
               <select
                 value={languageHint}
                 onChange={(e) => setLanguageHint(e.target.value)}
@@ -655,7 +655,7 @@ function TtsExampleCard({ providerId }) {
 
           {/* Language row + Browse button (edge-tts, local-device, elevenlabs) */}
           {config.hasBrowseButton && (
-            <Row label="Language">
+            <Row label="Bahasa">
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <button
                   onClick={openModal}
@@ -663,7 +663,7 @@ function TtsExampleCard({ providerId }) {
                 >
                   {selectedLang
                     ? <span className="text-text-main">{languages.find((l) => l.code === selectedLang)?.name || selectedLang}</span>
-                    : <span className="text-text-muted">No language selected</span>}
+                    : <span className="text-text-muted">Belum ada bahasa yang dipilih</span>}
                 </button>
                 <button
                   onClick={openModal}
@@ -686,7 +686,7 @@ function TtsExampleCard({ providerId }) {
                     onClick={() => {
                       setSelectedVoice(v.id);
                       setSelectedVoiceName(v.name);
-                      if (config.hasVoiceIdInput) setVoiceId(v.id);
+                      if (config.hasVoiceIdMasukan) setVoiceId(v.id);
                     }}
                     className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                       selectedVoice === v.id
@@ -708,7 +708,7 @@ function TtsExampleCard({ providerId }) {
           )}
 
           {/* Voice ID input (ElevenLabs) — manual entry or auto-fill from chip */}
-          {config.hasVoiceIdInput && (
+          {config.hasVoiceIdMasukan && (
             <Row label="Voice ID">
               <div className="flex flex-col gap-1">
                 <div className="relative">
@@ -737,7 +737,7 @@ function TtsExampleCard({ providerId }) {
 
           {/* Google TTS: Language dropdown */}
           {config.hasLanguageDropdown && (
-            <Row label="Language">
+            <Row label="Bahasa">
               <select
                 value={selectedVoice}
                 onChange={(e) => {
@@ -754,18 +754,18 @@ function TtsExampleCard({ providerId }) {
             </Row>
           )}
 
-          {/* Input */}
-          <Row label="Input">
+          {/* Masukan */}
+          <Row label="Masukan">
             <div className="relative">
               <input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => setMasukan(e.target.value)}
                 className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               />
               {input && (
                 <button
                   type="button"
-                  onClick={() => setInput("")}
+                  onClick={() => setMasukan("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                 >
                   <span className="material-symbols-outlined text-[14px]">close</span>
@@ -774,8 +774,8 @@ function TtsExampleCard({ providerId }) {
             </div>
           </Row>
 
-          {/* Output Format */}
-          <Row label="Output Format">
+          {/* Format Keluaran */}
+          <Row label="Format Keluaran">
             <select
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
@@ -867,7 +867,7 @@ function TtsExampleCard({ providerId }) {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-xl">
-              <h3 className="text-sm font-semibold">Select Language</h3>
+              <h3 className="text-sm font-semibold">Pilih Bahasa</h3>
               <button onClick={() => setModalOpen(false)} className="text-text-muted hover:text-primary transition-colors">
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
@@ -879,7 +879,7 @@ function TtsExampleCard({ providerId }) {
                 autoFocus
                 value={modalSearch}
                 onChange={(e) => setModalSearch(e.target.value)}
-                placeholder="Search language..."
+                placeholder="Cari bahasa..."
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               />
             </div>
@@ -888,7 +888,7 @@ function TtsExampleCard({ providerId }) {
             <div className="overflow-y-auto flex-1 p-2">
               {modalError && <p className="text-xs text-red-500 px-2 py-1">{modalError}</p>}
               {modalLoading ? (
-                <p className="text-xs text-text-muted px-2 py-3">Loading...</p>
+                <p className="text-xs text-text-muted px-2 py-3">Memuat...</p>
               ) : (
                 <div className="flex flex-col gap-0.5">
                   {filteredLanguages.map((c) => (
@@ -909,7 +909,7 @@ function TtsExampleCard({ providerId }) {
                     </button>
                   ))}
                   {filteredLanguages.length === 0 && (
-                    <p className="text-xs text-text-muted px-2 py-3">No languages found.</p>
+                    <p className="text-xs text-text-muted px-2 py-3">Tidak ada bahasa yang ditemukan.</p>
                   )}
                 </div>
               )}
@@ -942,7 +942,7 @@ function GenericExampleCard({ providerId, kind }) {
   const supportsEdit = !!selectedModelObj?.capabilities?.includes("edit");
   const supportsMask = !!selectedModelObj?.capabilities?.includes("mask");
 
-  const [input, setInput] = useState(safeExConfig.defaultInput || "");
+  const [input, setMasukan] = useState(safeExConfig.defaultMasukan || "");
   const [refImage, setRefImage] = useState("");
   const [maskImage, setMaskImage] = useState("");
   const [extraValues, setExtraValues] = useState(() =>
@@ -955,7 +955,7 @@ function GenericExampleCard({ providerId, kind }) {
   const [result, setResult] = useState(null);
   const [progress, setProgress] = useState(null); // { stage, bytesReceived }
   const [partialImage, setPartialImage] = useState(null);
-  const [imageOutputFormat, setImageOutputFormat] = useState("json"); // json | binary
+  const [imageKeluaranFormat, setImageKeluaranFormat] = useState("json"); // json | binary
   const [binaryImageUrl, setBinaryImageUrl] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
@@ -1041,7 +1041,7 @@ function GenericExampleCard({ providerId, kind }) {
   };
 
   // Streaming supported for codex image (Plus/Pro accounts) — disabled when binary output requested
-  const wantBinary = kind === "image" && imageOutputFormat === "binary";
+  const wantBinary = kind === "image" && imageKeluaranFormat === "binary";
   const useStreaming = kind === "image" && providerId === "codex" && !wantBinary;
   const apiPathWithQuery = `${apiPath}${wantBinary ? "?response_format=binary" : ""}`;
   const headersPreview = `-H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}"${pinnedConnectionId ? ` \\\n  -H "x-connection-id: ${pinnedConnectionId}"` : ""}${useStreaming ? ` \\\n  -H "Accept: text/event-stream"` : ""}`;
@@ -1165,7 +1165,7 @@ function GenericExampleCard({ providerId, kind }) {
             <input
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              placeholder="Enter model id (provider-specific)"
+              placeholder="Masukkan ID model sesuai penyedia"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
             />
           </Row>
@@ -1195,7 +1195,7 @@ function GenericExampleCard({ providerId, kind }) {
         {/* API Key */}
         <Row label="API Key">
           <span className="px-3 py-1.5 text-sm font-mono text-text-main bg-sidebar rounded-lg truncate block">
-            {apiKey ? `${apiKey.slice(0, 8)}${"\u2022".repeat(Math.min(20, apiKey.length - 8))}` : <span className="text-text-muted italic">No key configured</span>}
+            {apiKey ? `${apiKey.slice(0, 8)}${"\u2022".repeat(Math.min(20, apiKey.length - 8))}` : <span className="text-text-muted italic">Kunci belum dikonfigurasi</span>}
           </span>
         </Row>
 
@@ -1221,19 +1221,19 @@ function GenericExampleCard({ providerId, kind }) {
           </Row>
         )}
 
-        {/* Input */}
+        {/* Masukan */}
         <Row label={exConfig.inputLabel}>
           <div className="relative">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setMasukan(e.target.value)}
               placeholder={exConfig.inputPlaceholder}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             />
             {input && (
               <button
                 type="button"
-                onClick={() => setInput("")}
+                onClick={() => setMasukan("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
               >
                 <span className="material-symbols-outlined text-[14px]">close</span>
@@ -1366,12 +1366,12 @@ function GenericExampleCard({ providerId, kind }) {
           });
         })()}
 
-        {/* Output Format toggle (image only) — last */}
+        {/* Format Keluaran toggle (image only) — last */}
         {kind === "image" && (
-          <Row label="Output Format">
+          <Row label="Format Keluaran">
             <select
-              value={imageOutputFormat}
-              onChange={(e) => setImageOutputFormat(e.target.value)}
+              value={imageKeluaranFormat}
+              onChange={(e) => setImageKeluaranFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             >
               <option value="json">JSON (Base64)</option>
@@ -1630,7 +1630,7 @@ function SttExampleCard({ providerId }) {
             <input
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              placeholder="Enter model id"
+              placeholder="Masukkan ID model"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
             />
           </Row>
@@ -1660,7 +1660,7 @@ function SttExampleCard({ providerId }) {
         {/* API Key */}
         <Row label="API Key">
           <span className="px-3 py-1.5 text-sm font-mono text-text-main bg-sidebar rounded-lg truncate block">
-            {apiKey ? `${apiKey.slice(0, 8)}${"\u2022".repeat(Math.min(20, apiKey.length - 8))}` : <span className="text-text-muted italic">No key configured</span>}
+            {apiKey ? `${apiKey.slice(0, 8)}${"\u2022".repeat(Math.min(20, apiKey.length - 8))}` : <span className="text-text-muted italic">Kunci belum dikonfigurasi</span>}
           </span>
         </Row>
 
@@ -1683,7 +1683,7 @@ function SttExampleCard({ providerId }) {
 
         {/* Language (if model supports) */}
         {allowedParams.includes("language") && (
-          <Row label="Language">
+          <Row label="Bahasa">
             <input
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -1800,7 +1800,7 @@ export default function MediaProviderDetailPage() {
   const isCustom = isCustomEmbeddingProvider(id) && kind === "embedding";
 
   const handleDeleteCustom = async () => {
-    if (!confirm("Delete this Custom Embedding node?")) return;
+    if (!confirm("Hapus simpul Embedding Kustom ini?")) return;
     try {
       const res = await fetch(`/api/provider-nodes/${id}`, { method: "DELETE" });
       if (res.ok) navigate(`/dashboard/media-providers/${kind}`);
@@ -1840,7 +1840,7 @@ export default function MediaProviderDetailPage() {
   if (!isCustom && !builtInProvider) return null; // notFound removed
   if (isCustom && !customLoading && !customNode) return null; // notFound removed
   if (isCustom && customLoading) {
-    return <div className="text-text-muted text-sm py-12 text-center">Loading...</div>;
+    return <div className="text-text-muted text-sm py-12 text-center">Memuat...</div>;
   }
 
   const kinds = isCustom ? ["embedding"] : (provider.serviceKinds ?? ["llm"]);
