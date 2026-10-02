@@ -9,7 +9,6 @@ export { GeminiCLIService } from "./gemini.js";
 export { QwenService } from "./qwen.js";
 export { IFlowService } from "./iflow.js";
 export { QoderService } from "./qoder.js";
-export { AntigravityService } from "./antigravity.js";
 export { OpenAIService } from "./openai.js";
 export { GitHubService } from "./github.js";
 export { KiroService } from "./kiro.js";
