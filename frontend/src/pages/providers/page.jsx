@@ -46,14 +46,14 @@ function getStatusDisplay(connected, error, errorCode) {
   if (connected > 0) {
     parts.push(
       <Badge key="connected" variant="success" size="sm" dot>
-        {connected} Connected
+        {connected} Tersambung
       </Badge>,
     );
   }
   if (error > 0) {
     const errText = errorCode
-      ? `${error} Error (${errorCode})`
-      : `${error} Error`;
+      ? `${error} Kesalahan (${errorCode})`
+      : `${error} Kesalahan`;
     parts.push(
       <Badge key="error" variant="error" size="sm" dot>
         {errText}
@@ -388,15 +388,15 @@ export default function ProvidersPage() {
                   ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                   : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
               }`}
-              title="Test semua koneksi OAuth"
-              aria-label="Test semua koneksi OAuth"
+              title="Uji semua koneksi OAuth"
+              aria-label="Uji semua koneksi OAuth"
             >
               <span
                 className={`material-symbols-outlined text-[14px]${testingMode === "oauth" ? " animate-spin" : ""}`}
               >
                 play_arrow
               </span>
-              {testingMode === "oauth" ? "Menguji..." : "Test Semua"}
+              {testingMode === "oauth" ? "Menguji..." : "Uji Semua"}
             </button>
           </div>
         </div>
@@ -430,7 +430,7 @@ export default function ProvidersPage() {
                 ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
             }`}
-            title="Test semua koneksi gratis"
+            title="Uji semua koneksi gratis"
             aria-label="Test semua koneksi penyedia gratis"
           >
             <span
@@ -438,7 +438,7 @@ export default function ProvidersPage() {
             >
               play_arrow
             </span>
-            {testingMode === "free" ? "Menguji..." : "Test Semua"}
+            {testingMode === "free" ? "Menguji..." : "Uji Semua"}
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -481,7 +481,7 @@ export default function ProvidersPage() {
                 ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
             }`}
-            title="Test semua koneksi kunci API"
+            title="Uji semua koneksi kunci API"
             aria-label="Test semua koneksi kunci API"
           >
             <span
@@ -489,7 +489,7 @@ export default function ProvidersPage() {
             >
               play_arrow
             </span>
-            {testingMode === "apikey" ? "Menguji..." : "Test Semua"}
+            {testingMode === "apikey" ? "Menguji..." : "Uji Semua"}
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -1118,7 +1118,7 @@ function ProviderTestResultsView({ results }) {
       free: "Free",
       apikey: "Kunci API",
       provider: "Penyedia",
-      all: "All",
+      all: "Semua",
     }[mode] || mode;
 
   return (
@@ -1127,15 +1127,15 @@ function ProviderTestResultsView({ results }) {
         <div className="flex flex-wrap items-center gap-2 text-xs mb-1 sm:gap-3">
           <span className="text-text-muted">{modeLabel} Test</span>
           <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
-            {summary.passed} passed
+            {summary.passed} berhasil
           </span>
           {summary.failed > 0 && (
             <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 font-medium">
-              {summary.failed} failed
+              {summary.failed} gagal
             </span>
           )}
           <span className="text-text-muted sm:ml-auto">
-            {summary.total} tested
+            {summary.total} diuji
           </span>
         </div>
       )}
@@ -1175,7 +1175,7 @@ function ProviderTestResultsView({ results }) {
       ))}
       {items.length === 0 && (
         <div className="text-center py-4 text-text-muted text-sm">
-          No active connections found for this group.
+          Tidak ada koneksi aktif pada kelompok ini.
         </div>
       )}
     </div>
