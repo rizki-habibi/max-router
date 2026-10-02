@@ -1768,8 +1768,8 @@ export default function ProviderDetailPage() {
         onConfirm={handleAgRiskConfirm}
         title="Risk Notice"
         message={providerInfo?.deprecationNotice}
-        confirmText="I Understand, Continue"
-        cancelText="Cancel"
+        confirmText="Saya Mengerti, Lanjutkan"
+        cancelText="Batal"
         variant="danger"
       />
 
