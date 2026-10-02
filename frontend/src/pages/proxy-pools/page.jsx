@@ -30,21 +30,21 @@ export default function ProxyPoolsPage() {
   const [proxyPools, setProxyPools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [showBatchImportModal, setShowBatchImportModal] = useState(false);
+  const [showBatchImporModal, setShowBatchImporModal] = useState(false);
   const [showVercelModal, setShowVercelModal] = useState(false);
   const [showCloudflareModal, setShowCloudflareModal] = useState(false);
   const [showDenoModal, setShowDenoModal] = useState(false);
   const [showRelayMenu, setShowRelayMenu] = useState(false);
-  const [editingProxyPool, setEditingProxyPool] = useState(null);
+  const [editingProxyPool, setUbahingProxyPool] = useState(null);
   const [formData, setFormData] = useState(normalizeFormData());
-  const [batchImportText, setBatchImportText] = useState("");
+  const [batchImporText, setBatchImporText] = useState("");
   const [vercelForm, setVercelForm] = useState({ vercelToken: "", projectName: "vercel-relay" });
   const [cloudflareForm, setCloudflareForm] = useState({ accountId: "", apiToken: "", projectName: "cloudflare-relay" });
   const [denoForm, setDenoForm] = useState({ denoToken: "", orgDomain: "", projectName: "" });
   const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [importing, setImporing] = useState(false);
   const [deploying, setDeploying] = useState(false);
-  const [testingId, setTestingId] = useState(null);
+  const [testingId, setUjiingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [healthChecking, setHealthChecking] = useState(false);
   const [healthProgress, setHealthProgress] = useState({ current: 0, total: 0 });
@@ -84,17 +84,17 @@ export default function ProxyPoolsPage() {
   }, [fetchProxyPools]);
 
   const resetForm = () => {
-    setEditingProxyPool(null);
+    setUbahingProxyPool(null);
     setFormData(normalizeFormData());
   };
 
-  const openCreateModal = () => {
+  const openBuatModal = () => {
     resetForm();
     setShowFormModal(true);
   };
 
-  const openEditModal = (proxyPool) => {
-    setEditingProxyPool(proxyPool);
+  const openUbahModal = (proxyPool) => {
+    setUbahingProxyPool(proxyPool);
     setFormData(normalizeFormData(proxyPool));
     setShowFormModal(true);
   };
@@ -104,7 +104,7 @@ export default function ProxyPoolsPage() {
     resetForm();
   };
 
-  const handleSave = async () => {
+  const handleSimpan = async () => {
     const payload = {
       name: formData.name.trim(),
       proxyUrl: formData.proxyUrl.trim(),
@@ -117,9 +117,9 @@ export default function ProxyPoolsPage() {
 
     setSaving(true);
     try {
-      const isEdit = !!editingProxyPool;
-      const res = await fetch(isEdit ? `/api/proxy-pools/${editingProxyPool.id}` : "/api/proxy-pools", {
-        method: isEdit ? "PUT" : "POST",
+      const isUbah = !!editingProxyPool;
+      const res = await fetch(isUbah ? `/api/proxy-pools/${editingProxyPool.id}` : "/api/proxy-pools", {
+        method: isUbah ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -139,10 +139,10 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const handleDelete = async (proxyPool) => {
+  const handleHapus = async (proxyPool) => {
     setConfirmState({
-      title: "Delete Proxy Pool",
-      message: `Delete proxy pool "${proxyPool.name}"?`,
+      title: "Hapus Proxy Pool",
+      message: `Hapus proxy pool "${proxyPool.name}"?`,
       onConfirm: async () => {
         setConfirmState(null);
         try {
@@ -167,8 +167,8 @@ export default function ProxyPoolsPage() {
     });
   };
 
-  const handleTest = async (proxyPoolId) => {
-    setTestingId(proxyPoolId);
+  const handleUji = async (proxyPoolId) => {
+    setUjiingId(proxyPoolId);
     try {
       const res = await fetch(`/api/proxy-pools/${proxyPoolId}/test`, { method: "POST" });
       const data = await res.json();
@@ -184,7 +184,7 @@ export default function ProxyPoolsPage() {
       console.log("Error testing proxy pool:", error);
       notify.error("Failed to test proxy");
     } finally {
-      setTestingId(null);
+      setUjiingId(null);
     }
   };
 
@@ -235,11 +235,11 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const bulkDelete = async () => {
+  const bulkHapus = async () => {
     if (selectedIds.length === 0) return;
     setConfirmState({
-      title: "Delete Proxy Pools",
-      message: `Delete ${selectedIds.length} proxy pool(s)?`,
+      title: "Hapus Proxy Pools",
+      message: `Hapus ${selectedIds.length} proxy pool(s)?`,
       onConfirm: async () => {
         setConfirmState(null);
         setBulkBusy(true);
@@ -255,7 +255,7 @@ export default function ProxyPoolsPage() {
           }
           await fetchProxyPools();
           clearSelection();
-          notify.success(`Deleted ${ok}${blocked ? `, ${blocked} bound` : ""}${failed ? `, ${failed} failed` : ""}`);
+          notify.success(`Hapusd ${ok}${blocked ? `, ${blocked} bound` : ""}${failed ? `, ${failed} failed` : ""}`);
         } finally {
           setBulkBusy(false);
         }
@@ -331,14 +331,14 @@ export default function ProxyPoolsPage() {
     setSelectedIds((prev) => prev.filter((id) => proxyPools.some((p) => p.id === id)));
   }, [proxyPools]);
 
-  const openBatchImportModal = () => {
-    setBatchImportText("");
-    setShowBatchImportModal(true);
+  const openBatchImporModal = () => {
+    setBatchImporText("");
+    setShowBatchImporModal(true);
   };
 
-  const closeBatchImportModal = () => {
+  const closeBatchImporModal = () => {
     if (importing) return;
-    setShowBatchImportModal(false);
+    setShowBatchImporModal(false);
   };
 
   const openVercelModal = () => {
@@ -386,11 +386,11 @@ export default function ProxyPoolsPage() {
         closeVercelModal();
         notify.success(`Deployed: ${data.deployUrl}`);
       } else {
-        notify.error(data.error || "Deploy failed");
+        notify.error(data.error || "Penerapan gagal");
       }
     } catch (error) {
       console.log("Error deploying Vercel relay:", error);
-      notify.error("Deploy failed");
+      notify.error("Penerapan gagal");
     } finally {
       setDeploying(false);
     }
@@ -411,11 +411,11 @@ export default function ProxyPoolsPage() {
         closeCloudflareModal();
         notify.success(`Deployed: ${data.deployUrl}`);
       } else {
-        notify.error(data.error || "Deploy failed");
+        notify.error(data.error || "Penerapan gagal");
       }
     } catch (error) {
       console.log("Error deploying Cloudflare relay:", error);
-      notify.error("Deploy failed");
+      notify.error("Penerapan gagal");
     } finally {
       setDeploying(false);
     }
@@ -436,11 +436,11 @@ export default function ProxyPoolsPage() {
         closeDenoModal();
         notify.success(`Deployed: ${data.deployUrl}`);
       } else {
-        notify.error(data.error || "Deploy failed");
+        notify.error(data.error || "Penerapan gagal");
       }
     } catch (error) {
       console.log("Error deploying Deno relay:", error);
-      notify.error("Deploy failed");
+      notify.error("Penerapan gagal");
     } finally {
       setDeploying(false);
     }
@@ -455,7 +455,7 @@ export default function ProxyPoolsPage() {
       const hostLabel = parsed.port ? `${parsed.hostname}:${parsed.port}` : parsed.hostname;
       return {
         proxyUrl: parsed.toString(),
-        name: `Imported ${hostLabel}`,
+        name: `Impored ${hostLabel}`,
       };
     }
 
@@ -470,15 +470,15 @@ export default function ProxyPoolsPage() {
       const parsed = new URL(proxyUrl);
       return {
         proxyUrl: parsed.toString(),
-        name: `Imported ${host}:${port}`,
+        name: `Impored ${host}:${port}`,
       };
     }
 
     throw new Error("Unsupported format");
   };
 
-  const handleBatchImport = async () => {
-    const lines = batchImportText
+  const handleBatchImpor = async () => {
+    const lines = batchImporText
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean);
@@ -510,7 +510,7 @@ export default function ProxyPoolsPage() {
       return;
     }
 
-    setImporting(true);
+    setImporing(true);
     try {
       const existingKeys = new Set(
         proxyPools.map((pool) => `${(pool.proxyUrl || "").trim()}|||${(pool.noProxy || "").trim()}`)
@@ -547,13 +547,13 @@ export default function ProxyPoolsPage() {
       }
 
       await fetchProxyPools();
-      setShowBatchImportModal(false);
-      notify.success(`Batch import completed: Created ${created}, Skipped ${skipped}, Failed ${failed}`);
+      setShowBatchImporModal(false);
+      notify.success(`Impor massal selesai: Dibuat ${created}, Dilewati ${skipped}, Gagal ${failed}`);
     } catch (error) {
       console.log("Error batch importing proxies:", error);
-      notify.error("Batch import failed");
+      notify.error("Impor massal gagal");
     } finally {
-      setImporting(false);
+      setImporing(false);
     }
   };
 
@@ -628,10 +628,10 @@ export default function ProxyPoolsPage() {
             )}
           </div>
 
-          <Button size="sm" variant="secondary" icon="upload" onClick={openBatchImportModal}>
-            Batch Import
+          <Button size="sm" variant="secondary" icon="upload" onClick={openBatchImporModal}>
+            Batch Impor
           </Button>
-          <Button size="sm" icon="add" onClick={openCreateModal}>Add Proxy Pool</Button>
+          <Button size="sm" icon="add" onClick={openBuatModal}>Add Proxy Pool</Button>
         </div>
       </div>
 
@@ -675,8 +675,8 @@ export default function ProxyPoolsPage() {
                   <Button size="sm" variant="secondary" icon="toggle_off" onClick={() => bulkSetActive(false)} disabled={bulkBusy || healthChecking}>
                     Deactivate
                   </Button>
-                  <Button size="sm" variant="secondary" icon="delete" onClick={bulkDelete} disabled={bulkBusy || healthChecking}>
-                    Delete
+                  <Button size="sm" variant="secondary" icon="delete" onClick={bulkHapus} disabled={bulkBusy || healthChecking}>
+                    Hapus
                   </Button>
                   <Button size="sm" variant="ghost" onClick={clearSelection} disabled={bulkBusy || healthChecking}>
                     Clear
@@ -691,9 +691,9 @@ export default function ProxyPoolsPage() {
           <div className="text-center py-10">
             <p className="text-text-main font-medium mb-1">No proxy pool entries yet</p>
             <p className="text-sm text-text-muted mb-4">
-              Create a proxy pool entry, then assign it to connections.
+              Buat a proxy pool entry, then assign it to connections.
             </p>
-            <Button icon="add" onClick={openCreateModal}>Add Proxy Pool</Button>
+            <Button icon="add" onClick={openBuatModal}>Add Proxy Pool</Button>
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-black/[0.04] dark:divide-white/[0.05]">
@@ -730,7 +730,7 @@ export default function ProxyPoolsPage() {
                     <p className="text-xs text-text-muted truncate">No proxy: {pool.noProxy}</p>
                   ) : null}
                   <p className="text-[11px] text-text-muted mt-1">
-                    Last tested: {formatDateTime(pool.lastTestedAt)}
+                    Last tested: {formatDateTime(pool.lastUjiedAt)}
                     {pool.lastError ? ` · ${pool.lastError}` : ""}
                   </p>
                   </div>
@@ -744,9 +744,9 @@ export default function ProxyPoolsPage() {
                     title={pool.isActive ? "Disable" : "Enable"}
                   />
                   <button
-                    onClick={() => handleTest(pool.id)}
+                    onClick={() => handleUji(pool.id)}
                     className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
-                    title="Test proxy"
+                    title="Uji proxy"
                     disabled={testingId === pool.id}
                   >
                     <span
@@ -757,16 +757,16 @@ export default function ProxyPoolsPage() {
                     </span>
                   </button>
                   <button
-                    onClick={() => openEditModal(pool)}
+                    onClick={() => openUbahModal(pool)}
                     className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
-                    title="Edit"
+                    title="Ubah"
                   >
                     <span className="material-symbols-outlined text-[18px]">edit</span>
                   </button>
                   <button
-                    onClick={() => handleDelete(pool)}
+                    onClick={() => handleHapus(pool)}
                     className="p-2 rounded hover:bg-red-500/10 text-red-500"
-                    title="Delete"
+                    title="Hapus"
                   >
                     <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
@@ -778,16 +778,16 @@ export default function ProxyPoolsPage() {
       </Card>
 
       <Modal
-        isOpen={showBatchImportModal}
-        title="Batch Import Proxies"
-        onClose={closeBatchImportModal}
+        isOpen={showBatchImporModal}
+        title="Batch Impor Proxies"
+        onClose={closeBatchImporModal}
       >
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium text-text-main mb-1 block">Paste Proxy List (One per line)</label>
             <textarea
-              value={batchImportText}
-              onChange={(e) => setBatchImportText(e.target.value)}
+              value={batchImporText}
+              onChange={(e) => setBatchImporText(e.target.value)}
               placeholder={"http://user:pass@127.0.0.1:7897\n127.0.0.1:7897:user:pass"}
               className="w-full min-h-[180px] py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all"
             />
@@ -797,11 +797,11 @@ export default function ProxyPoolsPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Button fullWidth onClick={handleBatchImport} disabled={!batchImportText.trim() || importing}>
-              {importing ? "Importing..." : "Import"}
+            <Button fullWidth onClick={handleBatchImpor} disabled={!batchImporText.trim() || importing}>
+              {importing ? "Imporing..." : "Impor"}
             </Button>
-            <Button fullWidth variant="ghost" onClick={closeBatchImportModal} disabled={importing}>
-              Cancel
+            <Button fullWidth variant="ghost" onClick={closeBatchImporModal} disabled={importing}>
+              Batal
             </Button>
           </div>
         </div>
@@ -849,7 +849,7 @@ export default function ProxyPoolsPage() {
               {deploying ? "Deploying... (may take ~1 min)" : "Deploy"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeVercelModal} disabled={deploying}>
-              Cancel
+              Batal
             </Button>
           </div>
         </div>
@@ -869,16 +869,16 @@ export default function ProxyPoolsPage() {
             <ul className="text-xs text-text-muted list-disc pl-4 space-y-0.5">
               <li>High performance global routing and IP masking via Cloudflare Workers</li>
               <li>Free tier: 100,000 requests per day</li>
-              <li>Requires Cloudflare Account ID and a Workers API Token (Edit Workers permission)</li>
+              <li>Requires Cloudflare Account ID and a Workers API Token (Ubah Workers permission)</li>
             </ul>
             <div className="mt-2 pt-2 border-t border-orange-500/10 text-xs text-text-muted">
               <p className="font-medium text-text-main mb-1">How to generate your API Token:</p>
               <ol className="list-decimal pl-4 space-y-0.5">
-                <li>Go to <b>My Profile</b> → <b>API Tokens</b> → <b>Create Token</b></li>
+                <li>Go to <b>My Profile</b> → <b>API Tokens</b> → <b>Buat Token</b></li>
                 <li>Scroll down to <b>Custom Token</b> and click <b>Get started</b></li>
-                <li>Under <b>Permissions</b>: Account | Workers Scripts | Edit</li>
+                <li>Under <b>Permissions</b>: Account | Workers Scripts | Ubah</li>
                 <li>Under <b>Account Resources</b>: Include | Account | <i>Your Account Name</i></li>
-                <li>Click <b>Continue to summary</b> → <b>Create Token</b></li>
+                <li>Click <b>Continue to summary</b> → <b>Buat Token</b></li>
               </ol>
             </div>
           </div>
@@ -894,7 +894,7 @@ export default function ProxyPoolsPage() {
             value={cloudflareForm.apiToken}
             onChange={(e) => setCloudflareForm((prev) => ({ ...prev, apiToken: e.target.value }))}
             placeholder="your-cloudflare-api-token"
-            hint={<>Requires "Workers Scripts: Edit" permission. <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get token →</a></>}
+            hint={<>Requires "Workers Scripts: Ubah" permission. <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get token →</a></>}
             type="password"
           />
           <Input
@@ -913,7 +913,7 @@ export default function ProxyPoolsPage() {
               {deploying ? "Deploying..." : "Deploy Worker"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeCloudflareModal} disabled={deploying}>
-              Cancel
+              Batal
             </Button>
           </div>
         </div>
@@ -942,7 +942,7 @@ export default function ProxyPoolsPage() {
               <ol className="list-decimal pl-4 space-y-0.5">
                 <li>Go to <b>console.deno.com</b></li>
                 <li>Select your <b>Organization</b> → <b>Settings</b> → <b>Organization Tokens</b></li>
-                <li>Create a <b>Organization Token</b> (prefix <b>ddo_</b>)</li>
+                <li>Buat a <b>Organization Token</b> (prefix <b>ddo_</b>)</li>
               </ol>
             </div>
           </div>
@@ -977,7 +977,7 @@ export default function ProxyPoolsPage() {
               {deploying ? "Deploying..." : "Deploy Relay"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeDenoModal} disabled={deploying}>
-              Cancel
+              Batal
             </Button>
           </div>
         </div>
@@ -985,7 +985,7 @@ export default function ProxyPoolsPage() {
 
       <Modal
         isOpen={showFormModal}
-        title={editingProxyPool ? "Edit Proxy Pool" : "Add Proxy Pool"}
+        title={editingProxyPool ? "Ubah Proxy Pool" : "Add Proxy Pool"}
         onClose={closeFormModal}
       >
         <div className="flex flex-col gap-4">
@@ -1036,13 +1036,13 @@ export default function ProxyPoolsPage() {
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
               fullWidth
-              onClick={handleSave}
+              onClick={handleSimpan}
               disabled={!formData.name.trim() || !formData.proxyUrl.trim() || saving}
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : "Simpan"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeFormModal} disabled={saving}>
-              Cancel
+              Batal
             </Button>
           </div>
         </div>
