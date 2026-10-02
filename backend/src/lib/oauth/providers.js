@@ -27,7 +27,6 @@ import {
   getOAuthClientMetadata,
 } from "./constants/oauth.js";
 import { XAI_CONFIG, XAI_PKCE_VERIFIER_BYTES } from "./constants/xai.js";
-import { ANTIGRAVITY_ENDPOINTS } from "./../constants/antigravity.js";
 
 // Inlined from services/xai.js to keep web route bundle free of `open` (CLI-only) package
 let cachedXaiDiscovery = null;
