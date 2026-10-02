@@ -7,7 +7,6 @@
 const NATIVE_PAIRS = {
   "claude": ["claude", "anthropic"],
   "gemini-cli": ["gemini-cli"],
-  "antigravity": ["antigravity"],
   "codex": ["codex"],
 };
 
@@ -22,9 +21,6 @@ export function detectClientTool(headers = {}, body = {}) {
   const xApp = (headers["x-app"] || "").toLowerCase();
   const openaiIntent = (headers["openai-intent"] || "").toLowerCase();
   const initiator = (headers["x-initiator"] || headers["X-Initiator"] || "").toLowerCase();
-
-  // Antigravity: detected via body field (not header)
-  if (body.userAgent === "antigravity") return "antigravity";
 
   // GitHub Copilot / OAI compatible extension using Copilot chat headers
   if (ua.includes("githubcopilotchat") || openaiIntent === "conversation-panel" || initiator === "user") {
