@@ -26,5 +26,5 @@ export async function OPTIONS() {
  */
 export async function POST_handler(req, res) {
   await ensureInitialized();
-  return await handleChat(request);
+  return await handleChat(new Request(`${req.protocol || 'http'}://${req.get?.('host') || 'localhost'}${req.originalUrl || req.url || '/'}`, { method: req.method, headers: new Headers(req.headers), body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined }));
 }
