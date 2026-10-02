@@ -359,7 +359,7 @@ const PROVIDERS = {
       let projectId = "";
       try {
         const projectRes = await fetch(
-          ANTIGRAVITY_ENDPOINTS.loadCodeAssist,
+          "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
           {
             method: "POST",
             headers: {
