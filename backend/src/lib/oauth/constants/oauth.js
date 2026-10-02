@@ -1,3 +1,5 @@
+import { platform, arch } from "os";
+
 // OpenAI OAuth Configuration (Authorization Code Flow with PKCE)
 export const OPENAI_CONFIG = {
   clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
