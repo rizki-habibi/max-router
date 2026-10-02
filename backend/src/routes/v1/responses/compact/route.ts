@@ -30,7 +30,7 @@ export async function POST_handler(req, res) {
   body._compact = true;
   const newRequest = new Request(req.url, {
     method: "POST",
-    headers: request.headers,
+    headers: new Headers(req.headers),
     body: JSON.stringify(body)
   });
   return await handleChat(newRequest);
