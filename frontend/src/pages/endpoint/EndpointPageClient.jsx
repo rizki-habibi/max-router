@@ -48,9 +48,9 @@ async function clientPingAny(...urls) {
 }
 
 const CAVEMAN_LEVELS = [
-  { id: "lite", label: "Lite", desc: "Hapus kata pengisi, pertahankan tata bahasa" },
-  { id: "full", label: "Full", desc: "Hapus kata sandang, potongan kalimat diperbolehkan" },
-  { id: "ultra", label: "Ultra", desc: "Gaya singkat, kompresi maksimum" },
+  { id: "lite", label: "Ringan", desc: "Hapus kata pengisi, pertahankan tata bahasa" },
+  { id: "full", label: "Penuh", desc: "Hapus kata sandang, potongan kalimat diperbolehkan" },
+  { id: "ultra", label: "Maksimal", desc: "Gaya singkat, kompresi maksimum" },
 ];
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
