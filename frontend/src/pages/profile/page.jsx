@@ -1,243 +1,249 @@
-import { useCallback, useEffect, useState } from "react";
-import { Card, Button, Input } from "@/shared/components";
 
-const DEFAULT_REPO = "https://github.com/rizki-habibi/kuro-vtuber-bot";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Card, Button } from "@/shared/components";
 
-function normalizeList(data, keys = []) {
-  if (Array.isArray(data)) return data;
-  for (const key of keys) {
-    if (Array.isArray(data?.[key])) return data[key];
-  }
-  return [];
-}
-
-async function readJson(url, options) {
-  const response = await fetch(url, { cache: "no-store", ...options });
+const readJson = async (url) => {
+  const response = await fetch(url, { cache: "no-store" });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+  if (!response.ok) throw new Error(data?.error || ("HTTP " + response.status));
   return data;
-}
+};
+
+const formatIssue = (item) => [
+  "[" + item.id + "] " + String(item.severity || "").toUpperCase(),
+  "Area: " + item.area,
+  "Masalah: " + item.title,
+  "Detail: " + item.detail,
+  item.evidence ? "Bukti: " + item.evidence : "",
+  item.fix ? "Solusi: " + item.fix : ""
+].filter(Boolean).join("\n");
 
 export default function ProfilPage() {
+  const [data, setData] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [lastScan, setLastScan] = useState(null);
+  const [copied, setCopied] = useState("");
+  const [filter, setFilter] = useState("all");
   const [message, setMessage] = useState("");
-  const [repoUrl, setRepoUrl] = useState(DEFAULT_REPO);
-  const [repoResult, setRepoResult] = useState(null);
 
-  const scanIntegrasi = useCallback(async () => {
+  const scan = useCallback(async () => {
     setScanning(true);
     setMessage("");
-    const result = {
-      server: { status: "memeriksa", detail: "Menghubungi layanan Max Router..." },
-      penyedia: { status: "memeriksa", jumlah: 0, detail: "Memeriksa penyedia AI..." },
-      mcp: { status: "memeriksa", jumlah: 0, detail: "Memeriksa sumber MCP..." },
-      github: { status: "memeriksa", detail: "Memeriksa akses GitHub..." },
-    };
-
     try {
-      const [providers, mcp] = await Promise.allSettled([
-        readJson("/api/providers"),
-        readJson("/api/cli-tools/cowork-mcp-registry"),
-      ]);
-
-      if (providers.status === "fulfilled") {
-        const list = normalizeList(providers.value, ["providers", "data"]);
-        result.penyedia = {
-          status: "terhubung",
-          jumlah: list.length,
-          detail: list.length ? `${list.length} penyedia terdeteksi` : "Belum ada penyedia tersimpan",
-        };
-      } else {
-        result.penyedia = { status: "gagal", jumlah: 0, detail: providers.reason?.message || "Penyedia tidak dapat dibaca" };
-      }
-
-      if (mcp.status === "fulfilled") {
-        const list = normalizeList(mcp.value, ["servers", "data"]);
-        result.mcp = {
-          status: "tersedia",
-          jumlah: list.length,
-          detail: list.length ? `${list.length} layanan MCP ditemukan` : "Sumber MCP dapat dijangkau",
-        };
-      } else {
-        result.mcp = { status: "gagal", jumlah: 0, detail: mcp.reason?.message || "Sumber MCP tidak dapat dibaca" };
-      }
-
-      try {
-        const health = await readJson("/api/health");
-        result.server = {
-          status: "online",
-          detail: health?.status ? `Server online: ${health.status}` : "Server Max Router merespons",
-        };
-      } catch {
-        result.server = { status: "online", detail: "Server merespons melalui aplikasi" };
-      }
-
-      try {
-        const github = await readJson("https://api.github.com/repos/rizki-habibi/max-router");
-        result.github = {
-          status: "terhubung",
-          detail: `GitHub dapat membaca ${github.full_name}`,
-        };
-      } catch {
-        result.github = { status: "terbatas", detail: "GitHub tidak dapat diverifikasi dari sesi ini" };
-      }
+      setData(await readJson("/api/diagnostics"));
     } catch (error) {
-      setMessage(error.message || "Pemeriksaan integrasi gagal.");
+      setMessage(error.message || "Diagnostic gagal dijalankan.");
     } finally {
-      setLastScan(result);
       setScanning(false);
     }
   }, []);
 
-  useEffect(() => {
-    scanIntegrasi();
-  }, [scanIntegrasi]);
+  useEffect(() => { scan(); }, [scan]);
 
-  const cekRepo = async () => {
-    setRepoResult({ status: "memeriksa", detail: "Memeriksa repositori..." });
+  const findings = data?.findings || [];
+  const filtered = useMemo(
+    () => filter === "all" ? findings : findings.filter(x => x.area === filter),
+    [findings, filter]
+  );
+
+  const copyText = async (text, key) => {
     try {
-      const url = repoUrl.trim();
-      const match = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)\/?$/i);
-      if (!match) {
-        throw new Error("Masukkan URL repositori GitHub yang valid.");
-      }
-      const owner = match[1];
-      const repo = match[2].replace(/\.git$/i, "");
-      const data = await readJson(`https://api.github.com/repos/${owner}/${repo}`);
-      const contents = await readJson(`https://api.github.com/repos/${owner}/${repo}/contents`);
-      const names = Array.isArray(contents) ? contents.map((item) => item.name.toLowerCase()) : [];
-      const petunjuk = [];
-      if (names.includes("package.json")) petunjuk.push("Node.js");
-      if (names.includes("requirements.txt") || names.includes("pyproject.toml")) petunjuk.push("Python");
-      if (names.some((name) => name.includes("docker"))) petunjuk.push("Docker");
-      if (names.some((name) => name.includes("mcp"))) petunjuk.push("MCP");
-      if (names.some((name) => name.includes("discord"))) petunjuk.push("Discord");
-      setRepoResult({
-        status: "ditemukan",
-        detail: data.description || "Repositori dapat dibaca",
-        nama: data.full_name,
-        bahasa: data.language || "Tidak terdeteksi",
-        teknologi: petunjuk.length ? petunjuk.join(", ") : "Perlu analisis berkas lebih lanjut",
-        url: data.html_url,
-      });
-    } catch (error) {
-      setRepoResult({ status: "gagal", detail: error.message || "Repositori tidak dapat dibaca" });
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(""), 1800);
+    } catch {
+      setMessage("Clipboard browser tidak tersedia.");
     }
   };
 
-  const badge = (status) => {
-    const map = {
-      online: "bg-green-500/10 text-green-600",
-      terhubung: "bg-green-500/10 text-green-600",
-      tersedia: "bg-blue-500/10 text-blue-600",
-      memeriksa: "bg-amber-500/10 text-amber-600",
-      terbatas: "bg-amber-500/10 text-amber-600",
-      gagal: "bg-red-500/10 text-red-600",
-      ditemukan: "bg-green-500/10 text-green-600",
-    };
-    return map[status] || "bg-surface-2 text-text-muted";
+  const copyAll = () => {
+    const header = [
+      "MAX ROUTER — FULL DIAGNOSTIC REPORT",
+      "Waktu: " + (data?.scannedAt || "-"),
+      "Durasi: " + (data?.durationMs || 0) + " ms",
+      "Error: " + (data?.summary?.error || 0),
+      "Warning: " + (data?.summary?.warning || 0),
+      "Info: " + (data?.summary?.info || 0),
+      ""
+    ].join("\n");
+    copyText(header + findings.map(formatIssue).join("\n\n"), "all");
   };
 
-  const items = lastScan ? [
-    { icon: "dns", title: "Penyedia AI", desc: lastScan.penyedia.detail, status: lastScan.penyedia.status, count: lastScan.penyedia.jumlah },
-    { icon: "hub", title: "MCP", desc: lastScan.mcp.detail, status: lastScan.mcp.status, count: lastScan.mcp.jumlah },
-    { icon: "code", title: "GitHub & repositori AI", desc: lastScan.github.detail, status: lastScan.github.status },
-    { icon: "cloud_done", title: "Server Max Router", desc: lastScan.server.detail, status: lastScan.server.status },
-  ] : [];
+  const categories = ["all", ...new Set(findings.map(x => x.area))];
+  const errorCount = data?.summary?.error || 0;
+  const warningCount = data?.summary?.warning || 0;
+  const infoCount = data?.summary?.info || 0;
 
   return (
-    <div className="space-y-5 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Card>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
-                <span className="material-symbols-outlined">hub</span>
+              <div className="rounded-xl bg-primary/10 p-3 text-primary">
+                <span className="material-symbols-outlined">health_and_safety</span>
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Deteksi Integrasi</h2>
-                <p className="text-sm text-text-muted">Membaca layanan yang tersedia secara langsung dari server online.</p>
+                <h2 className="text-xl font-bold">Pusat Diagnostik</h2>
+                <p className="text-sm text-text-muted">Periksa YML, backend, UI/UX, database, environment, route dan kesehatan aplikasi.</p>
               </div>
             </div>
           </div>
-          <Button variant="primary" icon="radar" loading={scanning} onClick={scanIntegrasi}>
-            {scanning ? "Memindai..." : "Pindai Sekarang"}
+          <Button variant="primary" icon="radar" loading={scanning} onClick={scan}>
+            {scanning ? "Memindai..." : "Scan Semua Sistem"}
           </Button>
         </div>
 
-        {message && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">{message}</p>}
+        {message && <div className="mt-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{message}</div>}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {items.map((item) => (
-            <div key={item.title} className="rounded-xl border border-border-subtle bg-surface/70 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-primary">{item.icon}</span>
-                  <div>
-                    <p className="font-semibold">{item.title}</p>
-                    <p className="text-xs text-text-muted">{item.desc}</p>
-                  </div>
-                </div>
-                <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${badge(item.status)}`}>
-                  {item.status}
-                </span>
-              </div>
-              {typeof item.count === "number" && (
-                <p className="mt-3 text-2xl font-bold">{item.count}</p>
-              )}
-            </div>
-          ))}
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <Stat label="Error" value={errorCount} icon="error" tone="red" />
+          <Stat label="Peringatan" value={warningCount} icon="warning" tone="amber" />
+          <Stat label="Info" value={infoCount} icon="info" tone="blue" />
         </div>
       </Card>
 
-      <Card>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
-            <span className="material-symbols-outlined">account_tree</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">Pemeriksa Repositori AI</h2>
-            <p className="text-sm text-text-muted">Masukkan repositori GitHub publik untuk melihat tanda teknologi dan struktur awalnya.</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="https://github.com/pemilik/nama-repo" />
-          <Button variant="secondary" icon="search" onClick={cekRepo}>Periksa Repo</Button>
-        </div>
-
-        {repoResult && (
-          <div className="mt-4 rounded-xl border border-border-subtle bg-surface-2 p-4">
-            <div className="flex items-start justify-between gap-3">
+      {data && (
+        <>
+          <Card>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-semibold">{repoResult.nama || "Repositori"}</p>
-                <p className="text-sm text-text-muted">{repoResult.detail}</p>
+                <h3 className="font-semibold">Status pemeriksaan</h3>
+                <p className="text-xs text-text-muted">
+                  Terakhir: {new Date(data.scannedAt).toLocaleString("id-ID")} · {data.durationMs} ms
+                </p>
               </div>
-              <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${badge(repoResult.status)}`}>{repoResult.status}</span>
+              <button
+                type="button"
+                onClick={copyAll}
+                className="rounded-xl border border-border-subtle px-3 py-2 text-sm font-medium hover:bg-surface-2"
+              >
+                <span className="material-symbols-outlined mr-1 align-middle text-[18px]">content_copy</span>
+                {copied === "all" ? "Semua tersalin" : "Salin Semua Error"}
+              </button>
             </div>
-            {repoResult.status === "ditemukan" && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
-                <p><span className="text-text-muted">Bahasa:</span> {repoResult.bahasa}</p>
-                <p><span className="text-text-muted">Teknologi:</span> {repoResult.teknologi}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
 
-      <Card>
-        <div className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-primary">cloud</span>
-          <div>
-            <h3 className="font-semibold">Mode online</h3>
-            <p className="mt-1 text-sm text-text-muted">
-              Halaman ini tidak menyimpan pengaturan integrasi di penyimpanan lokal browser. Status dibaca ulang dari server setiap kali dipindai.
-            </p>
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setFilter(category)}
+                  className={"whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold " +
+                    (filter === category ? "bg-primary text-white" : "bg-surface-2 text-text-muted")}
+                >
+                  {category === "all" ? "Semua" : category}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {filtered.length === 0 ? (
+            <Card>
+              <div className="py-10 text-center">
+                <span className="material-symbols-outlined text-4xl text-green-500">check_circle</span>
+                <h3 className="mt-3 font-semibold">Tidak ada masalah pada kategori ini</h3>
+                <p className="mt-1 text-sm text-text-muted">Pemeriksaan selesai dan tidak menemukan error yang tercatat.</p>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((item, index) => (
+                <DiagnosticCard
+                  key={item.id + "-" + index}
+                  item={item}
+                  copied={copied}
+                  onCopy={copyText}
+                />
+              ))}
+            </div>
+          )}
+
+          <Card>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Capability label="YML / CI" ok={data.capabilities?.yml} />
+              <Capability label="Database" ok={data.capabilities?.database} />
+              <Capability label="Backend" ok={data.capabilities?.backend} />
+              <Capability label="UI Assets" ok={data.capabilities?.uiAssets} />
+            </div>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DiagnosticCard({ item, copied, onCopy }) {
+  const tone = item.severity === "error"
+    ? "border-red-500/30 bg-red-500/[0.04]"
+    : item.severity === "warning"
+      ? "border-amber-500/30 bg-amber-500/[0.04]"
+      : "border-border-subtle bg-surface";
+
+  const icon = item.severity === "error" ? "error" : item.severity === "warning" ? "warning" : "info";
+  const report = formatIssue(item);
+
+  return (
+    <Card className={"border " + tone}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex gap-3 min-w-0">
+          <span className="material-symbols-outlined shrink-0">{icon}</span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <code className="rounded bg-surface-2 px-2 py-1 text-xs">{item.id}</code>
+              <span className="text-xs text-text-muted">{item.area}</span>
+              <span className="text-xs font-semibold uppercase">{item.severity}</span>
+            </div>
+            <h3 className="mt-2 font-semibold">{item.title}</h3>
+            <p className="mt-1 text-sm text-text-muted break-words">{item.detail}</p>
+            {item.evidence && (
+              <pre className="mt-3 max-h-36 overflow-auto rounded-lg bg-black/[0.05] p-3 text-xs whitespace-pre-wrap">{item.evidence}</pre>
+            )}
+            {item.fix && <p className="mt-3 text-sm"><strong>Solusi:</strong> {item.fix}</p>}
           </div>
         </div>
-        {lastScan && <p className="mt-3 text-xs text-text-muted">Pemeriksaan terakhir selesai tanpa membuat salinan konfigurasi lokal.</p>}
-      </Card>
+
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onCopy(report, item.id)}
+            className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2"
+          >
+            <span className="material-symbols-outlined mr-1 align-middle text-[16px]">content_copy</span>
+            {copied === item.id ? "Tersalin" : "Salin Error"}
+          </button>
+          <button
+            type="button"
+            onClick={() => onCopy(JSON.stringify(item, null, 2), item.id + "-json")}
+            className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2"
+          >
+            Salin JSON
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function Stat({ label, value, icon, tone }) {
+  const classes = tone === "red" ? "text-red-600 bg-red-500/10" : tone === "amber" ? "text-amber-600 bg-amber-500/10" : "text-blue-600 bg-blue-500/10";
+  return (
+    <div className="rounded-xl border border-border-subtle p-4">
+      <div className="flex items-center gap-2">
+        <span className={"material-symbols-outlined rounded-lg p-1.5 " + classes}>{icon}</span>
+        <span className="text-sm text-text-muted">{label}</span>
+      </div>
+      <p className="mt-2 text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function Capability({ label, ok }) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl bg-surface-2 p-3">
+      <span className={"material-symbols-outlined text-[20px] " + (ok ? "text-green-600" : "text-amber-600")}>
+        {ok ? "check_circle" : "help"}
+      </span>
+      <span className="text-sm font-medium">{label}</span>
     </div>
   );
 }
