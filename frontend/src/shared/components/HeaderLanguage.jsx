@@ -13,8 +13,7 @@ function getLocaleFromCookie() {
   return normalizeLocale(value);
 }
 
-export default function HeaderLanguage() {
-  const [open, setOpen] = useState(false);
+export default function HeaderLanguage() {\n  return null;\n}\n\n/* Language picker disabled; application is Indonesian-only.\n  const [open, setOpen] = useState(false);
   const [locale, setLocale] = useState("en");
 
   useEffect(() => {
