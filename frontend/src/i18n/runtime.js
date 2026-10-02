@@ -123,8 +123,8 @@ function processElement(element) {
 export async function initRuntimeI18n() {
   if (typeof window === "undefined") return;
   
-  currentLocale = getLocaleFromCookie();
-  await loadTranslations(currentLocale);
+  currentLocale = "id";
+  await loadTranslations("id");
   
   // Process existing DOM
   processElement(document.body);
