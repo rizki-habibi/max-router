@@ -6,7 +6,8 @@ import path from "node:path";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const ROOT = path.resolve(process.cwd(), "..");
+const BACKEND_ROOT = fs.existsSync(path.join(process.cwd(), "src", "routes")) ? process.cwd() : path.join(process.cwd(), "backend");
+const ROOT = path.dirname(BACKEND_ROOT);
 const WORKFLOWS = path.join(ROOT, ".github", "workflows");
 const issue = (id, area, severity, title, detail, evidence = "", fix = "") =>
   ({ id, area, severity, title, detail, evidence, fix });
@@ -94,7 +95,7 @@ export async function GET_handler(req,res) {
   const started = Date.now();
   try {
     const [database,application] = await Promise.all([scanDatabase(),scanApplication(req)]);
-    const routeCount = walk(path.join(process.cwd(),"src","routes"),f => /\/route\.(ts|js)$/i.test(f)).length;
+    const routeCount = walk(path.join(BACKEND_ROOT,"src","routes"),f => /\/route\.(ts|js)$/i.test(f)).length;
     const findings = [...scanYml(),...database.result,...application.result,...scanEnvironment()];
     if (!routeCount) findings.push(issue("ROUTE-001","Backend","error","Route module tidak ditemukan","Tidak ada route.ts/route.js yang terdeteksi."));
     const summary = findings.reduce((acc,item) => { acc[item.severity]=(acc[item.severity]||0)+1; return acc; },{error:0,warning:0,info:0});
