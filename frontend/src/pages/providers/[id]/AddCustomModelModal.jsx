@@ -154,7 +154,7 @@ export default function AddCustomModelModal({
         {testStatus === "error" && (
           <div className="flex items-start gap-2 text-sm text-red-500">
             <span className="material-symbols-outlined text-base shrink-0">cancel</span>
-            <span>{testError || "Model not reachable"}</span>
+            <span>{testError || "Model tidak dapat dihubungi"}</span>
           </div>
         )}
 
