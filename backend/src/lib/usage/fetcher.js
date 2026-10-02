@@ -1,4 +1,3 @@
-import { ANTIGRAVITY_ENDPOINTS } from "./../constants/antigravity.js";
 
 /**
  * Usage Fetcher - Get usage/quota/balance data from provider APIs
