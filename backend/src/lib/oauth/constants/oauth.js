@@ -132,6 +132,24 @@ export const CODEBUDDY_CONFIG = {
   pollInterval: 5000,
 };
 
+
+// Gemini CLI OAuth Configuration.
+// Credentials are supplied through environment variables so the router does not
+// carry a provider-specific client secret in source control.
+export const GEMINI_CONFIG = {
+  clientId: process.env.GEMINI_CLIENT_ID || "",
+  clientSecret: process.env.GEMINI_CLIENT_SECRET || "",
+  authorizeUrl: "https://accounts.google.com/o/oauth2/auth",
+  tokenUrl: "https://oauth2.googleapis.com/token",
+  userInfoUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
+  scopes: [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/cloud-platform",
+  ],
+};
+
 // OAuth timeout (5 minutes)
 export const OAUTH_TIMEOUT = 300000;
 
