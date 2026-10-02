@@ -21,8 +21,8 @@ export default function Navigation() {
 
         {/* Desktop menu */}
         <div className="hidden md:flex items-center gap-8">
-          <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#features">Features</a>
-          <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#how-it-works">How it Works</a>
+          <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#features">Fitur</a>
+          <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#how-it-works">Cara Kerja</a>
           <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="https://github.com/decolua/9router#readme" target="_blank" rel="noopener noreferrer">Docs</a>
           <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors flex items-center gap-1" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">
             GitHub <span className="material-symbols-outlined text-[14px]">open_in_new</span>
@@ -50,8 +50,8 @@ export default function Navigation() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-[#3a2f27] bg-[#181411]/95 backdrop-blur-md">
           <div className="flex flex-col gap-4 p-6">
-            <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
-            <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How it Works</a>
+            <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#features" onClick={() => setMobileMenuOpen(false)}>Fitur</a>
+            <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>Cara Kerja</a>
             <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="https://github.com/decolua/9router#readme" target="_blank" rel="noopener noreferrer">Docs</a>
             <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">GitHub</a>
             <button 
