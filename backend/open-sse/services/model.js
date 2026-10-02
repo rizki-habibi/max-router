@@ -5,7 +5,6 @@ const ALIAS_TO_PROVIDER_ID = {
   gc: "gemini-cli",
   qw: "qwen",
   if: "iflow",
-  ag: "antigravity",
   gh: "github",
   kr: "kiro",
   cu: "cursor",
