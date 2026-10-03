@@ -15,6 +15,8 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import {
   FREE_PROVIDERS,
   FREE_TIER_PROVIDERS,
+  OAUTH_PROVIDERS,
+  APIKEY_PROVIDERS,
   OPENAI_COMPATIBLE_PREFIX,
   ANTHROPIC_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
@@ -288,11 +290,12 @@ export default function ProvidersPage() {
     }))
     .filter((p) => matchSearch(p.name));
 
-  // Max Router is intentionally compatible-provider-only. Legacy built-in services are disabled.
-  const oauthEntries = [];
-  const freeEntries = [];
-  const freeTierEntries = [];
-  const apikeyEntries = [];
+  // Tampilkan seluruh katalog provider bawaan + koneksi yang tersimpan.
+  // Provider Compatible tetap berasal dari provider-nodes.
+  const oauthEntries = Object.entries(OAUTH_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
+  const freeEntries = Object.entries(FREE_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
+  const freeTierEntries = Object.entries(FREE_TIER_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
+  const apikeyEntries = Object.entries(APIKEY_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
   const isApikeySearching = !!searchQuery.trim();
   const visibleApikeyEntries =
     isApikeySearching || showAllApikey
