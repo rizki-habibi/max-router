@@ -13,10 +13,6 @@ import {
 } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import {
-  FREE_PROVIDERS,
-  FREE_TIER_PROVIDERS,
-  OAUTH_PROVIDERS,
-  APIKEY_PROVIDERS,
   OPENAI_COMPATIBLE_PREFIX,
   ANTHROPIC_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
@@ -110,14 +106,10 @@ function getConnectionErrorTag(connection) {
   return "ERR";
 }
 
-const APIKEY_INITIAL_VISIBLE = 20;
-
 export default function ProvidersPage() {
   const [connections, setConnections] = useState([]);
   const [providerNodes, setProviderNodes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAllApikey, setShowAllApikey] = useState(false);
-  const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
 
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
@@ -290,18 +282,51 @@ export default function ProvidersPage() {
     }))
     .filter((p) => matchSearch(p.name));
 
-  // Tampilkan seluruh katalog provider bawaan + koneksi yang tersimpan.
-  // Provider Compatible tetap berasal dari provider-nodes.
-  const oauthEntries = Object.entries(OAUTH_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
-  const freeEntries = Object.entries(FREE_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
-  const freeTierEntries = Object.entries(FREE_TIER_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
-  const apikeyEntries = Object.entries(APIKEY_PROVIDERS).filter(([key, info]) => matchSearch(info.name || key));
-  const isApikeySearching = !!searchQuery.trim();
-  const visibleApikeyEntries =
-    isApikeySearching || showAllApikey
-      ? apikeyEntries
-      : apikeyEntries.slice(0, APIKEY_INITIAL_VISIBLE);
-  const hiddenApikeyCount = apikeyEntries.length - APIKEY_INITIAL_VISIBLE;
+  // Hanya tampilkan integrasi yang benar-benar tersimpan.
+  // Katalog OAuth/API/TTS/Search/Image bawaan tidak dirender di halaman ini.
+  const savedProviderEntries = (() => {
+    const candidates = new Map();
+
+    const add = (providerId, name, authType = "apikey", node = null) => {
+      if (!providerId) return;
+      const key = String(providerId).trim();
+      if (!key) return;
+      const existing = candidates.get(key);
+      candidates.set(key, {
+        id: key,
+        name: name || existing?.name || key,
+        authType: authType || existing?.authType || "apikey",
+        node: node || existing?.node || null,
+      });
+    };
+
+    for (const node of providerNodes) {
+      const haystack = [
+        node.id,
+        node.name,
+        node.baseUrl,
+        node.providerSpecificData?.nodeName,
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      if (haystack.includes("xkiro")) add(node.id || "xkiro", "xKiro", "apikey", node);
+      if (haystack.includes("atria")) add(node.id || "atria", "Atria", "apikey", node);
+    }
+
+    for (const connection of connections) {
+      const haystack = [
+        connection.provider,
+        connection.name,
+        connection.email,
+        connection.providerSpecificData?.nodeName,
+        connection.providerSpecificData?.baseUrl,
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      if (haystack.includes("xkiro")) add(connection.provider || "xkiro", "xKiro", connection.authType, null);
+      if (haystack.includes("atria")) add(connection.provider || "atria", "Atria", connection.authType, null);
+    }
+
+    return [...candidates.values()].filter((entry) => matchSearch(entry.name));
+  })();
 
   if (loading) {
     return (
@@ -312,211 +337,53 @@ export default function ProvidersPage() {
     );
   }
 
-  const hasAnyResult =
-    oauthEntries.length > 0 ||
-    freeEntries.length > 0 ||
-    freeTierEntries.length > 0 ||
-    apikeyEntries.length > 0 ||
-    compatibleProviders.length > 0 ||
-    anthropicCompatibleProviders.length > 0;
+  const hasAnyResult = savedProviderEntries.length > 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
       {!hasAnyResult && (
         <div className="text-center py-8 border border-dashed border-border rounded-xl">
           <span className="material-symbols-outlined text-[32px] text-text-muted mb-2">
-            search_off
+            cloud_off
           </span>
-          <p className="text-text-muted text-sm">Tidak ada provider yang cocok dengan pencarian</p>
+          <p className="text-text-muted text-sm">Belum ada integrasi xKiro atau Atria yang tersimpan.</p>
         </div>
       )}
 
-      {/* Provider Compatible — dynamic */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Provider Compatible{" "}
-          </h2>
-          <div className="grid grid-cols-1 gap-2 sm:flex sm:w-auto">
-            <Button
-              size="sm"
-              icon="add"
-              onClick={() => setShowAddCompatibleModal(true)}
-              className="w-full sm:w-auto"
-            >
-              Tambah Compatible
-            </Button>
+      {savedProviderEntries.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg sm:text-xl font-semibold">Integrasi Tersimpan</h2>
+            <p className="text-sm text-text-muted">
+              Hanya koneksi xKiro dan Atria yang tersimpan di MAX Router.
+            </p>
           </div>
-        </div>
-        {compatibleProviders.length === 0 &&
-        anthropicCompatibleProviders.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
-            <span className="material-symbols-outlined text-[18px]">extension</span>
-            <span>Belum ada provider kompatibel — tambahkan endpoint OpenAI-compatible atau Anthropic Messages-compatible.</span>
-          </div>
-        ) : (
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {[...compatibleProviders, ...anthropicCompatibleProviders].map(
-              (info) => (
+            {savedProviderEntries.map((entry) => {
+              const info = {
+                id: entry.id,
+                name: entry.name,
+                color: entry.name.toLowerCase().includes("xkiro") ? "#7C3AED" : "#0EA5E9",
+                textIcon: entry.name.toLowerCase().includes("xkiro") ? "XK" : "AT",
+                ...(entry.node || {}),
+              };
+
+              return (
                 <ApiKeyProviderCard
-                  key={info.id}
-                  providerId={info.id}
+                  key={entry.id}
+                  providerId={entry.id}
                   provider={info}
-                  stats={getProviderStats(info.id, "apikey")}
-                  authType="compatible"
+                  stats={getProviderStats(entry.id, entry.authType)}
+                  authType={entry.authType}
                   onToggle={(active) =>
-                    handleToggleProvider(info.id, "apikey", active)
+                    handleToggleProvider(entry.id, entry.authType, active)
                   }
                 />
-              ),
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* OAuth Providers */}
-      {oauthEntries.length > 0 && (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            OAuth Providers
-          </h2>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <ModelAvailabilityBadge />
-            <button
-              onClick={() => handleBatchTest("oauth")}
-              disabled={!!testingMode}
-              className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
-                testingMode === "oauth"
-                  ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                  : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-              }`}
-              title="Uji semua koneksi OAuth"
-              aria-label="Uji semua koneksi OAuth"
-            >
-              <span
-                className={`material-symbols-outlined text-[14px]${testingMode === "oauth" ? " animate-spin" : ""}`}
-              >
-                play_arrow
-              </span>
-              {testingMode === "oauth" ? "Menguji..." : "Uji Semua"}
-            </button>
+              );
+            })}
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {oauthEntries.map(([key, info]) => (
-            <ProviderCard
-              key={key}
-              providerId={key}
-              provider={info}
-              stats={getProviderStats(key, "oauth")}
-              authType="oauth"
-              onToggle={(active) => handleToggleProvider(key, "oauth", active)}
-            />
-          ))}
-        </div>
-      </div>
-      )}
-
-      {/* Free Tier Providers */}
-      {(freeEntries.length > 0 || freeTierEntries.length > 0) && (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Free Tier Providers
-          </h2>
-          <button
-            onClick={() => handleBatchTest("free")}
-            disabled={!!testingMode}
-            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
-              testingMode === "free"
-                ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-            }`}
-            title="Uji semua koneksi gratis"
-            aria-label="Test semua koneksi penyedia gratis"
-          >
-            <span
-              className={`material-symbols-outlined text-[14px]${testingMode === "free" ? " animate-spin" : ""}`}
-            >
-              play_arrow
-            </span>
-            {testingMode === "free" ? "Menguji..." : "Uji Semua"}
-          </button>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {freeEntries.map(([key, info]) => (
-            <ProviderCard
-              key={key}
-              providerId={key}
-              provider={info}
-              stats={getProviderStats(key, "oauth")}
-              authType="free"
-              onToggle={(active) => handleToggleProvider(key, "oauth", active)}
-            />
-          ))}
-          {freeTierEntries.map(([key, info]) => (
-            <ApiKeyProviderCard
-              key={key}
-              providerId={key}
-              provider={info}
-              stats={getProviderStats(key, "apikey")}
-              authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
-            />
-          ))}
-        </div>
-      </div>
-      )}
-
-      {/* Kunci API Providers — fixed list */}
-      {apikeyEntries.length > 0 && (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Kunci API Providers{" "}
-          </h2>
-          <button
-            onClick={() => handleBatchTest("apikey")}
-            disabled={!!testingMode}
-            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
-              testingMode === "apikey"
-                ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-            }`}
-            title="Uji semua koneksi kunci API"
-            aria-label="Test semua koneksi kunci API"
-          >
-            <span
-              className={`material-symbols-outlined text-[14px]${testingMode === "apikey" ? " animate-spin" : ""}`}
-            >
-              play_arrow
-            </span>
-            {testingMode === "apikey" ? "Menguji..." : "Uji Semua"}
-          </button>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {visibleApikeyEntries.map(([key, info]) => (
-            <ApiKeyProviderCard
-              key={key}
-              providerId={key}
-              provider={info}
-              stats={getProviderStats(key, "apikey")}
-              authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
-            />
-          ))}
-        </div>
-        {!isApikeySearching && !showAllApikey && hiddenApikeyCount > 0 && (
-          <button
-            onClick={() => setShowAllApikey(true)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary/5"
-          >
-            <span className="material-symbols-outlined text-[16px]">expand_more</span>
-            Tampilkan semua {apikeyEntries.length} provider
-          </button>
-        )}
-      </div>
       )}
 
       <AddCompatibleModal
