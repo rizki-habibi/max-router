@@ -113,6 +113,7 @@ export default function ProvidersPage() {
 
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
+  const [isAddCompatibleOpen, setIsAddCompatibleOpen] = useState(false);
   const notify = useNotificationStore();
   const searchQuery = useHeaderSearchStore((s) => s.query);
   const registerSearch = useHeaderSearchStore((s) => s.register);
@@ -341,6 +342,16 @@ export default function ProvidersPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Penyedia</h1>
+          <p className="text-sm text-text-muted">Kelola integrasi tersimpan dan tambahkan provider OpenAI/Anthropic Compatible.</p>
+        </div>
+        <Button icon="add" onClick={() => setIsAddCompatibleOpen(true)}>
+          Tambah Kompatibel
+        </Button>
+      </div>
+
       {!hasAnyResult && (
         <div className="text-center py-8 border border-dashed border-border rounded-xl">
           <span className="material-symbols-outlined text-[32px] text-text-muted mb-2">
@@ -386,6 +397,25 @@ export default function ProvidersPage() {
         </div>
       )}
 
+
+      <AddCompatibleModal
+        isOpen={isAddCompatibleOpen}
+        onClose={() => setIsAddCompatibleOpen(false)}
+        onCreated={async () => {
+          try {
+            const [connectionsRes, nodesRes] = await Promise.all([
+              fetch("/api/providers"),
+              fetch("/api/provider-nodes"),
+            ]);
+            const connectionsData = await connectionsRes.json();
+            const nodesData = await nodesRes.json();
+            if (connectionsRes.ok) setConnections(connectionsData.connections || []);
+            if (nodesRes.ok) setProviderNodes(nodesData.nodes || []);
+          } catch (error) {
+            console.log("Error refreshing providers:", error);
+          }
+        }}
+      />
 
       {/* Hasil Pengujian Modal */}
       {testResults && (
