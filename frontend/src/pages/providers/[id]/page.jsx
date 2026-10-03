@@ -99,6 +99,16 @@ export default function ProviderDetailPage() {
     triggerApiKeyConnection();
   };
 
+  const savedConnection = connections.find((connection) => connection.provider === providerId) || null;
+  const savedData = savedConnection?.providerSpecificData || {};
+  const savedBaseUrl = savedData.baseUrl || savedConnection?.baseUrl || "";
+  const isSavedXkiro = /xkiro/i.test(
+    [providerId, savedConnection?.name, savedData.nodeName, savedBaseUrl].filter(Boolean).join(" "),
+  );
+  const isSavedAtria = /atria/i.test(
+    [providerId, savedConnection?.name, savedData.nodeName, savedBaseUrl].filter(Boolean).join(" "),
+  );
+
   const providerInfo = providerNode
     ? {
         id: providerNode.id,
@@ -109,7 +119,22 @@ export default function ProviderDetailPage() {
         baseUrl: providerNode.baseUrl,
         type: providerNode.type,
       }
-    : (OAUTH_PROVIDERS[providerId] || APIKEY_PROVIDERS[providerId] || FREE_PROVIDERS[providerId] || FREE_TIER_PROVIDERS[providerId] || WEB_COOKIE_PROVIDERS[providerId]);
+    : (OAUTH_PROVIDERS[providerId] ||
+      APIKEY_PROVIDERS[providerId] ||
+      FREE_PROVIDERS[providerId] ||
+      FREE_TIER_PROVIDERS[providerId] ||
+      WEB_COOKIE_PROVIDERS[providerId] ||
+      (savedConnection
+        ? {
+            id: providerId,
+            name: savedConnection.name || (isSavedXkiro ? "xKiro" : isSavedAtria ? "Atria" : providerId),
+            color: isSavedXkiro ? "#7C3AED" : isSavedAtria ? "#0EA5E9" : "#10A37F",
+            textIcon: isSavedXkiro ? "XK" : isSavedAtria ? "AT" : providerId.slice(0, 2).toUpperCase(),
+            baseUrl: savedBaseUrl,
+            apiType: savedData.apiType || "chat",
+            type: savedData.type || "openai-compatible",
+          }
+        : null));
   const authModes = providerInfo?.authModes || [];
   const isOAuth = !!OAUTH_PROVIDERS[providerId] || !!FREE_PROVIDERS[providerId] || authModes.includes("oauth");
   const supportsApiKeyAuth = !!APIKEY_PROVIDERS[providerId] || authModes.includes("apikey");
