@@ -386,18 +386,6 @@ export default function ProvidersPage() {
         </div>
       )}
 
-      <AddCompatibleModal
-        isOpen={showAddCompatibleModal}
-        onClose={() => setShowAddCompatibleModal(false)}
-        onCreated={async () => {
-          const [connectionsRes, nodesRes] = await Promise.all([
-            fetch("/api/providers"),
-            fetch("/api/provider-nodes"),
-          ]);
-          if (connectionsRes.ok) setConnections((await connectionsRes.json()).connections || []);
-          if (nodesRes.ok) setProviderNodes((await nodesRes.json()).nodes || []);
-        }}
-      />
 
       {/* Hasil Pengujian Modal */}
       {testResults && (
