@@ -48,7 +48,7 @@ async function normalizeProxyPoolId(proxyPoolId) {
 // GET /api/providers - List all connections
 export async function GET(req, res) {
   try {
-    const connections = (await getProviderConnections()).filter((c) => isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider));
+    const connections = await getProviderConnections();
 
     // Build nodeNameMap for compatible providers (id → name)
     let nodeNameMap = {};
