@@ -25,8 +25,12 @@ export default function AutomationDashboard() {
   const [folder, setFolder] = useState("inbox");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("email_connected")) setNotice("Akun Gmail berhasil terhubung. Klik Sinkronkan Sekarang untuk mengambil pesan.");
+    if (params.get("email_error")) setNotice(`Koneksi Gmail gagal: ${params.get("email_error")}`);
     let cancelled = false;
     async function loadEmailData() {
       setLoading(true);
@@ -95,11 +99,15 @@ export default function AutomationDashboard() {
           </div>
           <p className="text-sm text-text-muted">Kelola banyak akun Gmail, Proton Mail, Outlook, dan layanan email lain dari satu tempat.</p>
         </div>
-        <button type="button" onClick={() => setNotice("Koneksi akun email akan tersedia setelah connector email diaktifkan.")}
+        <button type="button" onClick={() => { window.location.href = "/api/email/oauth/gmail/start"; }}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
           <span className="material-symbols-outlined text-[18px]">add</span>
-          Tambah Akun Email
+          Tambah Gmail
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" disabled={syncing} onClick={async () => { setSyncing(true); try { const r=await fetch("/api/email/sync",{method:"POST"}); const d=await r.json(); setNotice(r.ok ? `Sinkronisasi selesai: ${d.synced || 0} pesan diproses.` : (d.error || "Sinkronisasi gagal")); window.location.reload(); } catch { setNotice("Tidak dapat menghubungi layanan sinkronisasi."); } finally { setSyncing(false); } }} className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-background disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">sync</span>{syncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</button>
       </div>
 
       {notice && (
