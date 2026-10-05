@@ -8,8 +8,7 @@ const CLI_TOKEN_SALT = "9r-cli-auth";
 
 let cachedCliToken: string | null = null;
 async function getCliToken() {
-  if (!cachedCliToken)
-    cachedCliToken = await getConsistentMachineId(CLI_TOKEN_SALT);
+  if (!cachedCliToken) cachedCliToken = await getConsistentMachineId(CLI_TOKEN_SALT);
   return cachedCliToken;
 }
 
@@ -19,7 +18,6 @@ async function hasValidCliToken(req: Request) {
   return token === (await getCliToken());
 }
 
-// Public paths — no auth required
 const PUBLIC_API_PATHS = [
   "/api/health",
   "/api/init",
@@ -43,38 +41,11 @@ const ALWAYS_PROTECTED = [
   "/api/version/update",
 ];
 
-const PROTECTED_API_PATHS = [
-  "/api/settings",
-  "/api/keys",
-  "/api/providers",
-  "/api/provider-nodes",
-  "/api/proxy-pools",
-  "/api/combos",
-  "/api/models",
-  "/api/usage",
-  "/api/oauth",
-  "/api/media-providers",
-  "/api/pricing",
-  "/api/tags",
-  "/api/tunnel",
-  "/api/mcp",
-  "/api/automation",
-];
-
-export async function authMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const path = req.path;
 
-  // Allow public paths
-  if (PUBLIC_API_PATHS.some((p) => path === p || path.startsWith(p + "/")))
-    return next();
-  if (PUBLIC_PREFIXES.some((p) => path.startsWith(p)))
-    return next();
-
-  // Allow CLI token
+  if (PUBLIC_API_PATHS.some((p) => path === p || path.startsWith(p + "/"))) return next();
+  if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return next();
   if (await hasValidCliToken(req)) return next();
 
   const alwaysProtected = ALWAYS_PROTECTED.some(
@@ -83,33 +54,35 @@ export async function authMiddleware(
 
   try {
     const settings = await getSettings();
-    const requireLogin = settings?.requireLogin ?? false;
+    const requireLogin = settings?.requireLogin === true;
 
-    // Check JWT cookie
     const token = req.cookies?.["9r_session"];
     if (token) {
       const valid = await verifyDashboardAuthToken(token);
       if (valid) return next();
     }
 
-    // If login not required and path not always-protected
-    if (!requireLogin && !alwaysProtected) {
-      // Protected paths are only enforced when requireLogin=true.
-      // When login is not required, allow dashboard API paths freely.
-      return next();
-    }
+    if (!requireLogin && !alwaysProtected) return next();
 
-    // Check API key for LLM endpoints
     const apiKey = (req.headers["x-api-key"] ||
-      req.headers["authorization"]?.replace("Bearer ", "")) as
-      | string
-      | undefined;
-    if (apiKey) {
-      const valid = await validateApiKey(apiKey);
-      if (valid) return next();
-    }
+      req.headers["authorization"]?.replace(/^Bearer\s+/i, "")) as string | undefined;
 
-    return res.status(401).json({ error: "Unauthorized" });
+    if (apiKey && await validateApiKey(apiKey)) return next();
+
+    const reason = token ? "session_invalid" : "session_missing";
+    console.warn(
+      "[auth] 401",
+      JSON.stringify({ path, method: req.method, reason, requireLogin, hasApiKey: Boolean(apiKey) })
+    );
+
+    return res.status(401).json({
+      error: "Unauthorized",
+      reason,
+      requireLogin,
+      hint: reason === "session_missing"
+        ? "Cookie 9r_session tidak diterima oleh server."
+        : "Cookie 9r_session ada tetapi tidak valid.",
+    });
   } catch (err) {
     console.error("[auth]", err);
     return res.status(500).json({ error: "Auth error" });
