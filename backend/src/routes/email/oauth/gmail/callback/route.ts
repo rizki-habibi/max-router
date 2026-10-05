@@ -1,4 +1,4 @@
-import { getAdapter } from "../../../../../../lib/db/driver.js";
+import { getAdapter } from "../../../../../lib/db/driver.js";
 import { upsertEmailAccount } from "../../../../../../lib/db/repos/emailRepo.js";
 import { v4 as uuidv4 } from "uuid";
 
