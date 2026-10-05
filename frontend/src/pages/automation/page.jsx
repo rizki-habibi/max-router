@@ -25,10 +25,15 @@ export default function AutomationDashboard() {
   const [folder, setFolder] = useState("inbox");
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("email_connected") || params.get("email_error")) window.history.replaceState({}, "", "/dashboard/automation");
+    const connected = params.get("email_connected");
+    const error = params.get("email_error");
+    if (connected) setNotice({ type: "success", text: `Gmail ${connected} berhasil terhubung.` });
+    if (error) setNotice({ type: "error", text: error });
+    if (connected || error) window.history.replaceState({}, "", "/dashboard/automation");
     let cancelled = false;
     async function loadEmailData() {
       setLoading(true);
@@ -41,6 +46,7 @@ export default function AutomationDashboard() {
           const data = await accountsRes.json();
           if (!cancelled) setAccounts(Array.isArray(data.accounts) ? data.accounts : []);
         }
+        if (!accountsRes.ok && accountsRes.status === 401) setNotice({ type: "error", text: "Sesi Max Router diperlukan untuk memuat akun email." });
         if (messagesRes.ok) {
           const data = await messagesRes.json();
           if (!cancelled) setMessages(Array.isArray(data.messages) ? data.messages : []);
@@ -67,7 +73,7 @@ export default function AutomationDashboard() {
       const text = [item.from_name, item.from_address, item.to_address, item.subject, item.snippet, item.body]
         .filter(Boolean).join(" ").toLowerCase();
       if (provider !== "all" && itemProvider !== provider) return false;
-      if (account !== "all" && itemAccount !== account) return false;
+      if (account !== "all" && itemAccount !== account && String(item.email_address || "").toLowerCase() !== String(account).toLowerCase()) return false;
       if (filter === "unread" && item.is_read) return false;
       if (filter === "starred" && !item.is_starred) return false;
       if (filter === "attachment" && !item.has_attachment) return false;
@@ -91,6 +97,7 @@ export default function AutomationDashboard() {
     <div className="min-h-full space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
+          {notice && <div className={`mb-3 rounded-xl border px-4 py-3 text-sm ${notice.type === "success" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700" : "border-red-500/30 bg-red-500/10 text-red-700"}`}>{notice.text}</div>}
           <div className="flex items-center gap-2 mb-1">
             <span className="material-symbols-outlined text-primary">mail</span>
             <h1 className="text-xl font-bold text-text-main">Pusat Email</h1>
@@ -161,7 +168,7 @@ export default function AutomationDashboard() {
               <span className="material-symbols-outlined text-5xl text-text-muted/50">inbox</span>
               <h2 className="mt-3 text-base font-semibold text-text-main">{loading ? "Memuat pesan..." : "Belum ada pesan"}</h2>
               <p className="mt-1 max-w-md mx-auto text-sm text-text-muted">
-                {loading ? "Sedang mengambil pesan dari akun email yang terhubung." : "Hubungkan akun Gmail, Proton Mail, atau layanan email lain untuk mulai menerima dan mendeteksi pesan di sini."}
+                {loading ? "Sedang mengambil pesan dari akun email yang terhubung." : accounts.length ? "Belum ada pesan pada folder atau filter ini. Coba ubah folder, filter, atau pencarian." : "Hubungkan akun Gmail untuk mulai menerima dan mendeteksi pesan di sini."}
               </p>
             </div>
           )}
