@@ -1,5 +1,5 @@
 // Latest schema version — bumped when a migration is added in ./migrations/
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const PRAGMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -15,6 +15,16 @@ PRAGMA busy_timeout = 5000;
 // auto-add missing tables/columns/indexes after versioned migrations.
 // For destructive changes (drop/rename/type-change), write a migration file.
 export const TABLES = {
+  emailAccounts: {
+    columns: {
+      id: "TEXT PRIMARY KEY", provider: "TEXT NOT NULL", email: "TEXT NOT NULL", name: "TEXT", accessToken: "TEXT", refreshToken: "TEXT", expiresAt: "TEXT", scope: "TEXT", isActive: "INTEGER DEFAULT 1", lastSyncAt: "TEXT", lastError: "TEXT", createdAt: "TEXT NOT NULL", updatedAt: "TEXT NOT NULL",
+    }, indexes: ["CREATE INDEX IF NOT EXISTS idx_email_accounts_provider ON emailAccounts(provider)", "CREATE INDEX IF NOT EXISTS idx_email_accounts_email ON emailAccounts(email)"],
+  },
+  emailMessages: {
+    columns: {
+      id: "TEXT PRIMARY KEY", accountId: "TEXT NOT NULL", providerMessageId: "TEXT NOT NULL", threadId: "TEXT", folder: "TEXT DEFAULT 'inbox'", fromAddress: "TEXT", fromName: "TEXT", toAddress: "TEXT", subject: "TEXT", snippet: "TEXT", body: "TEXT", isRead: "INTEGER DEFAULT 0", isStarred: "INTEGER DEFAULT 0", hasAttachment: "INTEGER DEFAULT 0", receivedAt: "TEXT", createdAt: "TEXT NOT NULL", updatedAt: "TEXT NOT NULL",
+    }, indexes: ["CREATE UNIQUE INDEX IF NOT EXISTS idx_email_messages_provider_id ON emailMessages(accountId, providerMessageId)", "CREATE INDEX IF NOT EXISTS idx_email_messages_received ON emailMessages(receivedAt DESC)", "CREATE INDEX IF NOT EXISTS idx_email_messages_account_folder ON emailMessages(accountId, folder)"],
+  },
   _meta: {
     columns: {
       key: "TEXT PRIMARY KEY",
