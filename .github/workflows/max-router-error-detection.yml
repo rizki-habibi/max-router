@@ -108,6 +108,97 @@ jobs:
           console.log('Static runtime/database/diagnostics audit: OK');
           NODE
 
+
+      - name: Audit OAuth email dan sesi Max Router
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+
+          const checks = [
+            ['Email accounts endpoint', 'src/routes/email/accounts/route.ts', '/api/email/accounts'],
+            ['Gmail OAuth start', 'src/routes/email/oauth/gmail/start/route.ts', 'GOOGLE_CLIENT_ID'],
+            ['Gmail OAuth callback', 'src/routes/email/oauth/gmail/callback/route.ts', 'setDashboardAuthCookie'],
+            ['Session cookie', 'src/lib/auth/dashboardSession.js', '9r_session'],
+            ['Secure cookie detection', 'src/lib/auth/dashboardSession.js', 'x-forwarded-proto'],
+            ['SameSite protection', 'src/lib/auth/dashboardSession.js', 'sameSite'],
+            ['Auth middleware session check', 'src/middleware/auth.ts', 'verifyDashboardAuthToken'],
+          ];
+
+          for (const [label, file, needle] of checks) {
+            if (!fs.existsSync(file)) throw new Error('[EMAIL-AUTH] File tidak ditemukan: ' + file);
+            const source = fs.readFileSync(file, 'utf8');
+            if (!source.includes(needle)) {
+              throw new Error('[EMAIL-AUTH] ' + label + ' gagal: "' + needle + '" tidak ditemukan di ' + file);
+            }
+            console.log('[EMAIL-AUTH] OK: ' + label);
+          }
+
+          const callback = fs.readFileSync('src/routes/email/oauth/gmail/callback/route.ts', 'utf8');
+          if (!callback.includes('req.cookies?.["9r_session"]')) {
+            throw new Error('[EMAIL-AUTH] Callback Gmail tidak membaca sesi 9r_session.');
+          }
+          if (!callback.includes('verifyDashboardAuthToken(existingSession)')) {
+            throw new Error('[EMAIL-AUTH] Callback Gmail tidak memvalidasi sesi dashboard.');
+          }
+
+          const session = fs.readFileSync('src/lib/auth/dashboardSession.js', 'utf8');
+          if (!/httpOnly:\s*true/.test(session)) throw new Error('[EMAIL-AUTH] Cookie sesi harus httpOnly.');
+          if (!/sameSite:\s*"lax"/.test(session)) throw new Error('[EMAIL-AUTH] Cookie sesi harus SameSite=Lax.');
+
+          console.log('[EMAIL-AUTH] Static OAuth/session audit: PASS');
+          NODE
+
+      - name: Smoke test endpoint auth tanpa membocorkan secret
+        env:
+          NODE_ENV: test
+          PORT: 20223
+          ALLOW_EPHEMERAL_SQLITE: 'true'
+          INITIAL_PASSWORD: 'ci-test-password-not-production'
+          JWT_SECRET: 'ci-only-secret-not-production'
+        run: |
+          timeout 30s npm start > /tmp/max-router-auth.log 2>&1 &
+          PID=$!
+          sleep 8
+
+          if ! kill -0 "$PID" 2>/dev/null; then
+            cat /tmp/max-router-auth.log
+            exit 1
+          fi
+
+          node --input-type=module - <<'NODE'
+          const base = 'http://127.0.0.1:20223';
+
+          const login = await fetch(base + '/api/auth/login', {
+            method: 'POST',
+            headers: {'content-type': 'application/json'},
+            body: JSON.stringify({password: 'ci-test-password-not-production'})
+          });
+
+          const setCookie = login.headers.get('set-cookie') || '';
+          console.log('[AUTH-SMOKE] login HTTP:', login.status);
+          console.log('[AUTH-SMOKE] cookie present:', Boolean(setCookie));
+          console.log('[AUTH-SMOKE] cookie flags:', setCookie.replace(/9r_session=[^;]+/g, '9r_session=<redacted>'));
+
+          if (!login.ok) throw new Error('[AUTH-SMOKE] Login test gagal.');
+          if (!/9r_session=/.test(setCookie)) throw new Error('[AUTH-SMOKE] Cookie 9r_session tidak diterbitkan.');
+
+          const token = setCookie.match(/9r_session=([^;]+)/)?.[1];
+          const accounts = await fetch(base + '/api/email/accounts', {
+            headers: {cookie: '9r_session=' + token}
+          });
+          console.log('[AUTH-SMOKE] /api/email/accounts HTTP:', accounts.status);
+          const body = await accounts.text();
+          console.log('[AUTH-SMOKE] accounts response:', body.slice(0, 500));
+
+          if (accounts.status === 401) {
+            throw new Error('[AUTH-SMOKE] SESI PUTUS: /api/email/accounts mengembalikan 401 setelah login.');
+          }
+          if (!accounts.ok) throw new Error('[AUTH-SMOKE] /api/email/accounts gagal HTTP ' + accounts.status);
+          NODE
+
+          cat /tmp/max-router-auth.log
+          kill "$PID" || true
+
       - name: Validate workflow YAML
         working-directory: .
         run: |
