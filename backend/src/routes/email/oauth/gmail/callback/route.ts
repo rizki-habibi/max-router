@@ -1,6 +1,7 @@
 import { getAdapter } from "../../../../../lib/db/driver.js";
 import { upsertEmailAccount } from "../../../../../lib/db/repos/emailRepo.js";
 import { v4 as uuidv4 } from "uuid";
+import { setDashboardAuthCookie, verifyDashboardAuthToken } from "../../../../../lib/auth/dashboardSession.js";
 
 async function jsonFetch(url, options) {
   const r = await fetch(url, options);
@@ -69,6 +70,14 @@ export async function GET_handler(req, res) {
     });
 
     if (!info.email) throw new Error("Google tidak mengembalikan alamat Gmail.");
+
+    // OAuth callback kembali ke domain Max Router. Pastikan sesi dashboard tetap hidup
+    // dengan menerbitkan ulang cookie sesi yang sudah ada (jika masih valid).
+    // Ini mencegah Pusat Email membaca callback sebagai sesi baru/tanpa autentikasi.
+    const existingSession = req.cookies?.["9r_session"];
+    if (existingSession && await verifyDashboardAuthToken(existingSession)) {
+      await setDashboardAuthCookie(res, req);
+    }
 
     await upsertEmailAccount({
       id: uuidv4(),
