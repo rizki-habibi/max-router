@@ -138,9 +138,9 @@ const getPageInfo = (pathname) => {
     };
   if (pathname === "/dashboard")
     return {
-      title: "Endpoint",
-      description: "API endpoint configuration",
-      icon: "api",
+      title: "Beranda",
+      description: "Halaman utama Max Router",
+      icon: "home",
       breadcrumbs: [],
     };
   return { title: "", description: "", breadcrumbs: [] };
