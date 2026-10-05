@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { DashboardLayout } from "@/shared/components/layouts";
 
 // Lazy-loaded pages (code splitting — loads each page only when needed)
@@ -24,12 +24,37 @@ const ConsoleLog      = lazy(() => import("./pages/console-log/page"));
 const WeavyPool          = lazy(() => import("./pages/providers/weavy/pool/page"));
 const AmmailTutorial     = lazy(() => import("./pages/automation/ammail-tutorial/page"));
 
-// Auth guard — check if dashboard session cookie is present
+// Auth guard — cookie 9r_session bersifat HttpOnly sehingga tidak boleh dibaca
+// dari JavaScript. Validasi sesi selalu dilakukan oleh server.
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  // Simple check — backend /api/auth/status will confirm
-  const hasSession = document.cookie.includes("9r_session") ||
-                     localStorage.getItem("9r_authed") === "1";
-  if (!hasSession) return <Navigate to="/login" replace />;
+  const [state, setState] = useState<"checking" | "valid" | "invalid">("checking");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/status", {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!active) return;
+        if (res.ok && data.isLoggedIn === true) {
+          localStorage.setItem("9r_authed", "1");
+          setState("valid");
+        } else {
+          localStorage.removeItem("9r_authed");
+          setState("invalid");
+        }
+      })
+      .catch(() => {
+        if (active) setState("invalid");
+      });
+    return () => { active = false; };
+  }, []);
+
+  if (state === "checking") return <LoadingFallback />;
+  if (state === "invalid") return <Navigate to="/login?force=1" replace />;
   return <>{children}</>;
 }
 
