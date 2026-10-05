@@ -90,6 +90,7 @@ export async function POST_handler(req, res) {
   let synced = 0;
   let failed = 0;
   const results = [];
+  const newMessages = [];
 
   try {
     const accounts = (await listEmailAccounts()).filter(
@@ -114,7 +115,7 @@ export async function POST_handler(req, res) {
           const headers = full.payload?.headers || [];
           const labels = full.labelIds || [];
 
-          await upsertEmailMessage({
+          const saved = await upsertEmailMessage({
             accountId: account.id,
             providerMessageId: full.id,
             threadId: full.threadId,
@@ -138,6 +139,23 @@ export async function POST_handler(req, res) {
               ? new Date(Number(full.internalDate)).toISOString()
               : new Date().toISOString(),
           });
+          if (saved?.created) {
+            const subject = header(headers, "Subject");
+            const from = header(headers, "From");
+            const body = extractBody(full.payload);
+            const haystack = `${subject} ${from} ${full.snippet || ""} ${body}`.toLowerCase();
+            const xkiro = /xkiro/.test(haystack) && /(token|api|key|reset|reset|credential|auth|access)/.test(haystack);
+            newMessages.push({
+              account: account.email,
+              provider: account.provider,
+              messageId: full.id,
+              subject,
+              from,
+              receivedAt: full.internalDate ? new Date(Number(full.internalDate)).toISOString() : new Date().toISOString(),
+              category: xkiro ? "xkiro_token" : "email_baru",
+              sensitive: xkiro,
+            });
+          }
           synced++;
         }
 
@@ -166,7 +184,7 @@ export async function POST_handler(req, res) {
       }
     }
 
-    return res.json({ ok: true, synced, failed, results });
+    return res.json({ ok: true, synced, failed, results, newMessages });
   } catch (e) {
     console.error("[email/sync]", e);
     return res.status(500).json({
