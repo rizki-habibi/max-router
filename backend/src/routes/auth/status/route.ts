@@ -1,4 +1,3 @@
-
 import { getSettings } from "../../../lib/localDb.js";
 import { isOidcConfigured } from "../../../lib/auth/oidc.js";
 import { getDashboardAuthSession } from "../../../lib/auth/dashboardSession.js";
@@ -6,10 +5,10 @@ import { getDashboardAuthSession } from "../../../lib/auth/dashboardSession.js";
 export async function GET(req, res) {
   try {
     const settings = await getSettings();
-    const cookieStore = { get: (k) => ({ value: (req).cookies?.[k] }) };
-    const session = await getDashboardAuthSession(cookieStore.get("9r_session")?.value);
-    const requireLogin = settings.requireLogin !== false;
-    const authMode = settings.authMode || "password";
+    const token = req.cookies?.["9r_session"];
+    const session = await getDashboardAuthSession(token);
+    const requireLogin = settings?.requireLogin === true;
+    const authMode = settings?.authMode || "password";
     const oidcName = String(session?.oidcName || "").trim();
     const oidcEmail = String(session?.oidcEmail || "").trim();
     const displayName = oidcName || oidcEmail || (session?.oidc ? "OIDC user" : "Password user");
@@ -30,9 +29,11 @@ export async function GET(req, res) {
       oidcEmail: oidcEmail || null,
       oidcLogin: !!session?.oidc,
       isLoggedIn: !!session,
+      sessionState: token ? (session ? "valid" : "invalid") : "missing",
     });
-  } catch {
-    return res.json({
+  } catch (error) {
+    console.error("[auth/status]", error?.message || error);
+    return res.status(200).json({
       requireLogin: true,
       authMode: "password",
       oidcConfigured: false,
@@ -46,6 +47,7 @@ export async function GET(req, res) {
       oidcEmail: null,
       oidcLogin: false,
       isLoggedIn: false,
+      sessionState: "error",
     });
   }
 }
