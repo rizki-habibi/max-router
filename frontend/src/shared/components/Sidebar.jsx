@@ -22,7 +22,6 @@ const navItems = [
 
 const debugItems = [
   { href: "/dashboard/console-log", label: "Log Konsol", icon: "terminal" },
-  { href: "/dashboard/translator", label: "Penerjemah", icon: "translate" },
 ];
 
 const systemItems = [
@@ -37,17 +36,9 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [shutdownCountdown, setShutdownCountdown] = useState(0);
-  const [enableTranslator, setEnableTranslator] = useState(false);
   const { copied, copy } = useCopyToClipboard(2000);
 
   const INSTALL_CMD = UPDATER_CONFIG.installCmdLatest;
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => { if (data.enableTranslator) setEnableTranslator(true); })
-      .catch(() => {});
-  }, []);
 
   // Lazy check for new npm version on mount
   useEffect(() => {
@@ -219,34 +210,24 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               </Link>
             ))}
 
-            {/* Debug items (inside System section, before Settings) */}
-            {debugItems.map((item) => {
-              const show = item.href !== "/dashboard/translator" || enableTranslator;
-              return show ? (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "mr-comic-nav-item flex items-center rounded-xl transition-all group",
-                    collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
-                    isActive(item.href)
-                      ? "bg-primary/10 text-primary"
-                      : "text-text-muted hover:bg-surface-2 hover:text-text-main"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "material-symbols-outlined text-[18px]",
-                      isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors"
-                    )}
-                  >
-                    {item.icon}
-                  </span>
-                  <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
-                </Link>
-              ) : null;
-            })}
+            {/* Debug items */}
+            {debugItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={onClose}
+                className={cn(
+                  "mr-comic-nav-item flex items-center rounded-xl transition-all group",
+                  collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
+                  isActive(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                )}
+              >
+                <span className={cn("material-symbols-outlined text-[18px]", isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors")}>{item.icon}</span>
+                <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
+              </Link>
+            ))}
 
             {/* Settings */}
             <Link
