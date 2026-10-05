@@ -4,6 +4,7 @@ import { getDashboardAuthSession } from "../../../lib/auth/dashboardSession.js";
 
 export async function GET(req, res) {
   try {
+    res.setHeader("Cache-Control", "no-store");
     const settings = await getSettings();
     const token = req.cookies?.["9r_session"];
     const session = await getDashboardAuthSession(token);
