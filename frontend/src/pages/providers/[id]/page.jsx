@@ -18,6 +18,7 @@ import AddCustomModelModal from "./AddCustomModelModal";
 import LeonardoAdminPanel from "./LeonardoAdminPanel";
 
 const ONE_BY_ONE_DELAY_MS = 1000;
+const AG_RISK_STORAGE_KEY = "max-router-ag-risk-confirmed";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,6 +33,7 @@ export default function ProviderDetailPage() {
   const [providerNode, setProviderNode] = useState(null);
   const [proxyPools, setProxyPools] = useState([]);
   const [showOAuthModal, setShowOAuthModal] = useState(false);
+  const [showAgRiskModal, setShowAgRiskModal] = useState(false);
   const [showIFlowCookieModal, setShowIFlowCookieModal] = useState(false);
   const [showAddApiKeyModal, setShowAddApiKeyModal] = useState(false);
   const [addConnectionError, setAddConnectionError] = useState("");
@@ -80,6 +82,10 @@ export default function ProviderDetailPage() {
   };
 
   const triggerAddConnection = () => {
+    if (providerInfo?.deprecationNotice && typeof window !== "undefined" && window.localStorage.getItem(AG_RISK_STORAGE_KEY) !== "true") {
+      setShowAgRiskModal(true);
+      return;
+    }
     if (isOAuth) {
       triggerOAuthConnection();
       return;
