@@ -1,0 +1,2 @@
+import { listEmailMessages } from "../../../lib/db/repos/emailRepo.js";
+export async function GET_handler(req,res){ try { const url=new URL("http://localhost"+req.originalUrl); const folder=url.searchParams.get("folder")||"inbox"; return res.json({messages: await listEmailMessages({folder})}); } catch(e){ console.error("[email/messages]",e); return res.status(500).json({error:"Gagal memuat pesan email"}); } }
