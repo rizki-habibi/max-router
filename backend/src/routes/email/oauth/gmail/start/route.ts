@@ -4,7 +4,7 @@ import { getAdapter } from "../../../../../../lib/db/driver.js";
 export async function GET_handler(req,res){
   const clientId=process.env.GOOGLE_CLIENT_ID;
   if(!clientId) return res.status(503).json({error:"GOOGLE_CLIENT_ID belum dikonfigurasi di server"});
-  const base=(process.env.PUBLIC_BASE_URL||`${req.protocol}://${req.get("host")}`).replace(/\\/$/,"");
+  const base=(process.env.PUBLIC_BASE_URL||`${req.protocol}://${req.get("host")}`).replace(/\/$/,"");
   const redirectUri=`${base}/api/email/oauth/gmail/callback`;
   const state=crypto.randomBytes(32).toString("hex");
   const db=await getAdapter();
