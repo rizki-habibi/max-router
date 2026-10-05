@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNotificationStore } from "../../store/notificationStore.js";
 
 const FILTERS = [
   { id: "all", label: "Semua Pesan", icon: "mail" },
@@ -41,6 +42,7 @@ export default function AutomationDashboard() {
   const [notice, setNotice] = useState(null);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [imapForm, setImapForm] = useState({ email: "", name: "", host: "", port: "993", username: "", password: "", secure: true });
+  const addNotification = useNotificationStore((state) => state.addNotification);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -98,6 +100,29 @@ export default function AutomationDashboard() {
     loadEmailData();
     return () => { cancelled = true; };
   }, [folder]);
+
+  useEffect(() => {
+    let active = true;
+    async function watchEmail() {
+      try {
+        const response = await fetch("/api/email/sync", { method: "POST", credentials: "same-origin", cache: "no-store" });
+        if (!response.ok || !active) return;
+        const data = await response.json();
+        for (const item of Array.isArray(data.newMessages) ? data.newMessages : []) {
+          const xkiro = item.category === "xkiro_token";
+          addNotification({
+            type: xkiro ? "warning" : "info",
+            title: xkiro ? "Token xKiro terdeteksi" : "Email baru masuk",
+            message: xkiro ? `Email terkait xKiro terdeteksi pada ${item.account}. Buka Pusat Email untuk detail.` : `${item.from || "Pengirim tidak dikenal"} — ${item.subject || "(Tanpa subjek)"}`,
+            duration: xkiro ? 12000 : 7000,
+          });
+        }
+      } catch { /* pemantauan bersifat best-effort */ }
+    }
+    watchEmail();
+    const timer = window.setInterval(watchEmail, 60000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [addNotification]);
 
   const accountOptions = useMemo(() => accounts.filter((item) => {
     const itemProvider = String(item.provider || "").toLowerCase();
