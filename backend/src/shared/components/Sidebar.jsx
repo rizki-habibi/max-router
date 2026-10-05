@@ -79,7 +79,7 @@ export default function Sidebar({ onClose }) {
     }, 1000);
   };
 
-  const handleBatalUpdate = () => {
+  const handleCancelUpdate = () => {
     setIsUpdating(false);
     setShutdownCountdown(0);
   };
@@ -121,7 +121,7 @@ export default function Sidebar({ onClose }) {
                   onClick={() => setShowUpdateModal(true)}
                   className="px-2 py-1 rounded bg-green-600 hover:bg-green-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white text-[11px] font-semibold transition-colors cursor-pointer"
                 >
-                  Update now
+                  Perbarui sekarang
                 </button>
                 <button
                   onClick={() => copy(INSTALL_CMD)}
@@ -166,7 +166,7 @@ export default function Sidebar({ onClose }) {
           {/* System section */}
           <div className="pt-3 mt-2 space-y-0.5">
             <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
-              System
+              Sistem
             </p>
 
 
@@ -308,12 +308,12 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
 
       {isDisconnected ? (
         <Button variant="secondary" fullWidth onClick={() => globalThis.location.reload()}>
-          Reload Page
+          Muat Ulang Halaman
         </Button>
       ) : (
         <div className="flex gap-2">
           <Button variant="secondary" onClick={onCancel} disabled={isCountingDown}>
-            Cancel
+            Batal
           </Button>
           <Button variant="primary" fullWidth onClick={onCopyAndShutdown} disabled={isCountingDown}>
             {copied ? "✓ Tersalin — mematikan..." : isCountingDown ? `Mematikan dalam ${countdown} detik` : "Salin & Matikan"}
