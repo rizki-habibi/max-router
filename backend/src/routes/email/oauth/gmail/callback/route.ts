@@ -19,6 +19,12 @@ async function jsonFetch(url, options) {
 
 export async function GET_handler(req, res) {
   try {
+    res.setHeader("Cache-Control", "no-store");
+    const existingSession = req.cookies?.["9r_session"];
+    if (!existingSession || !(await verifyDashboardAuthToken(existingSession))) {
+      return res.redirect("/login?force=1");
+    }
+
     const url = new URL("http://localhost" + req.originalUrl);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
@@ -71,13 +77,7 @@ export async function GET_handler(req, res) {
 
     if (!info.email) throw new Error("Google tidak mengembalikan alamat Gmail.");
 
-    // OAuth callback kembali ke domain Max Router. Pastikan sesi dashboard tetap hidup
-    // dengan menerbitkan ulang cookie sesi yang sudah ada (jika masih valid).
-    // Ini mencegah Pusat Email membaca callback sebagai sesi baru/tanpa autentikasi.
-    const existingSession = req.cookies?.["9r_session"];
-    if (existingSession && await verifyDashboardAuthToken(existingSession)) {
-      await setDashboardAuthCookie(res, req);
-    }
+    // Perpanjang sesi yang sudah tervalidasi selama proses OAuth.
 
     await upsertEmailAccount({
       id: uuidv4(),
