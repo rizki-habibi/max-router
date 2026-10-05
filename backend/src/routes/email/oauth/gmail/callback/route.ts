@@ -1,5 +1,5 @@
 import { getAdapter } from "../../../../../lib/db/driver.js";
-import { upsertEmailAccount } from "../../../../../../lib/db/repos/emailRepo.js";
+import { upsertEmailAccount } from "../../../../../lib/db/repos/emailRepo.js";
 import { v4 as uuidv4 } from "uuid";
 
 async function jsonFetch(url,options){ const r=await fetch(url,options); const text=await r.text(); let data={}; try{data=JSON.parse(text)}catch{} if(!r.ok) throw new Error(data.error_description||data.error||text||`HTTP ${r.status}`); return data; }
