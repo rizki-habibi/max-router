@@ -16,9 +16,6 @@ function loadJwtSecret() {
     if (existing) return existing;
   } catch {}
 
-  // Production must use a persistent secret from the environment.
-  // Generating one in an ephemeral container invalidates every existing session
-  // after a restart/redeploy and makes the dashboard appear logged out.
   if (isProduction) {
     throw new Error(
       "[AUTH] JWT_SECRET wajib dikonfigurasi di production. Sesi tidak dibuat dengan secret ephemeral."
@@ -34,11 +31,16 @@ function loadJwtSecret() {
 const SECRET = new TextEncoder().encode(loadJwtSecret());
 
 export function shouldUseSecureCookie(request) {
-  const forceSecureCookie = process.env.AUTH_COOKIE_SECURE === "true";
-  const forwardedProto =
-    request?.headers?.["x-forwarded-proto"] ??
-    request?.headers?.get?.("x-forwarded-proto");
-  return forceSecureCookie || forwardedProto === "https";
+  if (String(process.env.AUTH_COOKIE_SECURE || "").trim().toLowerCase() === "false") {
+    return false;
+  }
+  if (process.env.NODE_ENV === "production") return true;
+
+  const forwardedProto = request?.headers?.["x-forwarded-proto"];
+  const proto = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : String(forwardedProto || request?.protocol || "").split(",")[0].trim().toLowerCase();
+  return proto === "https";
 }
 
 export async function createDashboardAuthToken(claims = {}) {
@@ -78,6 +80,7 @@ export async function setDashboardAuthCookie(res, request, claims = {}) {
     path: "/",
     maxAge: 24 * 60 * 60 * 1000,
   });
+  return token;
 }
 
 export function clearDashboardAuthCookie(res) {
