@@ -6,12 +6,10 @@ import Link from "next/link";
 import PropTypes from "prop-types";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
-import HeaderLanguage from "@/shared/components/HeaderLanguage";
 import ThemeToggle from "@/shared/components/ThemeToggle";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
-import { translate } from "@/i18n/runtime";
 
 const getPageInfo = (pathname) => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };
@@ -27,7 +25,7 @@ const getPageInfo = (pathname) => {
       title: provider?.name || providerId,
       description: "",
       breadcrumbs: [
-        { label: "Media Providers", href: `/dashboard/media-providers/${kindId}` },
+        { label: "Penyedia Media", href: `/dashboard/media-providers/${kindId}` },
         { label: kindConfig?.label || kindId, href: `/dashboard/media-providers/${kindId}` },
         { label: provider?.name || providerId, image: providerId === "codebuddy" || providerId === "cb" ? "/providers/codebuddy.svg" : `/providers/${providerId}.png` },
       ],
@@ -41,7 +39,7 @@ const getPageInfo = (pathname) => {
     const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
     return {
       title: kindConfig?.label || kindId,
-      description: `Manage your ${kindConfig?.label || kindId} providers`,
+      description: `Kelola penyedia ${kindConfig?.label || kindId}`,
       icon: kindConfig?.icon || "perm_media",
       breadcrumbs: [],
     };
@@ -57,7 +55,7 @@ const getPageInfo = (pathname) => {
         title: providerInfo.name,
         description: "",
         breadcrumbs: [
-          { label: "Providers", href: "/dashboard/providers" },
+          { label: "Penyedia", href: "/dashboard/providers" },
           {
             label: providerInfo.name,
             image: providerInfo.id === "codebuddy" || providerInfo.id === "cb" ? "/providers/codebuddy.svg" : `/providers/${providerInfo.id}.png`,
@@ -69,44 +67,44 @@ const getPageInfo = (pathname) => {
 
   if (pathname.includes("/providers") && !pathname.includes("/media-providers"))
     return {
-      title: "Providers",
-      description: "Manage your AI provider connections",
+      title: "Penyedia",
+      description: "Kelola koneksi penyedia AI",
       icon: "dns",
       breadcrumbs: [],
     };
   if (pathname.includes("/combos"))
     return {
-      title: "Combos",
-      description: "Model combos with fallback",
+      title: "Gabungan",
+      description: "Gabungan model dengan cadangan",
       icon: "layers",
       breadcrumbs: [],
     };
   if (pathname.includes("/usage"))
     return {
-      title: "Usage & Analytics",
+      title: "Penggunaan & Analitik",
       description:
-        "Monitor your API usage, token consumption, and request logs",
+        "Pantau penggunaan API, konsumsi token, dan log permintaan",
       icon: "bar_chart",
       breadcrumbs: [],
     };
   if (pathname.includes("/auth-files"))
     return {
-      title: "Auth Files",
-      description: "Map provider credentials stored in the local database",
+      title: "Berkas Autentikasi",
+      description: "Kelola kredensial penyedia yang tersimpan di basis data lokal",
       icon: "vpn_key",
       breadcrumbs: [],
     };
   if (pathname.includes("/quota"))
     return {
-      title: "Quota Tracker",
-      description: "Track and manage your API quota limits",
+      title: "Pelacak Kuota",
+      description: "Pantau dan kelola batas kuota API",
       icon: "data_usage",
       breadcrumbs: [],
     };
   if (pathname.includes("/proxy-pools"))
     return {
-      title: "Proxy Pools",
-      description: "Manage your proxy pool configurations",
+      title: "Kumpulan Proksi",
+      description: "Kelola konfigurasi kumpulan proksi",
       icon: "lan",
       breadcrumbs: [],
     };
@@ -119,22 +117,22 @@ const getPageInfo = (pathname) => {
     };
   if (pathname.includes("/profile"))
     return {
-      title: "Settings",
-      description: "Manage your preferences",
+      title: "Pengaturan",
+      description: "Kelola preferensi Anda",
       icon: "settings",
       breadcrumbs: [],
     };
   if (pathname.includes("/translator"))
     return {
-      title: "Translator",
-      description: "Debug translation flow between formats",
+      title: "Penerjemah",
+      description: "Debug alur konversi antarformat",
       icon: "translate",
       breadcrumbs: [],
     };
   if (pathname.includes("/console-log"))
     return {
-      title: "Console Log",
-      description: "Live server console output",
+      title: "Log Konsol",
+      description: "Keluaran konsol server secara langsung",
       icon: "monitor",
       breadcrumbs: [],
     };
@@ -195,7 +193,7 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
         router.refresh();
       }
     } catch (err) {
-      console.error("Failed to logout:", err);
+      console.error("Gagal keluar:", err);
     }
   };
 
@@ -246,7 +244,7 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
                       />
                     )}
                     <h1 className="text-base lg:text-2xl font-semibold text-text-main tracking-tight truncate">
-                      {translate(crumb.label)}
+                      {crumb.label}
                     </h1>
                   </div>
                 )}
@@ -262,12 +260,12 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
                 </span>
               )}
               <h1 className="text-base lg:text-2xl font-semibold tracking-tight truncate">
-                {translate(title)}
+                {title}
               </h1>
             </div>
             {description && (
               <p className="hidden lg:block text-sm text-text-muted truncate">
-                {translate(description)}
+                {description}
               </p>
             )}
           </div>
@@ -287,7 +285,6 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
         )}
         <HeaderSearch />
         <ThemeToggle />
-        <HeaderLanguage />
         <HeaderMenu onLogout={handleLogout} isLoggedIn={isLoggedIn} />
       </div>
     </header>
@@ -319,7 +316,7 @@ function HeaderSearch() {
           type="button"
           onClick={() => setQuery("")}
           className="absolute right-1 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main p-0.5 rounded"
-          aria-label="Clear search"
+          aria-label="Bersihkan pencarian"
         >
           <span className="material-symbols-outlined text-[16px]">close</span>
         </button>
