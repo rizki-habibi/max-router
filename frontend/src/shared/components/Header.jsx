@@ -10,7 +10,6 @@ import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
-import { translate } from "@/i18n/runtime";
 
 const getPageInfo = (pathname) => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };
@@ -139,9 +138,9 @@ const getPageInfo = (pathname) => {
     };
   if (pathname === "/dashboard")
     return {
-      title: "Endpoint",
-      description: "Konfigurasi endpoint API",
-      icon: "api",
+      title: "Beranda",
+      description: "Halaman utama Max Router",
+      icon: "home",
       breadcrumbs: [],
     };
   return { title: "", description: "", breadcrumbs: [] };
@@ -263,7 +262,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
                       />
                     )}
                     <h1 className="text-base lg:text-2xl font-semibold text-text-main tracking-tight truncate">
-                      {translate(crumb.label)}
+                      {crumb.label}
                     </h1>
                   </div>
                 )}
@@ -279,12 +278,12 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
                 </span>
               )}
               <h1 className="text-base lg:text-2xl font-semibold tracking-tight truncate">
-                {translate(title)}
+                {title}
               </h1>
             </div>
             {description && (
               <p className="hidden lg:block text-sm text-text-muted truncate">
-                {translate(description)}
+                {description}
               </p>
             )}
           </div>
