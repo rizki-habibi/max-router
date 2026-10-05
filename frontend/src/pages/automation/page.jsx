@@ -39,6 +39,7 @@ export default function AutomationDashboard() {
   const [folder, setFolder] = useState("inbox");
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [notice, setNotice] = useState(null);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [watchStatus, setWatchStatus] = useState("Belum diperiksa");
@@ -188,7 +189,8 @@ export default function AutomationDashboard() {
       {showAddAccount && <AddAccountModal onClose={() => setShowAddAccount(false)} imapForm={imapForm} setImapForm={setImapForm} onNotice={(value) => setNotice(value)} />}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" disabled={syncing} onClick={async () => { setSyncing(true); try { const r=await fetch("/api/email/sync",{method:"POST",credentials:"same-origin"}); if (r.ok) window.location.reload(); else { const d=await r.json().catch(()=>({})); setNotice({type:"error",text:d.error||`Sinkronisasi gagal (HTTP ${r.status}).`}); } } finally { setSyncing(false); } }} className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-background disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">sync</span>{syncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</button>
+        <button type="button" disabled={syncing} onClick={async () => { setSyncing(true); try { const r=await fetch("/api/email/sync",{method:"POST",credentials:"same-origin",cache:"no-store"}); const d=await r.json().catch(()=>({})); if (r.ok) { setNotice({type:"success",text:d.newMessages?.length ? `${d.newMessages.length} pesan baru terdeteksi.` : "Sinkronisasi selesai. Tidak ada pesan baru."); window.location.reload(); } else setNotice({type:"error",text:d.error||`Sinkronisasi gagal (HTTP ${r.status}).`}); } finally { setSyncing(false); } }} className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-background disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">sync</span>{syncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</button>
+        <button type="button" disabled={testing || !accounts.length} onClick={async () => { setTesting(true); try { const r=await fetch("/api/email/test",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({accountId:account !== "all" ? account : undefined})}); const d=await r.json().catch(()=>({})); if (r.ok) { setNotice({type:"success",text:`Pesan uji berhasil dibuat untuk ${d.message?.account || "akun email"}.`}); const m=await fetch("/api/email/messages?folder=inbox",{credentials:"same-origin",cache:"no-store"}); if (m.ok) { const md=await m.json(); setMessages(Array.isArray(md.messages) ? md.messages : []); } } else setNotice({type:"error",text:d.error||`Tes pesan gagal (HTTP ${r.status}).`}); } finally { setTesting(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">mark_email_unread</span>{testing ? "Membuat pesan uji..." : "Kirim Pesan Uji"}</button>
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
