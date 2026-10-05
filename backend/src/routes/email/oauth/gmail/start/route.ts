@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { getAdapter } from "../../../../../../lib/db/driver.js";
+import { getAdapter } from "../../../../../lib/db/driver.js";
 
 export async function GET_handler(req,res){
   const clientId=process.env.GOOGLE_CLIENT_ID;
