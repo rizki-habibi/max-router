@@ -17,7 +17,6 @@ const navItems = [
   { href: "/dashboard/combos", label: "Gabungan", icon: "layers" },
   { href: "/dashboard/usage", label: "Penggunaan", icon: "bar_chart" },
   { href: "/dashboard/parameters", label: "Parameter", icon: "tune" },
-  { href: "https://kali-desktop-production.up.railway.app", label: "Linux", icon: "computer", external: true },
 ];
 
 const debugItems = [
@@ -137,23 +136,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
 
         {/* Navigation */}
         <nav className={cn("flex-1 py-2 space-y-0.5 overflow-y-auto custom-scrollbar", collapsed ? "px-2" : "px-4")}>
-          {navItems.map((item) => item.external ? (
-            <a
-              key={item.href}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onClose}
-              title="Buka Kali Linux Desktop"
-              className={cn(
-                "mr-comic-nav-item flex items-center rounded-xl transition-all group text-text-muted hover:bg-surface-2 hover:text-text-main",
-                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1"
-              )}
-            >
-              <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">{item.icon}</span>
-              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
-            </a>
-          ) : (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
