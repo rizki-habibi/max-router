@@ -1,4 +1,4 @@
-import { listEmailAccounts, updateEmailAccount, upsertEmailMessage } from "../../lib/db/repos/emailRepo.js";
+import { listEmailAccounts, updateEmailAccount, upsertEmailMessage } from "../../../lib/db/repos/emailRepo.js";
 
 function header(headers,name){ return headers?.find(h=>h.name?.toLowerCase()===name.toLowerCase())?.value||""; }
 function decode(data){ if(!data)return ""; try{return Buffer.from(data.replace(/-/g,"+").replace(/_/g,"/"),"base64").toString("utf8")}catch{return ""} }
