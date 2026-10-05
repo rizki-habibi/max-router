@@ -15,6 +15,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FRONTEND_DIST = path.resolve(__dirname, "../../frontend/dist");
 
 const app = express();
+// Railway berada di belakang reverse proxy. Percayai satu hop agar Express
+// membaca protokol/host asli dengan benar untuk cookie dan redirect.
+app.set("trust proxy", 1);
 
 // Lightweight in-process diagnostics. Never store request bodies, tokens, cookies,
 // API keys, or other credentials here. These entries are intentionally bounded.
