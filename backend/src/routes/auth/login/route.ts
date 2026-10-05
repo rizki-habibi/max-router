@@ -16,6 +16,7 @@ function isTunnelRequest(req, settings) {
 
 export async function POST_handler(req, res) {
   try {
+    res.setHeader("Cache-Control", "no-store");
     const ip = getClientIp(req);
     const lock = checkLock(ip);
     if (lock.locked) {
