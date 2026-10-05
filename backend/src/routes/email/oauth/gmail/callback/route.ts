@@ -78,6 +78,7 @@ export async function GET_handler(req, res) {
     if (!info.email) throw new Error("Google tidak mengembalikan alamat Gmail.");
 
     // Perpanjang sesi yang sudah tervalidasi selama proses OAuth.
+    await setDashboardAuthCookie(res, req);
 
     await upsertEmailAccount({
       id: uuidv4(),
