@@ -41,6 +41,8 @@ export default function AutomationDashboard() {
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState(null);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [watchStatus, setWatchStatus] = useState("Belum diperiksa");
+  const [detectedNotifications, setDetectedNotifications] = useState([]);
   const [imapForm, setImapForm] = useState({ email: "", name: "", host: "", port: "993", username: "", password: "", secure: true });
   const addNotification = useNotificationStore((state) => state.addNotification);
 
@@ -106,9 +108,12 @@ export default function AutomationDashboard() {
     async function watchEmail() {
       try {
         const response = await fetch("/api/email/sync", { method: "POST", credentials: "same-origin", cache: "no-store" });
-        if (!response.ok || !active) return;
+        if (!response.ok || !active) { setWatchStatus(`Pemeriksaan gagal (HTTP ${response.status})`); return; }
+        setWatchStatus(`Terakhir diperiksa ${new Date().toLocaleTimeString("id-ID")}`);
         const data = await response.json();
-        for (const item of Array.isArray(data.newMessages) ? data.newMessages : []) {
+        const found = Array.isArray(data.newMessages) ? data.newMessages : [];
+        if (found.length) setDetectedNotifications((current) => [...found, ...current].slice(0, 20));
+        for (const item of found) {
           const xkiro = item.category === "xkiro_token";
           addNotification({
             type: xkiro ? "warning" : "info",
@@ -156,6 +161,21 @@ export default function AutomationDashboard() {
 
   return (
     <div className="min-h-full space-y-5">
+      <div className="rounded-xl border border-border-subtle bg-surface p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2"><span className="material-symbols-outlined text-primary">visibility</span><h2 className="text-base font-bold text-text-main">Pemantauan Email</h2></div>
+            <p className="mt-1 text-xs text-text-muted">{watchStatus} · pemeriksaan otomatis setiap 60 detik saat Pusat Email terbuka</p>
+          </div>
+          <span className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-muted">{accounts.length} akun terhubung</span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {accounts.length ? accounts.map((item) => <div key={item.id} className="rounded-lg border border-border-subtle bg-background px-3 py-2"><div className="text-sm font-semibold text-text-main">{item.email}</div><div className="text-[11px] text-text-muted">{providerLabel(item.provider)} · {item.lastError ? "Sinkronisasi error" : item.lastSyncAt ? "Tersinkron" : "Belum sinkron"}</div></div>) : <span className="text-sm text-text-muted">Belum ada akun yang dikirim server. Periksa koneksi Gmail dan sesi Max Router.</span>}
+        </div>
+      </div>
+
+      {detectedNotifications.length > 0 && <div className="rounded-xl border border-border-subtle bg-surface p-4"><div className="flex items-center justify-between"><div><h2 className="text-base font-bold text-text-main">Deteksi Terbaru</h2><p className="text-xs text-text-muted">Email yang baru ditemukan oleh pemantau.</p></div><button type="button" onClick={() => setDetectedNotifications([])} className="text-xs text-text-muted hover:text-text-main">Bersihkan</button></div><div className="mt-3 space-y-2">{detectedNotifications.map((item,index) => <div key={item.messageId || index} className="rounded-lg border border-border-subtle bg-background p-3"><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-text-main">{item.category === "xkiro_token" ? "Token xKiro terdeteksi" : "Email baru masuk"}</span><span className="text-[11px] text-text-muted">{formatDate(item.receivedAt)}</span></div><div className="mt-1 text-xs text-text-muted">{item.account} · {item.from || "Pengirim tidak dikenal"}</div><div className="mt-1 text-sm text-text-main">{item.subject || "(Tanpa subjek)"}</div></div>)}</div></div>}
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           {notice && <div className={`mb-3 rounded-xl border px-4 py-3 text-sm ${notice.type === "success" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700" : "border-red-500/30 bg-red-500/10 text-red-700"}`}>{notice.text}</div>}
