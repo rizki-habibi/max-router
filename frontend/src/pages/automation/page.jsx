@@ -40,7 +40,7 @@ export default function AutomationDashboard() {
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState(null);
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [imapForm, setImapForm] = useState({ email: "", name: "", host: "", port: "993", username: "", password: "" });
+  const [imapForm, setImapForm] = useState({ email: "", name: "", host: "", port: "993", username: "", password: "", secure: true });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -99,27 +99,28 @@ export default function AutomationDashboard() {
     return () => { cancelled = true; };
   }, [folder]);
 
-  const accountOptions = useMemo(() => accounts.filter((item) =>
-    provider === "all" || String(item.provider || "").toLowerCase() === provider
-  ), [accounts, provider]);
+  const accountOptions = useMemo(() => accounts.filter((item) => {
+    const itemProvider = String(item.provider || "").toLowerCase();
+    return provider === "all" || itemProvider === provider;
+  }), [accounts, provider]);
 
   const visibleMessages = useMemo(() => {
     const q = query.trim().toLowerCase();
     return messages.filter((item) => {
       const itemProvider = String(item.provider || "").toLowerCase();
-      const itemAccount = String(item.account_id || item.email_address || "");
-      const text = [item.from_name, item.from_address, item.to_address, item.subject, item.snippet, item.body]
+      const itemAccount = String(item.account_id || item.accountId || item.email_address || item.email || "");
+      const text = [item.from_name || item.fromName, item.from_address || item.fromAddress, item.to_address || item.toAddress, item.subject, item.snippet, item.body]
         .filter(Boolean).join(" ").toLowerCase();
       if (provider !== "all" && itemProvider !== provider) return false;
-      if (account !== "all" && itemAccount !== account && String(item.email_address || "").toLowerCase() !== String(account).toLowerCase()) return false;
-      if (filter === "unread" && item.is_read) return false;
-      if (filter === "starred" && !item.is_starred) return false;
-      if (filter === "attachment" && !item.has_attachment) return false;
+      if (account !== "all" && itemAccount.toLowerCase() !== String(account).toLowerCase() && String(item.email_address || item.email || "").toLowerCase() !== String(account).toLowerCase()) return false;
+      if (filter === "unread" && (item.is_read ?? item.isRead)) return false;
+      if (filter === "starred" && !(item.is_starred ?? item.isStarred)) return false;
+      if (filter === "attachment" && !(item.has_attachment ?? item.hasAttachment)) return false;
       return !q || text.includes(q);
     });
   }, [messages, query, filter, provider, account]);
 
-  const unreadCount = messages.filter((item) => !item.is_read).length;
+  const unreadCount = messages.filter((item) => !(item.is_read ?? item.isRead)).length;
   const providerLabel = (value) => PROVIDERS.find((item) => item.id === String(value).toLowerCase())?.label || value || "Email";
   const formatDate = (value) => {
     if (!value) return "";
