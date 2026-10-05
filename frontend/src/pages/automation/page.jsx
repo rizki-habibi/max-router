@@ -24,13 +24,11 @@ export default function AutomationDashboard() {
   const [account, setAccount] = useState("all");
   const [folder, setFolder] = useState("inbox");
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState("");
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("email_connected")) setNotice("Akun Gmail berhasil terhubung. Klik Sinkronkan Sekarang untuk mengambil pesan.");
-    if (params.get("email_error")) setNotice(`Koneksi Gmail gagal: ${params.get("email_error")}`);
+    if (params.get("email_connected") || params.get("email_error")) window.history.replaceState({}, "", "/dashboard/automation");
     let cancelled = false;
     async function loadEmailData() {
       setLoading(true);
@@ -97,7 +95,7 @@ export default function AutomationDashboard() {
             <span className="material-symbols-outlined text-primary">mail</span>
             <h1 className="text-xl font-bold text-text-main">Pusat Email</h1>
           </div>
-          <p className="text-sm text-text-muted">Kelola banyak akun Gmail, Proton Mail, Outlook, dan layanan email lain dari satu tempat.</p>
+          <p className="text-sm text-text-muted">Kelola banyak akun email dari satu tempat, dengan pencarian, filter, dan sinkronisasi terpusat.</p>
         </div>
         <button type="button" onClick={() => { window.location.href = "/api/email/oauth/gmail/start"; }}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
@@ -107,15 +105,9 @@ export default function AutomationDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" disabled={syncing} onClick={async () => { setSyncing(true); try { const r=await fetch("/api/email/sync",{method:"POST"}); const d=await r.json(); setNotice(r.ok ? `Sinkronisasi selesai: ${d.synced || 0} pesan diproses.` : (d.error || "Sinkronisasi gagal")); window.location.reload(); } catch { setNotice("Tidak dapat menghubungi layanan sinkronisasi."); } finally { setSyncing(false); } }} className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-background disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">sync</span>{syncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</button>
+        <button type="button" disabled={syncing} onClick={async () => { setSyncing(true); try { const r=await fetch("/api/email/sync",{method:"POST"}); if (r.ok) window.location.reload(); } finally { setSyncing(false); } }} className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-background disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">sync</span>{syncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</button>
       </div>
 
-      {notice && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-text-main">
-          <div className="flex items-start gap-2"><span className="material-symbols-outlined text-[18px] text-primary">info</span><span>{notice}</span></div>
-          <button type="button" onClick={() => setNotice("")} className="text-text-muted hover:text-text-main"><span className="material-symbols-outlined text-[18px]">close</span></button>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard icon="mail" label="Total Pesan" value={messages.length} />
