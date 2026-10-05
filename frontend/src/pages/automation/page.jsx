@@ -38,7 +38,9 @@ export default function AutomationDashboard() {
   const [folder, setFolder] = useState("inbox");
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [notice, setNotice] = useState(null);\n  const [showAddAccount, setShowAddAccount] = useState(false);\n  const [imapForm, setImapForm] = useState({ email: "", name: "", host: "", port: "993", username: "", password: "" });
+  const [notice, setNotice] = useState(null);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [imapForm, setImapForm] = useState({ email: "", name: "", host: "", port: "993", username: "", password: "" });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -137,7 +139,9 @@ export default function AutomationDashboard() {
         <button type="button" onClick={() => setShowAddAccount(true)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"><span className="material-symbols-outlined text-[18px]">add</span>Tambah Akun Email</button>
       </div>
 
-      {showAddAccount && <AddAccountModal onClose={() => setShowAddAccount(false)} imapForm={imapForm} setImapForm={setImapForm} onNotice={(value) => setNotice(value)} />}\n\n      <div className="flex flex-wrap items-center gap-2">
+      {showAddAccount && <AddAccountModal onClose={() => setShowAddAccount(false)} imapForm={imapForm} setImapForm={setImapForm} onNotice={(value) => setNotice(value)} />}
+
+      <div className="flex flex-wrap items-center gap-2">
         <button type="button" disabled={syncing} onClick={async () => { setSyncing(true); try { const r=await fetch("/api/email/sync",{method:"POST",credentials:"same-origin"}); if (r.ok) window.location.reload(); else { const d=await r.json().catch(()=>({})); setNotice({type:"error",text:d.error||`Sinkronisasi gagal (HTTP ${r.status}).`}); } } finally { setSyncing(false); } }} className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-background disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">sync</span>{syncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</button>
       </div>
 
