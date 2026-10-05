@@ -30,6 +30,8 @@ const PUBLIC_API_PATHS = [
   "/api/version",
   "/api/settings/require-login",
   "/api/automation/ammail/webhook",
+  "/api/email/oauth/gmail/start",
+  "/api/email/oauth/gmail/callback",
 ];
 
 const PUBLIC_PREFIXES = ["/v1", "/v1beta", "/api/v1", "/api/v1beta"];
