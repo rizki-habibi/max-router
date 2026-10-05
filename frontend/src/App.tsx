@@ -15,7 +15,6 @@ const Usage           = lazy(() => import("./pages/usage/page"));
 const ProxyPools      = lazy(() => import("./pages/proxy-pools/page"));
 const Combos          = lazy(() => import("./pages/combos/page"));
 const Endpoint        = lazy(() => import("./pages/endpoint/page"));
-const Translator      = lazy(() => import("./pages/translator/page"));
 const Automation      = lazy(() => import("./pages/automation/page"));
 const CompatibleChat = lazy(() => import("./pages/compatible-chat/page"));
 const ModelDetection = lazy(() => import("./pages/model-detection/page"));
@@ -103,7 +102,6 @@ export default function App() {
             <Route path="proxy-pools"     element={<ProxyPools />} />
             <Route path="combos"          element={<Combos />} />
             <Route path="endpoint"        element={<Endpoint />} />
-            <Route path="translator"      element={<Translator />} />
             <Route path="automation"      element={<Automation />} />
             <Route path="automation/ammail-tutorial" element={<AmmailTutorial />} />
             <Route path="chat" element={<CompatibleChat />} />
