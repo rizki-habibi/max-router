@@ -65,9 +65,9 @@ export default function UsageChart({ period = "7d", lastRequestTime }) {
       </div>
 
       {loading ? (
-        <div className="h-48 flex items-center justify-center text-text-muted text-sm">Loading...</div>
+        <div className="h-48 flex items-center justify-center text-text-muted text-sm">Memuat data penggunaan…</div>
       ) : !hasData ? (
-        <div className="h-48 flex items-center justify-center text-text-muted text-sm">No data for this period</div>
+        <div className="h-48 flex items-center justify-center text-text-muted text-sm">Belum ada data pada periode ini</div>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -104,7 +104,7 @@ export default function UsageChart({ period = "7d", lastRequestTime }) {
                 fontSize: "12px",
               }}
               formatter={(value, name) =>
-                name === "tokens" ? [fmtTokens(value), "Tokens"] : [fmtCost(value), "Cost"]
+                name === "tokens" ? [fmtTokens(value), "Token"] : [fmtCost(value), "Biaya"]
               }
             />
             {viewMode === "tokens" ? (
