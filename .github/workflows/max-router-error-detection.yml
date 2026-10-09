@@ -117,7 +117,7 @@ jobs:
           import fs from 'node:fs';
 
           const checks = [
-            ['Email accounts endpoint', 'src/routes/email/accounts/route.ts', '/api/email/accounts'],
+            ['Email accounts handler', 'src/routes/email/accounts/route.ts', 'GET_handler'],
             ['Gmail OAuth start', 'src/routes/email/oauth/gmail/start/route.ts', 'GOOGLE_CLIENT_ID'],
             ['Gmail OAuth callback', 'src/routes/email/oauth/gmail/callback/route.ts', 'setDashboardAuthCookie'],
             ['Session cookie', 'src/lib/auth/dashboardSession.js', '9r_session'],
