@@ -4,9 +4,9 @@ export default function HowItWorks() {
     <section className="py-24 border-y border-[#3a2f27] bg-[#23180f]/30" id="how-it-works">
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How 9Router V3 Works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Cara Kerja 9Router V3</h2>
           <p className="text-gray-400 max-w-xl text-lg">
-            Data flows seamlessly from your application through our intelligent routing layer to the best provider for the job.
+            Permintaan mengalir dari aplikasi melalui sistem perutean untuk memilih penyedia yang sesuai.
           </p>
         </div>
         
@@ -20,9 +20,9 @@ export default function HowItWorks() {
               <span className="material-symbols-outlined text-4xl text-gray-300">terminal</span>
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2">1. CLI &amp; SDKs</h3>
+              <h3 className="text-xl font-bold mb-2">1. CLI dan SDK</h3>
               <p className="text-sm text-gray-400">
-                Your requests start from your favorite tools or our unified SDK. Just change the base URL.
+                Permintaan dimulai dari alat pilihanmu atau SDK terpadu. Cukup ubah URL dasar.
               </p>
             </div>
           </div>
@@ -33,9 +33,9 @@ export default function HowItWorks() {
               <span className="material-symbols-outlined text-4xl text-[#f97815] animate-pulse">hub</span>
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2 text-[#f97815]">2. 9Router V3 Hub</h3>
+              <h3 className="text-xl font-bold mb-2 text-[#f97815]">2. Pusat 9Router V3</h3>
               <p className="text-sm text-gray-400">
-                Our engine analyzes the prompt, checks provider health, and routes for lowest latency or cost.
+                Mesin memeriksa kondisi penyedia lalu mengarahkan permintaan berdasarkan latensi atau biaya.
               </p>
             </div>
           </div>
@@ -51,7 +51,7 @@ export default function HowItWorks() {
               </div>
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2">3. AI Providers</h3>
+              <h3 className="text-xl font-bold mb-2">3. Penyedia AI</h3>
               <p className="text-sm text-gray-400">
                 The request is fulfilled by OpenAI, Anthropic, Gemini, or others instantly.
               </p>
