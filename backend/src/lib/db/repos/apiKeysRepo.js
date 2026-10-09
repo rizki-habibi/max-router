@@ -20,7 +20,14 @@ export async function getApiKeys() {
   return rows.map(rowToKey);
 }
 
-export async function getApiKeyByValue(key) {\n  if (!key) return null;\n  const db = await getAdapter();\n  const row = await db.get(`SELECT * FROM apiKeys WHERE key = ?`, [key]);\n  return rowToKey(row);\n}\n\nexport async function getApiKeyById(id) {
+export async function getApiKeyByValue(key) {
+  if (!key) return null;
+  const db = await getAdapter();
+  const row = await db.get(`SELECT * FROM apiKeys WHERE key = ?`, [key]);
+  return rowToKey(row);
+}
+
+export async function getApiKeyById(id) {
   const db = await getAdapter();
   const row = await db.get(`SELECT * FROM apiKeys WHERE id = ?`, [id]);
   return rowToKey(row);
