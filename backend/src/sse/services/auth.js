@@ -52,7 +52,15 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
       };
     }
 
-    const connections = await getProviderConnections({ provider: providerId, isActive: true });
+    const allConnections = await getProviderConnections({ provider: providerId, isActive: true });
+    // Connections without a scope remain Global for backward compatibility.
+    // A scoped connection is only eligible for the matching incoming API key.
+    const requestApiKeyId = options?.apiKeyId || null;
+    const connections = allConnections.filter((connection) => {
+      const scopeId = connection.providerSpecificData?.apiKeyScopeId || connection.apiKeyScopeId || null;
+      if (!scopeId || scopeId === "global") return true;
+      return Boolean(requestApiKeyId && scopeId === requestApiKeyId);
+    });
     log.debug("AUTH", `${provider} | total connections: ${connections.length}, excluded count: ${excludeSet.size}, model: ${model || "any"}`);
 
     if (connections.length === 0) {
