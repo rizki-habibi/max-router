@@ -253,7 +253,6 @@ export default function ProviderDetailPage() {
         fetch("/api/provider-nodes", { cache: "no-store" }),
         fetch("/api/proxy-pools?isActive=true", { cache: "no-store" }),
         fetch("/api/settings", { cache: "no-store" }),
-        fetch("/api/keys", { cache: "no-store" }),
       ]);
       const connectionsData = await connectionsRes.json();
       const nodesData = await nodesRes.json();
