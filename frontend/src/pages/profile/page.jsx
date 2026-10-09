@@ -1,22 +1,38 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, Button } from "@/shared/components";
 
-const readJson = async (url) => {
-  const response = await fetch(url, { cache: "no-store" });
+const readJson = async (url, signal) => {
+  const response = await fetch(url, { cache: "no-store", signal });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.error || ("HTTP " + response.status));
+  if (!response.ok) throw new Error(data?.error || ("Permintaan gagal (HTTP " + response.status + ")."));
   return data;
 };
 
+const validDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatDate = (value) => {
+  const date = validDate(value);
+  return date ? new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "medium", timeStyle: "medium"
+  }).format(date) : "Belum tersedia";
+};
+
 const formatIssue = (item) => [
-  "[" + item.id + "] " + String(item.severity || "").toUpperCase(),
-  "Bagian: " + item.area,
-  "Masalah: " + item.title,
-  "Rincian: " + item.detail,
+  "[" + (item.id || "TANPA-ID") + "] " + String(item.severity || "info").toUpperCase(),
+  "Bagian: " + (item.area || "Umum"),
+  "Masalah: " + (item.title || "Tanpa judul"),
+  "Rincian: " + (item.detail || "Tidak ada rincian"),
   item.evidence ? "Bukti: " + item.evidence : "",
   item.fix ? "Solusi: " + item.fix : ""
 ].filter(Boolean).join("\n");
+
+const severityName = (severity) => ({
+  error: "Kesalahan", warning: "Peringatan", info: "Informasi"
+}[severity] || "Informasi");
 
 export default function ProfilPage() {
   const [data, setData] = useState(null);
@@ -27,81 +43,142 @@ export default function ProfilPage() {
   const [message, setMessage] = useState("");
 
   const scan = useCallback(async () => {
+    if (scanning) return;
     setScanning(true);
     setMessage("");
     try {
-      setData(await readJson("/api/diagnostics"));
+      const result = await readJson("/api/diagnostics");
+      if (!result || !Array.isArray(result.findings)) {
+        throw new Error("Format laporan diagnostik tidak sesuai. Silakan periksa log server.");
+      }
+      setData(result);
     } catch (error) {
-      setMessage(error.message || "Diagnostic gagal dijalankan.");
+      if (error?.name !== "AbortError") {
+        setMessage(error?.message || "Pemeriksaan gagal. Silakan coba lagi.");
+      }
     } finally {
       setScanning(false);
     }
+  }, [scanning]);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const run = async () => {
+      setScanning(true);
+      setMessage("");
+      try {
+        const result = await readJson("/api/diagnostics", controller.signal);
+        if (!result || !Array.isArray(result.findings)) {
+          throw new Error("Format laporan diagnostik tidak sesuai.");
+        }
+        if (active) setData(result);
+      } catch (error) {
+        if (active && error?.name !== "AbortError") {
+          setMessage(error?.message || "Pemeriksaan gagal. Silakan coba lagi.");
+        }
+      } finally {
+        if (active) setScanning(false);
+      }
+    };
+    run();
+    return () => { active = false; controller.abort(); };
   }, []);
 
-  useEffect(() => { scan(); }, [scan]);
-
-  const findings = data?.findings || [];
+  const findings = Array.isArray(data?.findings) ? data.findings : [];
   const filtered = useMemo(
-    () => findings.filter((x) => (filter === "all" || x.area === filter) && (severityFilter === "all" || x.severity === severityFilter)),
+    () => findings.filter((item) =>
+      (filter === "all" || item.area === filter) &&
+      (severityFilter === "all" || item.severity === severityFilter)
+    ),
     [findings, filter, severityFilter]
   );
 
   const copyText = async (text, key) => {
     try {
+      if (!navigator.clipboard?.writeText) throw new Error("Papan klip tidak tersedia.");
       await navigator.clipboard.writeText(text);
       setCopied(key);
-      setTimeout(() => setCopied(""), 1800);
+      window.setTimeout(() => setCopied((current) => current === key ? "" : current), 1800);
     } catch {
-      setMessage("Fitur papan klip browser tidak tersedia.");
+      setMessage("Tidak dapat menyalin. Periksa izin papan klip pada peramban.");
     }
   };
 
   const copyAll = () => {
     const header = [
-      "MAX ROUTER — LAPORAN DIAGNOSTIK LENGKAP",
-      "Waktu: " + (data?.scannedAt || "-"),
-      "Durasi: " + (data?.durationMs || 0) + " ms",
-      "Kesalahan: " + (data?.summary?.error || 0),
-      "Peringatan: " + (data?.summary?.warning || 0),
-      "Informasi: " + (data?.summary?.info || 0),
+      "MAX ROUTER — LAPORAN DIAGNOSTIK",
+      "Waktu pemeriksaan: " + formatDate(data?.scannedAt),
+      "Durasi: " + (Number.isFinite(Number(data?.durationMs)) ? Number(data.durationMs) + " milidetik" : "Tidak tersedia"),
+      "Kesalahan: " + (data?.summary?.error ?? 0),
+      "Peringatan: " + (data?.summary?.warning ?? 0),
+      "Informasi: " + (data?.summary?.info ?? 0),
       ""
     ].join("\n");
     copyText(header + findings.map(formatIssue).join("\n\n"), "all");
   };
 
-  const categories = ["all", ...new Set(findings.map(x => x.area))];
-  const errorCount = data?.summary?.error || 0;
-  const warningCount = data?.summary?.warning || 0;
-  const infoCount = data?.summary?.info || 0;
+  const categories = ["all", ...new Set(findings.map((item) => item.area).filter(Boolean))];
+  const errorCount = data?.summary?.error ?? findings.filter((item) => item.severity === "error").length;
+  const warningCount = data?.summary?.warning ?? findings.filter((item) => item.severity === "warning").length;
+  const infoCount = data?.summary?.info ?? findings.filter((item) => item.severity === "info").length;
+  const duration = Number(data?.durationMs);
+  const durationLabel = Number.isFinite(duration) && duration >= 0 ? duration + " milidetik" : "Tidak tersedia";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <main className="mx-auto w-full max-w-6xl space-y-5">
       <Card>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                <span className="material-symbols-outlined">health_and_safety</span>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Pusat Diagnostik</h2>
-                <p className="text-sm text-text-muted">Periksa konfigurasi YML, server, antarmuka, basis data, lingkungan, rute, dan kesehatan aplikasi.</p>
-              </div>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <span className="material-symbols-outlined" aria-hidden="true">health_and_safety</span>
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold">Pusat Diagnostik</h2>
+              <p className="text-sm text-text-muted">Periksa konfigurasi, server, antarmuka, basis data, lingkungan, rute, dan kesehatan aplikasi.</p>
             </div>
           </div>
-          <Button variant="primary" icon="radar" loading={scanning} onClick={scan}>
-            {scanning ? "Memindai..." : "Scan Semua Sistem"}
+          <Button variant="primary" icon="radar" loading={scanning} onClick={scan} disabled={scanning}>
+            {scanning ? "Sedang memeriksa…" : "Periksa Semua Sistem"}
           </Button>
         </div>
 
-        {message && <div className="mt-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{message}</div>}
+        {message && (
+          <div role="alert" className="mt-4 flex flex-col gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600 sm:flex-row sm:items-center sm:justify-between">
+            <span>{message}</span>
+            <button type="button" onClick={scan} disabled={scanning} className="shrink-0 rounded-lg border border-current px-3 py-1.5 font-semibold disabled:opacity-50">Coba Lagi</button>
+          </div>
+        )}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <Stat label="Error" value={errorCount} icon="error" tone="red" />
-          <Stat label="Peringatan" value={warningCount} icon="warning" tone="amber" />
-          <Stat label="Info" value={infoCount} icon="info" tone="blue" />
-        </div>
+        {scanning && !data ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-3" aria-label="Memuat ringkasan pemeriksaan" aria-busy="true">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="animate-pulse rounded-xl border border-border-subtle p-4">
+                <div className="h-4 w-28 rounded bg-surface-2" />
+                <div className="mt-4 h-8 w-12 rounded bg-surface-2" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <Stat label="Kesalahan" value={errorCount} icon="error" tone="red" />
+            <Stat label="Peringatan" value={warningCount} icon="warning" tone="amber" />
+            <Stat label="Informasi" value={infoCount} icon="info" tone="blue" />
+          </div>
+        )}
       </Card>
+
+      {!data && scanning && (
+        <Card>
+          <div className="flex items-center gap-3 py-6" role="status" aria-live="polite">
+            <span className="material-symbols-outlined animate-spin" aria-hidden="true">progress_activity</span>
+            <div>
+              <h3 className="font-semibold">Pemeriksaan sedang berjalan</h3>
+              <p className="text-sm text-text-muted">Mengumpulkan status layanan dan konfigurasi. Bagian ini akan diperbarui setelah pemeriksaan selesai.</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {data && (
         <>
@@ -109,31 +186,31 @@ export default function ProfilPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-semibold">Status pemeriksaan</h3>
-                <p className="text-xs text-text-muted">
-                  Terakhir: {new Date(data.scannedAt).toLocaleString("id-ID")} · {data.durationMs} ms
+                <p className="mt-1 text-xs text-text-muted">
+                  Terakhir diperiksa: {formatDate(data.scannedAt)} · Durasi: {durationLabel}
                 </p>
+                {scanning && <p className="mt-1 text-xs text-primary" role="status">Pemeriksaan baru sedang berjalan…</p>}
               </div>
-              <button
-                type="button"
-                onClick={copyAll}
-                className="rounded-xl border border-border-subtle px-3 py-2 text-sm font-medium hover:bg-surface-2"
-              >
-                <span className="material-symbols-outlined mr-1 align-middle text-[18px]">content_copy</span>
-                {copied === "all" ? "Semua tersalin" : "Salin Semua Temuan"}
+              <button type="button" onClick={copyAll} className="rounded-xl border border-border-subtle px-3 py-2 text-sm font-medium hover:bg-surface-2">
+                <span className="material-symbols-outlined mr-1 align-middle text-[18px]" aria-hidden="true">content_copy</span>
+                {copied === "all" ? "Laporan berhasil disalin" : "Salin Semua Temuan"}
               </button>
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <label htmlFor="diagnostic-area-filter" className="text-xs font-semibold text-text-muted">Saring berdasarkan bagian</label>
-                <select id="diagnostic-area-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm">
+                <select id="diagnostic-area-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="w-full rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm">
                   {categories.map((category) => <option key={category} value={category}>{category === "all" ? "Semua Bagian" : category}</option>)}
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <label htmlFor="diagnostic-severity-filter" className="text-xs font-semibold text-text-muted">Saring berdasarkan tingkat</label>
-                <select id="diagnostic-severity-filter" value={severityFilter} onChange={(event) => setSeverityFilter(event.target.value)} className="rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm">
-                  <option value="all">Semua Tingkat</option><option value="error">Kesalahan</option><option value="warning">Peringatan</option><option value="info">Informasi</option>
+                <select id="diagnostic-severity-filter" value={severityFilter} onChange={(event) => setSeverityFilter(event.target.value)} className="w-full rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm">
+                  <option value="all">Semua Tingkat</option>
+                  <option value="error">Kesalahan</option>
+                  <option value="warning">Peringatan</option>
+                  <option value="info">Informasi</option>
                 </select>
               </div>
             </div>
@@ -142,35 +219,31 @@ export default function ProfilPage() {
           {filtered.length === 0 ? (
             <Card>
               <div className="py-10 text-center">
-                <span className="material-symbols-outlined text-4xl text-green-500">check_circle</span>
-                <h3 className="mt-3 font-semibold">Tidak ada masalah pada kategori ini</h3>
-                <p className="mt-1 text-sm text-text-muted">Pemeriksaan selesai dan tidak menemukan error yang tercatat.</p>
+                <span className="material-symbols-outlined text-4xl text-green-500" aria-hidden="true">check_circle</span>
+                <h3 className="mt-3 font-semibold">Tidak ada temuan pada saringan ini</h3>
+                <p className="mt-1 text-sm text-text-muted">Coba pilih bagian atau tingkat lain untuk melihat temuan yang tersedia.</p>
               </div>
             </Card>
           ) : (
             <div className="space-y-3">
               {filtered.map((item, index) => (
-                <DiagnosticCard
-                  key={item.id + "-" + index}
-                  item={item}
-                  copied={copied}
-                  onCopy={copyText}
-                />
+                <DiagnosticCard key={(item.id || "temuan") + "-" + index} item={item} copied={copied} onCopy={copyText} />
               ))}
             </div>
           )}
 
           <Card>
+            <h3 className="mb-3 font-semibold">Komponen yang diperiksa</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Capability label="YML / CI" ok={data.capabilities?.yml} />
-              <Capability label="Database" ok={data.capabilities?.database} />
-              <Capability label="Backend" ok={data.capabilities?.backend} />
-              <Capability label="UI Assets" ok={data.capabilities?.uiAssets} />
+              <Capability label="Alur kerja dan YML" ok={data.capabilities?.yml} />
+              <Capability label="Basis data" ok={data.capabilities?.database} />
+              <Capability label="Server aplikasi" ok={data.capabilities?.backend} />
+              <Capability label="Aset antarmuka" ok={data.capabilities?.uiAssets} />
             </div>
           </Card>
         </>
       )}
-    </div>
+    </main>
   );
 }
 
@@ -180,45 +253,34 @@ function DiagnosticCard({ item, copied, onCopy }) {
     : item.severity === "warning"
       ? "border-amber-500/30 bg-amber-500/[0.04]"
       : "border-border-subtle bg-surface";
-
   const icon = item.severity === "error" ? "error" : item.severity === "warning" ? "warning" : "info";
   const report = formatIssue(item);
+  const id = item.id || "temuan";
 
   return (
     <Card className={"border " + tone}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex gap-3 min-w-0">
-          <span className="material-symbols-outlined shrink-0">{icon}</span>
-          <div className="min-w-0">
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-3">
+          <span className="material-symbols-outlined shrink-0" aria-hidden="true">{icon}</span>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <code className="rounded bg-surface-2 px-2 py-1 text-xs">{item.id}</code>
-              <span className="text-xs text-text-muted">{item.area}</span>
-              <span className="text-xs font-semibold uppercase">{item.severity}</span>
+              <code className="break-all rounded bg-surface-2 px-2 py-1 text-xs">{id}</code>
+              <span className="text-xs text-text-muted">{item.area || "Umum"}</span>
+              <span className="text-xs font-semibold">{severityName(item.severity)}</span>
             </div>
-            <h3 className="mt-2 font-semibold">{item.title}</h3>
-            <p className="mt-1 text-sm text-text-muted break-words">{item.detail}</p>
-            {item.evidence && (
-              <pre className="mt-3 max-h-36 overflow-auto rounded-lg bg-black/[0.05] p-3 text-xs whitespace-pre-wrap">{item.evidence}</pre>
-            )}
-            {item.fix && <p className="mt-3 text-sm"><strong>Solusi:</strong> {item.fix}</p>}
+            <h3 className="mt-2 break-words font-semibold">{item.title || "Temuan tanpa judul"}</h3>
+            <p className="mt-1 break-words text-sm text-text-muted">{item.detail || "Tidak ada rincian tambahan."}</p>
+            {item.evidence && <pre className="mt-3 max-h-36 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/[0.05] p-3 text-xs">{item.evidence}</pre>}
+            {item.fix && <p className="mt-3 break-words text-sm"><strong>Saran perbaikan:</strong> {item.fix}</p>}
           </div>
         </div>
-
         <div className="flex shrink-0 flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onCopy(report, item.id)}
-            className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2"
-          >
-            <span className="material-symbols-outlined mr-1 align-middle text-[16px]">content_copy</span>
-            {copied === item.id ? "Tersalin" : "Salin Error"}
+          <button type="button" onClick={() => onCopy(report, id)} className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2">
+            <span className="material-symbols-outlined mr-1 align-middle text-[16px]" aria-hidden="true">content_copy</span>
+            {copied === id ? "Berhasil disalin" : "Salin Temuan"}
           </button>
-          <button
-            type="button"
-            onClick={() => onCopy(JSON.stringify(item, null, 2), item.id + "-json")}
-            className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2"
-          >
-            Salin JSON
+          <button type="button" onClick={() => onCopy(JSON.stringify(item, null, 2), id + "-json")} className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2">
+            {copied === id + "-json" ? "JSON berhasil disalin" : "Salin JSON"}
           </button>
         </div>
       </div>
@@ -231,21 +293,23 @@ function Stat({ label, value, icon, tone }) {
   return (
     <div className="rounded-xl border border-border-subtle p-4">
       <div className="flex items-center gap-2">
-        <span className={"material-symbols-outlined rounded-lg p-1.5 " + classes}>{icon}</span>
+        <span className={"material-symbols-outlined rounded-lg p-1.5 " + classes} aria-hidden="true">{icon}</span>
         <span className="text-sm text-text-muted">{label}</span>
       </div>
-      <p className="mt-2 text-3xl font-bold">{value}</p>
+      <p className="mt-2 text-3xl font-bold tabular-nums">{value}</p>
     </div>
   );
 }
 
 function Capability({ label, ok }) {
+  const known = typeof ok === "boolean";
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-surface-2 p-3">
-      <span className={"material-symbols-outlined text-[20px] " + (ok ? "text-green-600" : "text-amber-600")}>
-        {ok ? "check_circle" : "help"}
+    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-surface-2 p-3">
+      <span className={"material-symbols-outlined text-[20px] " + (ok === true ? "text-green-600" : ok === false ? "text-amber-600" : "text-text-muted")} aria-hidden="true">
+        {ok === true ? "check_circle" : ok === false ? "warning" : "help"}
       </span>
-      <span className="text-sm font-medium">{label}</span>
+      <span className="min-w-0 text-sm font-medium">{label}</span>
+      <span className="ml-auto text-xs text-text-muted">{known ? (ok ? "Tersedia" : "Perlu diperiksa") : "Belum diketahui"}</span>
     </div>
   );
 }
