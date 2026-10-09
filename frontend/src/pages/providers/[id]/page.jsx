@@ -29,6 +29,7 @@ export default function ProviderDetailPage() {
   const navigate = useNavigate();
   const providerId = params.id;
   const [connections, setConnections] = useState([]);
+  const [apiKeys, setApiKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [providerNode, setProviderNode] = useState(null);
   const [proxyPools, setProxyPools] = useState([]);
@@ -252,11 +253,15 @@ export default function ProviderDetailPage() {
         fetch("/api/provider-nodes", { cache: "no-store" }),
         fetch("/api/proxy-pools?isActive=true", { cache: "no-store" }),
         fetch("/api/settings", { cache: "no-store" }),
+        fetch("/api/keys", { cache: "no-store" }),
       ]);
       const connectionsData = await connectionsRes.json();
       const nodesData = await nodesRes.json();
       const proxyPoolsData = await proxyPoolsRes.json();
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
+      const keysRes = await fetch("/api/keys", { cache: "no-store" });
+      const keysData = keysRes.ok ? await keysRes.json() : { keys: [] };
+      setApiKeys(keysData.keys || []);
       if (connectionsRes.ok) {
         const filtered = (connectionsData.connections || []).filter(c => c.provider === providerId);
         setConnections(filtered);
@@ -837,10 +842,28 @@ export default function ProviderDetailPage() {
 
   const providerMark = providerInfo?.textIcon || providerInfo?.textIcon === "" ? providerInfo.textIcon : "AI";
 
+  const handleUpdateConnectionScope = async (connection, scopeId) => {
+    const providerSpecificData = { ...(connection.providerSpecificData || {}), apiKeyScopeId: scopeId || "global" };
+    try {
+      const res = await fetch(`/api/providers/${encodeURIComponent(connection.id)}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerSpecificData }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Gagal mengubah cakupan API key.");
+      setConnections(prev => prev.map(item => item.id === connection.id ? { ...item, providerSpecificData } : item));
+    } catch (error) {
+      console.error("Gagal mengubah cakupan API key:", error);
+      window.alert(error.message || "Gagal mengubah cakupan API key.");
+    }
+  };
+
   const connectionsList = (
     <ProviderConnectionsTable
       connections={connections}
       proxyPools={proxyPools}
+      apiKeys={apiKeys}
+      onScopeChange={handleUpdateConnectionScope}
       selectedIds={selectedConnectionIds}
       allSelected={allSelected}
       onSelect={toggleSelectConnection}
