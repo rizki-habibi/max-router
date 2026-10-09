@@ -13,7 +13,7 @@ export default function Footer() {
               <h3 className="text-white text-lg font-bold">9Router V3</h3>
             </div>
             <p className="text-gray-500 text-sm max-w-xs mb-6">
-              The unified endpoint for AI generation. Connect, route, and manage your AI providers with ease.
+              Endpoint terpadu untuk AI. Hubungkan, arahkan, dan kelola penyedia AI dengan mudah.
             </p>
             <div className="flex gap-4">
               <a className="text-gray-400 hover:text-white transition-colors" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">
@@ -24,15 +24,15 @@ export default function Footer() {
           
           {/* Product */}
           <div className="flex flex-col gap-4">
-            <h4 className="font-bold text-white">Product</h4>
+            <h4 className="font-bold text-white">Produk</h4>
             <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="#features">Fitur</a>
             <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="/dashboard">Dashboard</a>
-            <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">Changelog</a>
+            <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">Catatan Perubahan</a>
           </div>
           
           {/* Resources */}
           <div className="flex flex-col gap-4">
-            <h4 className="font-bold text-white">Resources</h4>
+            <h4 className="font-bold text-white">Sumber Daya</h4>
             <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="https://github.com/decolua/9router#readme" target="_blank" rel="noopener noreferrer">Dokumentasi</a>
             <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a className="text-gray-400 hover:text-[#f97815] text-sm transition-colors" href="https://www.npmjs.com/package/9router" target="_blank" rel="noopener noreferrer">NPM</a>
