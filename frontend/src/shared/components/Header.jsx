@@ -17,7 +17,7 @@ const HEADER_ICONS = {
   person: UserRound, notifications: Bell, notifications_none: BellOff,
   error: AlertCircle, warning: AlertTriangle, check_circle: CheckCircle2,
   info: Info, close: X, search: Search, api: Activity, dns: Server,
-  layers: Layers, vpn_key: KeyRound, data_usage: ChartNoAxesColumn,
+  layers: Layers, vpn_key: KeyRound, data_usage: BarChart3,
   lan: Network, settings: Settings, translate: Languages, monitor: Monitor, home: Home,
 };
 function HeaderIcon({ name, className = "" }) {
