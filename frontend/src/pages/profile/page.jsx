@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, Button } from "@/shared/components";
+import { Card } from "@/shared/components";
+import { Activity, AlertTriangle, CheckCircle2, CircleHelp, Copy, Info, LoaderCircle, Radar, ShieldCheck } from "lucide-react";
 
 const readJson = async (url, signal) => {
   const response = await fetch(url, { cache: "no-store", signal });
@@ -171,7 +172,7 @@ export default function ProfilPage() {
       {!data && scanning && (
         <Card>
           <div className="flex items-center gap-3 py-6" role="status" aria-live="polite">
-            <span className="material-symbols-outlined animate-spin" aria-hidden="true">progress_activity</span>
+            <LoaderCircle className="shrink-0 animate-spin text-primary" size={22} aria-hidden="true" />
             <div>
               <h3 className="font-semibold">Pemeriksaan sedang berjalan</h3>
               <p className="text-sm text-text-muted">Mengumpulkan status layanan dan konfigurasi. Bagian ini akan diperbarui setelah pemeriksaan selesai.</p>
@@ -192,7 +193,7 @@ export default function ProfilPage() {
                 {scanning && <p className="mt-1 text-xs text-primary" role="status">Pemeriksaan baru sedang berjalan…</p>}
               </div>
               <button type="button" onClick={copyAll} className="rounded-xl border border-border-subtle px-3 py-2 text-sm font-medium hover:bg-surface-2">
-                <span className="material-symbols-outlined mr-1 align-middle text-[18px]" aria-hidden="true">content_copy</span>
+                <Copy className="mr-1 inline-block align-middle" size={16} aria-hidden="true" />
                 {copied === "all" ? "Laporan berhasil disalin" : "Salin Semua Temuan"}
               </button>
             </div>
@@ -219,7 +220,7 @@ export default function ProfilPage() {
           {filtered.length === 0 ? (
             <Card>
               <div className="py-10 text-center">
-                <span className="material-symbols-outlined text-4xl text-green-500" aria-hidden="true">check_circle</span>
+                <CheckCircle2 className="mx-auto text-green-500" size={38} aria-hidden="true" />
                 <h3 className="mt-3 font-semibold">Tidak ada temuan pada saringan ini</h3>
                 <p className="mt-1 text-sm text-text-muted">Coba pilih bagian atau tingkat lain untuk melihat temuan yang tersedia.</p>
               </div>
@@ -261,7 +262,7 @@ function DiagnosticCard({ item, copied, onCopy }) {
     <Card className={"border " + tone}>
       <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 gap-3">
-          <span className="material-symbols-outlined shrink-0" aria-hidden="true">{icon}</span>
+          <span className="shrink-0">{item.severity === "error" ? <AlertTriangle size={20} aria-hidden="true" /> : item.severity === "warning" ? <AlertTriangle size={20} aria-hidden="true" /> : <Info size={20} aria-hidden="true" />}</span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <code className="break-all rounded bg-surface-2 px-2 py-1 text-xs">{id}</code>
