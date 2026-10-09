@@ -23,7 +23,7 @@ export async function getApiKeys() {
 export async function getApiKeyByValue(key) {
   if (!key) return null;
   const db = await getAdapter();
-  const row = await db.get(`SELECT * FROM apiKeys WHERE key = ?`, [key]);
+  const row = await db.get(`SELECT * FROM apiKeys WHERE key = ? AND isActive = 1`, [key]);
   return rowToKey(row);
 }
 
