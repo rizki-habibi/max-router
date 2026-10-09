@@ -286,12 +286,12 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
         <div className="mr-token-heatmap-grid mt-4" role="img" aria-label="Peta aktivitas harian berdasarkan permintaan terbaru">
           {days.map((day) => {
             const level = day.count === 0 ? 0 : Math.min(4, Math.ceil((day.count / maxCount) * 4));
-            return <span key={day.dayKey} className={\`mr-token-heat mr-token-heat-\${level}\`} title={\`\${day.dayKey}: \${day.count} permintaan dalam data yang tersedia\`} />;
+            return <span key={day.dayKey} className={`mr-token-heat mr-token-heat-${level}`} title={`${day.dayKey}: ${day.count} permintaan dalam data yang tersedia`} />;
           })}
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs opacity-75">
           <span>Warna hijau menunjukkan jumlah permintaan per hari</span>
-          <span className="flex items-center gap-1.5">Sedikit {[0,1,2,3,4].map((level) => <i key={level} className={\`mr-token-heat mr-token-heat-\${level}\`} />)} Banyak</span>
+          <span className="flex items-center gap-1.5">Sedikit {[0,1,2,3,4].map((level) => <i key={level} className={`mr-token-heat mr-token-heat-${level}`} />)} Banyak</span>
         </div>
         <p className="mt-2 text-xs opacity-60">Hari tanpa data ditampilkan kosong; riwayat lengkap memerlukan agregasi dari backend.</p>
       </div>
