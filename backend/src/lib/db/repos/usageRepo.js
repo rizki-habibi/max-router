@@ -341,8 +341,8 @@ export async function getUsageStats(period = "all") {
   for (const k of allApiKeys) apiKeyMap[k.key] = { name: k.name, id: k.id, createdAt: k.createdAt };
 
   // Keep individual usage events so the dashboard arcade can react to each real request.
-  // apiKey is the recorded key label/value for attribution; never expose the secret key itself in UI.
-  const recentRows = await db.all(`SELECT id, timestamp, provider, model, apiKey, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`);
+  // Do not include the API key value in dashboard response payloads.
+  const recentRows = await db.all(`SELECT id, timestamp, provider, model, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`);
   const recentRequests = recentRows
     .map((r) => {
       const t = parseJson(r.tokens, {}) || {};
@@ -351,7 +351,6 @@ export async function getUsageStats(period = "all") {
         timestamp: r.timestamp,
         model: r.model,
         provider: r.provider || "",
-        apiKey: r.apiKey || "",
         promptTokens: t.prompt_tokens || t.input_tokens || 0,
         completionTokens: t.completion_tokens || t.output_tokens || 0,
         status: r.status || "ok",
