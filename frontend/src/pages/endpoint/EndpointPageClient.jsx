@@ -54,6 +54,9 @@ const CAVEMAN_LEVELS = [
 ];
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
+  const [keySearch, setKeySearch] = useState("");
+  const [keyStatusFilter, setKeyStatusFilter] = useState("all");
+  const [keySort, setKeySort] = useState("newest");
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -116,6 +119,18 @@ export default function APIPageClient({ machineId }) {
 
   // API key visibility toggle state
   const [visibleKeys, setVisibleKeys] = useState(new Set());
+
+  const filteredKeys = [...keys]
+    .filter((key) => String(key.name || "").toLowerCase().includes(keySearch.trim().toLowerCase()))
+    .filter((key) => keyStatusFilter === "all" || (keyStatusFilter === "active" ? key.isActive !== false : key.isActive === false))
+    .sort((a, b) => {
+      if (keySort === "name") return String(a.name || "").localeCompare(String(b.name || ""), "id");
+      const aTime = new Date(a.createdAt || 0).getTime();
+      const bTime = new Date(b.createdAt || 0).getTime();
+      const safeA = Number.isFinite(aTime) ? aTime : 0;
+      const safeB = Number.isFinite(bTime) ? bTime : 0;
+      return keySort === "oldest" ? safeA - safeB : safeB - safeA;
+    });
 
   // Client-side local/remote detection (UI hint only, not a security gate)
   const [isRemoteHost, setIsRemoteHost] = useState(false);
@@ -1130,6 +1145,35 @@ export default function APIPageClient({ machineId }) {
           </div>
         )}
 
+        {keys.length > 0 && (
+          <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-border bg-surface p-3 sm:grid-cols-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor="api-key-search" className="text-xs font-medium text-text-muted">Cari nama kunci</label>
+              <Input id="api-key-search" value={keySearch} onChange={(event) => setKeySearch(event.target.value)} placeholder="Masukkan nama kunci..." />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor="api-key-status-filter" className="text-xs font-medium text-text-muted">Saring status</label>
+              <select id="api-key-status-filter" value={keyStatusFilter} onChange={(event) => setKeyStatusFilter(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="all">Semua kunci</option>
+                <option value="active">Aktif</option>
+                <option value="paused">Dijeda</option>
+              </select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor="api-key-sort" className="text-xs font-medium text-text-muted">Urutkan kunci</label>
+              <select id="api-key-sort" value={keySort} onChange={(event) => setKeySort(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="newest">Terbaru dibuat</option>
+                <option value="oldest">Terlama dibuat</option>
+                <option value="name">Nama A–Z</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-xs text-text-muted sm:col-span-3">
+              <span>Menampilkan {filteredKeys.length} dari {keys.length} kunci</span>
+              {(keySearch || keyStatusFilter !== "all" || keySort !== "newest") && <button type="button" onClick={() => { setKeySearch(""); setKeyStatusFilter("all"); setKeySort("newest"); }} className="rounded-lg px-2 py-1 font-semibold text-primary hover:bg-primary/5">Hapus saringan</button>}
+            </div>
+          </div>
+        )}
+
         {keys.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
@@ -1142,8 +1186,14 @@ export default function APIPageClient({ machineId }) {
             </Button>
           </div>
         ) : (
+          {filteredKeys.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
+              <p className="font-medium">Kunci API tidak ditemukan</p>
+              <p className="mt-1 text-sm text-text-muted">Ubah kata pencarian atau saringan status.</p>
+            </div>
+          ) : (
           <div className="flex flex-col">
-            {keys.map((key) => (
+            {filteredKeys.map((key) => (
               <div
                 key={key.id}
                 className={`group flex items-center justify-between py-3 border-b border-black/[0.03] dark:border-white/[0.03] last:border-b-0 ${key.isActive === false ? "opacity-60" : ""}`}
@@ -1209,6 +1259,7 @@ export default function APIPageClient({ machineId }) {
               </div>
             ))}
           </div>
+          )}
         )}
       </Card>
 
