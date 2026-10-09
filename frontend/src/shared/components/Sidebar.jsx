@@ -17,7 +17,11 @@ const NAV_ICONS = {
 };
 function NavIcon({ name, active = false }) {
   const Icon = NAV_ICONS[name] || Activity;
-  return <Icon aria-hidden="true" size={18} strokeWidth={active ? 2.5 : 2} className={active ? "text-primary" : "text-text-muted group-hover:text-primary transition-colors"} />;
+  return (
+    <span className="mr-comic-icon-tile" data-icon={name} data-active={active ? "true" : "false"}>
+      <Icon aria-hidden="true" size={17} strokeWidth={active ? 2.8 : 2.4} />
+    </span>
+  );
 }
 
 const navItems = [
