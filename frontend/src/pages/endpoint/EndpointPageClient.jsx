@@ -348,7 +348,7 @@ export default function APIPageClient({ machineId }) {
 
   const fetchData = async () => {
     try {
-      const keysRes = await fetch("/api/keys");
+      const keysRes = await fetch("/api/keys", { signal: AbortSignal.timeout(8000), cache: "no-store" });
       const keysData = await keysRes.json();
       if (keysRes.ok) {
         setKeys(keysData.keys || []);
