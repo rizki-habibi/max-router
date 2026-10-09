@@ -1105,3 +1105,13 @@ button {
 @keyframes mr-token-fire{0%{opacity:.1;transform:scaleY(.4);transform-origin:bottom}40%{opacity:1;transform:scaleY(1)}100%{opacity:.25;transform:translateY(-35px) scaleY(.8)}}
 @media(max-width:640px){.mr-token-battle{min-height:285px}.mr-token-stat{top:10px;padding:8px;max-width:48%}.mr-token-stat small{font-size:9px}.mr-token-alien-row{left:4%;right:4%;top:48%;gap:4px}.mr-token-heatmap-grid{grid-template-columns:repeat(14,minmax(0,1fr));gap:3px}.mr-token-moon{width:95px;height:95px;right:5%;top:33%}}
 @media(prefers-reduced-motion:reduce){.mr-token-stars,.mr-token-alien,.mr-token-ship,.mr-token-laser{animation:none!important}}
+
+
+/* Canvas arcade: live animated shooter, no static emoji ship/enemy row */
+.mr-token-battle-canvas{height:390px;min-height:290px;background:#090f2c;touch-action:pan-y}
+.mr-token-game-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:pan-y}
+.mr-token-battle-canvas .mr-token-stat{pointer-events:none;z-index:3}
+.mr-token-game-hint{position:absolute;left:0;right:0;bottom:35px;text-align:center;font:800 9px ui-monospace,monospace;letter-spacing:.12em;color:rgba(203,234,255,.68);pointer-events:none}
+.mr-token-battle-canvas .mr-token-stat strong{font-variant-numeric:tabular-nums}
+@media(max-width:640px){.mr-token-battle-canvas{height:330px;min-height:290px}.mr-token-game-hint{font-size:8px;letter-spacing:.04em}}
+@media(prefers-reduced-motion:reduce){.mr-token-stars,.mr-token-alien,.mr-token-ship,.mr-token-laser{animation:none!important}}
