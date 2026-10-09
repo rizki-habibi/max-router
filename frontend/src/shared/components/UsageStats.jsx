@@ -101,7 +101,6 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
 
   // A shot represents a completed, successful response from the router, not an idle animation.
   useEffect(() => {
-    if (!recent.length) return;
     const getId = (request) => String(request.id ?? [request.timestamp, request.model, request.provider, request.promptTokens, request.completionTokens].join(":"));
     const isSuccessful = (request) => {
       const status = String(request.status ?? "ok").toLowerCase();
