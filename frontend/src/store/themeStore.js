@@ -32,21 +32,12 @@ const useThemeStore = create(
 );
 
 // Apply theme to document
-function applyTheme(theme) {
+function applyTheme() {
   if (typeof window === "undefined") return;
 
-  const root = document.documentElement;
-  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-
-  const effectiveTheme = theme === "system" ? systemTheme : theme;
-
-  if (effectiveTheme === "dark") {
-    root.classList.add("dark");
-  } else {
-    root.classList.remove("dark");
-  }
+  // Max Router now uses one consistent comic-inspired dark palette.
+  // Ignore old persisted light/system preferences so they cannot switch the UI back to light mode.
+  document.documentElement.classList.add("dark");
 }
 
 export default useThemeStore;
