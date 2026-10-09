@@ -84,6 +84,105 @@ function RecentRequests({ requests = [] }) {
   );
 }
 
+
+function TokenSpaceArcade({ requests = [], period = "today" }) {
+  const [enabled, setEnabled] = useState(true);
+  const [shot, setShot] = useState(0);
+  const [lastSeen, setLastSeen] = useState("");
+  const recent = Array.isArray(requests) ? requests.slice(0, 18) : [];
+  const totalTokens = recent.reduce((sum, r) => sum + (Number(r.promptTokens) || 0) + (Number(r.completionTokens) || 0), 0);
+  const successful = recent.filter((r) => !r.status || ["ok", "success"].includes(String(r.status).toLowerCase())).length;
+  const successRate = recent.length ? Math.round((successful / recent.length) * 100) : 0;
+
+  useEffect(() => {
+    const newest = recent[0];
+    const signature = newest ? String(newest.timestamp || "") + ":" + String(newest.model || "") + ":" + String(newest.promptTokens || 0) : "";
+    if (signature && lastSeen && signature !== lastSeen) setShot((value) => value + 1);
+    if (signature) setLastSeen(signature);
+  }, [requests, lastSeen, recent]);
+
+  const days = Array.from({ length: 84 }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (83 - index));
+    const dayKey = date.toLocaleDateString("en-CA");
+    const count = recent.filter((r) => {
+      const timestamp = r.timestamp ? new Date(r.timestamp) : null;
+      return timestamp && !Number.isNaN(timestamp.getTime()) && timestamp.toLocaleDateString("en-CA") === dayKey;
+    }).length;
+    return { date, count, dayKey };
+  });
+  const maxCount = Math.max(1, ...days.map((d) => d.count));
+
+  return (
+    <section className="mr-token-arcade flex min-w-0 flex-col gap-4" aria-label="Permainan penggunaan token">
+      <div className="mr-token-game-shell relative overflow-hidden rounded-2xl border-2 p-4 sm:p-5">
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="mr-token-kicker">MISI TOKEN · 9ROUTER SPACE DEFENSE</div>
+            <h2 className="mt-1 text-xl font-extrabold sm:text-2xl">Pertahanan Galaksi AI</h2>
+            <p className="mt-1 text-sm opacity-80">Setiap permintaan yang tercatat menjadi energi dalam misi ini.</p>
+          </div>
+          <button type="button" onClick={() => setEnabled((value) => !value)} className="mr-token-toggle rounded-xl border-2 px-3 py-2 text-sm font-bold">
+            {enabled ? "Jeda animasi" : "Mulai animasi"}
+          </button>
+        </div>
+        <div className={`mr-token-battle relative mt-4 overflow-hidden rounded-xl border-2 ${enabled ? "is-playing" : "is-paused"}`}>
+          <div className="mr-token-stars" aria-hidden="true" />
+          <div className="mr-token-moon" aria-hidden="true" />
+          <div className="mr-token-stat mr-token-stat-left">
+            <span>ENERGI TERPAKAI</span>
+            <strong>{fmt(totalTokens)}</strong>
+            <small>Token dari {recent.length} permintaan terbaru</small>
+          </div>
+          <div className="mr-token-stat mr-token-stat-right">
+            <span>AKURASI MISI</span>
+            <strong>{recent.length ? successRate + "%" : "—"}</strong>
+            <small>{recent.length ? successful + " permintaan berhasil" : "Menunggu data permintaan"}</small>
+          </div>
+          <div className="mr-token-alien-row" aria-label="Alien target">
+            {Array.from({ length: 7 }, (_, index) => (
+              <span key={index} className={`mr-token-alien alien-${index % 4}`} style={{ animationDelay: `${index * 0.19}s` }} aria-hidden="true">
+                {["✹", "👾", "✦", "◉"][index % 4]}
+              </span>
+            ))}
+          </div>
+          {enabled && recent.length > 0 && <span key={shot} className="mr-token-laser" aria-hidden="true" />}
+          <div className="mr-token-ship" aria-label="Pesawat penjaga">🚀</div>
+          <div className="mr-token-game-caption">
+            {recent.length ? `Misi aktif · ${recent.length} permintaan terbaru terpantau` : "Menunggu permintaan AI pertama untuk memulai misi"}
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="mr-token-live-dot">{recent.length ? "Data aktivitas tersedia" : "Belum ada aktivitas terbaru"}</span>
+          <span className="opacity-70">Animasi dekoratif · angka mengikuti log permintaan</span>
+        </div>
+      </div>
+
+      <div className="mr-token-heatmap rounded-2xl border-2 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-extrabold">Peta Aktivitas Token</h3>
+            <p className="mt-1 text-sm opacity-70">Seperti kotak kontribusi GitHub: makin hijau, makin banyak permintaan yang tercatat.</p>
+          </div>
+          <span className="mr-token-heatmap-total">{recent.length} permintaan terbaru</span>
+        </div>
+        <div className="mr-token-heatmap-grid mt-4" role="img" aria-label="Peta aktivitas harian berdasarkan permintaan terbaru">
+          {days.map((day) => {
+            const level = day.count === 0 ? 0 : Math.min(4, Math.ceil((day.count / maxCount) * 4));
+            return <span key={day.dayKey} className={`mr-token-heat mr-token-heat-${level}`} title={`${day.dayKey}: ${day.count} permintaan yang masih tercakup log terbaru`} />;
+          })}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs opacity-75">
+          <span>Aktivitas yang terdeteksi dari log terbaru</span>
+          <span className="flex items-center gap-1.5">Sedikit { [0,1,2,3,4].map((level) => <i key={level} className={`mr-token-heat mr-token-heat-${level}`} />)} Banyak</span>
+        </div>
+        <p className="mt-2 text-xs opacity-60">Kotak tanpa warna berarti tidak ada permintaan dalam data yang tersedia; bukan bukti bahwa tidak pernah ada penggunaan.</p>
+      </div>
+    </section>
+  );
+}
+
 function sortData(dataMap, pendingMap = {}, sortBy, sortOrder) {
   return Object.entries(dataMap || {})
     .map(([key, data]) => {
@@ -495,6 +594,9 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
 
       {/* Overview cards */}
       {loading ? spinner : <OverviewCards stats={stats} />}
+
+      {/* Space-shooter token activity and GitHub-style contribution heatmap */}
+      {loading ? null : <TokenSpaceArcade requests={stats?.recentRequests || []} period={period} />}
 
       {/* Provider topology + Recent Requests */}
       {loading ? spinner : (
