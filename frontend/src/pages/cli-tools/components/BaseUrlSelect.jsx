@@ -50,7 +50,7 @@ const buildOptions = ({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tai
   savedPresets.forEach((p) => {
     opts.push({ value: `saved:${p.name}`, label: p.baseUrl, url: p.baseUrl, saved: true });
   });
-  opts.push({ value: CUSTOM_VALUE, label: "Custom URL...", url: "" });
+  opts.push({ value: CUSTOM_VALUE, label: "URL khusus…", url: "" });
   return opts;
 };
 
@@ -101,7 +101,7 @@ export default function BaseUrlSelect({
       if (!trimmed) return;
       let defaultName = trimmed;
       try { defaultName = new URL(trimmed).host; } catch {}
-      const name = window.prompt("Save endpoint as:", defaultName);
+      const name = window.prompt("Simpan endpoint dengan nama:", defaultName);
       if (!name?.trim()) return;
       const updated = [...savedPresets.filter((p) => p.name !== name.trim()), { name: name.trim(), baseUrl: trimmed }]
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -151,10 +151,10 @@ export default function BaseUrlSelect({
           {options.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
-          {canSave && <option value={SAVE_VALUE}>+ Save current as...</option>}
+          {canSave && <option value={SAVE_VALUE}>+ Simpan alamat saat ini sebagai…</option>}
         </select>
         {isSaved && (
-          <button type="button" onClick={handleDeleteSaved} className="p-1 text-text-muted hover:text-red-500 rounded transition-colors shrink-0" title="Delete saved endpoint">
+          <button type="button" onClick={handleDeleteSaved} className="p-1 text-text-muted hover:text-red-500 rounded transition-colors shrink-0" title="Hapus alamat tersimpan">
             <span className="material-symbols-outlined text-[14px]">delete</span>
           </button>
         )}
