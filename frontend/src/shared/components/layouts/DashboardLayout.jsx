@@ -68,7 +68,7 @@ export default function DashboardLayout() {
                     type="button"
                     onClick={() => removeNotification(n.id)}
                     className="text-current/70 hover:text-current"
-                    aria-label="Dismiss notification"
+                    aria-label="Tutup notifikasi"
                   >
                     <span className="material-symbols-outlined text-[16px]">close</span>
                   </button>
