@@ -10,7 +10,7 @@ import Footer from "./components/Footer";
 export default function LandingPage() {
   const navigate = useNavigate();
   return (
-    <div className="relative text-white font-sans overflow-x-hidden antialiased selection:bg-[#f97815] selection:text-white">
+    <div className="mr-comic-landing relative text-white font-sans overflow-x-hidden antialiased selection:bg-[#f97815] selection:text-white">
       {/* Animated Background */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#181411]">
         {/* Grid pattern */}
@@ -50,9 +50,9 @@ export default function LandingPage() {
         <section className="py-32 px-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-t from-[#f97815]/5 to-transparent pointer-events-none"></div>
           <div className="max-w-4xl mx-auto text-center relative z-10">
-            <h2 className="text-4xl md:text-5xl font-black mb-6">Ready to Simplify Your AI Infrastructure?</h2>
+            <h2 className="text-4xl md:text-5xl font-black mb-6">Satu Endpoint, Semua Penyedia AI</h2>
             <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-              Join developers who are streamlining their AI integrations with 9Router V3. Open source and free to start.
+              Kelola koneksi AI, kunci API, dan perutean model dari satu dasbor. Sumber terbuka dan siap kamu gunakan.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button 
