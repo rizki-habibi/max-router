@@ -15,30 +15,30 @@ export default function GetStarted() {
           <div className="flex-1">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Mulai dalam 30 Detik</h2>
             <p className="text-gray-400 text-lg mb-8">
-              Install 9Router V3, configure your providers via web dashboard, and start routing AI requests.
+              Pasang 9Router V3, atur penyedia melalui dasbor web, lalu mulai arahkan permintaan AI.
             </p>
             
             <div className="flex flex-col gap-6">
               <div className="flex gap-4">
                 <div className="flex-none w-8 h-8 rounded-full bg-[#f97815]/20 text-[#f97815] flex items-center justify-center font-bold">1</div>
                 <div>
-                  <h4 className="font-bold text-lg">Install 9Router V3</h4>
-                  <p className="text-sm text-gray-500 mt-1">Run npx command to start the server instantly</p>
+                  <h4 className="font-bold text-lg">Pasang 9Router V3</h4>
+                  <p className="text-sm text-gray-500 mt-1">Jalankan perintah npx untuk memulai server</p>
                 </div>
               </div>
               
               <div className="flex gap-4">
                 <div className="flex-none w-8 h-8 rounded-full bg-[#f97815]/20 text-[#f97815] flex items-center justify-center font-bold">2</div>
                 <div>
-                  <h4 className="font-bold text-lg">Open Dashboard</h4>
-                  <p className="text-sm text-gray-500 mt-1">Configure providers and API keys via web interface</p>
+                  <h4 className="font-bold text-lg">Buka Dasbor</h4>
+                  <p className="text-sm text-gray-500 mt-1">Atur penyedia dan kunci API melalui antarmuka web</p>
                 </div>
               </div>
               
               <div className="flex gap-4">
                 <div className="flex-none w-8 h-8 rounded-full bg-[#f97815]/20 text-[#f97815] flex items-center justify-center font-bold">3</div>
                 <div>
-                  <h4 className="font-bold text-lg">Route Requests</h4>
+                  <h4 className="font-bold text-lg">Arahkan Permintaan</h4>
                   <p className="text-sm text-gray-500 mt-1">Point your CLI tools to http://localhost:20128</p>
                 </div>
               </div>
