@@ -88,7 +88,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
 
   return (
     <>
-      <aside className={cn("flex shrink-0 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-[width] duration-200 min-h-full", collapsed ? "w-[72px]" : "w-72")}>
+      <aside className={cn("mr-comic-sidebar flex shrink-0 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-[width] duration-200 min-h-full", collapsed ? "w-[72px]" : "w-72")}>
         {/* Traffic lights */}
         <div className="flex items-center gap-2 px-6 pt-5 pb-2">
           <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
