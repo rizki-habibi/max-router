@@ -1195,3 +1195,35 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+
+/* Shared dashboard chrome: comic frame and navigation states */
+.mr-comic-sidebar {
+  border-right: 2px solid var(--mr-comic-ink, #22253a) !important;
+  box-shadow: 4px 0 0 var(--mr-comic-outline, rgba(34,37,58,.18));
+}
+.mr-comic-sidebar nav a,
+.mr-comic-sidebar nav button {
+  border-radius: 10px;
+  transition: transform .14s ease, box-shadow .14s ease, background-color .14s ease;
+}
+.mr-comic-sidebar nav a[aria-current="page"],
+.mr-comic-sidebar nav a.bg-primary\/10 {
+  box-shadow: inset 3px 0 0 var(--color-primary), 2px 2px 0 var(--mr-comic-outline, rgba(34,37,58,.16));
+}
+.mr-comic-sidebar nav a:hover,
+.mr-comic-sidebar nav button:hover {
+  transform: translateX(2px);
+}
+.mr-comic-header {
+  border-bottom: 2px solid var(--mr-comic-ink, #22253a) !important;
+}
+.mr-comic-header input,
+.mr-comic-header button {
+  border-radius: 10px;
+}
+@media (max-width: 1023px) {
+  .mr-comic-sidebar {
+    box-shadow: 5px 0 0 rgba(0,0,0,.18);
+  }
+}
