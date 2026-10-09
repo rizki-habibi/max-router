@@ -806,14 +806,14 @@ export default function APIPageClient({ machineId }) {
       <Card>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">api</span>
-          API Endpoint
+          Endpoint API
         </h2>
 
         {/* Endpoint rows */}
         <div className="flex flex-col gap-2">
           {/* Local */}
           <EndpointRow
-            label="Local"
+            label="Lokal"
             url={currentEndpoint}
             copyId="local_url"
             copied={copied}
