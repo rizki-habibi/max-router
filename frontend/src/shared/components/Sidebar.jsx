@@ -145,8 +145,8 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className={cn("flex-1 py-2 space-y-0.5 overflow-y-auto custom-scrollbar", collapsed ? "px-2" : "px-4")}>
+        {/* Navigasi */}
+        <nav className={cn("flex-1 py-2 space-y-1 overflow-y-auto custom-scrollbar", collapsed ? "px-2" : "px-4")}>
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -154,16 +154,65 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               onClick={onClose}
               className={cn(
                 "mr-comic-nav-item flex items-center rounded-xl transition-all group",
-                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
-                isActive(item.href)
-                  ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
+                isActive(item.href) ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-surface-2 hover:text-text-main"
               )}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              title={collapsed ? item.label : undefined}
             >
               <NavIcon name={item.icon} active={isActive(item.href)} />
-              <NavIcon name={item.icon} active={isActive(item.href)} />
+              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
+            </Link>
+          ))}
+
+          <div className="pt-3 mt-2 space-y-1">
+            <p className={cn("px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2", collapsed ? "hidden" : "")}>Sistem</p>
+            {systemItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={onClose}
+                className={cn(
+                  "mr-comic-nav-item flex items-center rounded-xl transition-all group",
+                  collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
+                  isActive(item.href) ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                )}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                title={collapsed ? item.label : undefined}
+              >
                 <NavIcon name={item.icon} active={isActive(item.href)} />
-                <NavIcon name="settings" active={isActive("/dashboard/profile")} />
+                <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
+              </Link>
+            ))}
+            {debugItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={onClose}
+                className={cn(
+                  "mr-comic-nav-item flex items-center rounded-xl transition-all group",
+                  collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
+                  isActive(item.href) ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                )}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                title={collapsed ? item.label : undefined}
+              >
+                <NavIcon name={item.icon} active={isActive(item.href)} />
+                <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
+              </Link>
+            ))}
+            <Link
+              to="/dashboard/profile"
+              onClick={onClose}
+              className={cn(
+                "mr-comic-nav-item flex items-center rounded-xl transition-all group",
+                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
+                isActive("/dashboard/profile") ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+              )}
+              aria-current={isActive("/dashboard/profile") ? "page" : undefined}
+              title={collapsed ? "Pengaturan" : undefined}
+            >
+              <NavIcon name="settings" active={isActive("/dashboard/profile")} />
               <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Pengaturan</span>
             </Link>
           </div>
