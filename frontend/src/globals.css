@@ -1070,3 +1070,38 @@ button {
 .mr-dashboard-comic-content :is(input,select,textarea):focus{border-color:#55d8ef;box-shadow:0 0 0 3px rgba(85,216,239,.17)}
 .mr-dashboard-comic-content table thead{background:linear-gradient(90deg,rgba(255,107,87,.20),rgba(255,223,93,.15),rgba(85,216,239,.18))!important}
 @media(max-width:640px){.mr-comic-icon-tile{width:29px;height:29px;flex-basis:29px}.mr-dashboard-comic-content .mr-comic-card,.mr-dashboard-comic-content .mr-endpoint-page>.rounded-xl{box-shadow:3px 3px 0 #100e20,4px 4px 0 rgba(255,107,87,.3)!important}}
+
+
+/* Token Space Arcade + GitHub-style activity heatmap */
+.mr-token-arcade{color:var(--text-main,#172033)}
+.mr-token-game-shell{border-color:#1e293b;background:linear-gradient(125deg,#fff 0%,#f2f7ff 52%,#fff5e9 100%);box-shadow:5px 5px 0 #d6dff3,7px 7px 0 rgba(255,116,81,.22)}
+.mr-token-kicker{font-size:10px;font-weight:900;letter-spacing:.16em;color:#7055d9}
+.mr-token-toggle{border-color:#263454;background:#fff;color:#172033;box-shadow:3px 3px 0 #263454}
+.mr-token-battle{min-height:310px;border-color:#20294d;background:radial-gradient(ellipse at 50% 110%,#2855a0 0%,#171b4c 48%,#090f2c 100%);color:#fff}
+.mr-token-stars{position:absolute;inset:0;opacity:.75;background-image:radial-gradient(circle,#fff 1px,transparent 1.5px),radial-gradient(circle,#64e7ff 1px,transparent 1.5px),radial-gradient(circle,#ffd66b 1px,transparent 1.5px);background-size:37px 37px,61px 61px,83px 83px;background-position:0 0,13px 19px,29px 7px;animation:mr-token-star-drift 24s linear infinite}
+.mr-token-moon{position:absolute;width:140px;height:140px;right:10%;top:22%;border-radius:50%;background:radial-gradient(circle at 32% 28%,#d2b8ff,#8059d6 45%,#332d80 74%);box-shadow:0 0 38px rgba(148,116,255,.35);opacity:.7}
+.mr-token-stat{position:absolute;z-index:2;top:14px;display:flex;flex-direction:column;gap:3px;border:1px solid rgba(255,255,255,.3);border-radius:12px;background:rgba(9,15,44,.72);padding:10px 12px;backdrop-filter:blur(5px);max-width:45%}
+.mr-token-stat span{font-size:9px;font-weight:900;letter-spacing:.1em;color:#8feaff}
+.mr-token-stat strong{font-size:clamp(18px,3vw,25px);font-weight:900}
+.mr-token-stat small{font-size:10px;opacity:.76}
+.mr-token-stat-left{left:12px}.mr-token-stat-right{right:12px;text-align:right}
+.mr-token-alien-row{position:absolute;left:8%;right:8%;top:43%;display:flex;align-items:center;justify-content:space-around;gap:12px}
+.mr-token-alien{display:flex;align-items:center;justify-content:center;width:clamp(27px,4vw,43px);height:clamp(27px,4vw,43px);border:2px solid #211b48;border-radius:35% 35% 42% 42%;background:linear-gradient(145deg,#91f8df,#35bca9);color:#15224c;font-size:20px;box-shadow:3px 3px 0 #070c26,0 0 17px rgba(92,244,213,.45);animation:mr-token-alien-float 2.4s ease-in-out infinite}
+.mr-token-alien.alien-1{background:linear-gradient(145deg,#ffc5f0,#e75acb);box-shadow:3px 3px 0 #070c26,0 0 17px rgba(231,90,203,.42)}
+.mr-token-alien.alien-2{background:linear-gradient(145deg,#fff0a2,#ffae40);box-shadow:3px 3px 0 #070c26,0 0 17px rgba(255,174,64,.42)}
+.mr-token-alien.alien-3{background:linear-gradient(145deg,#b8d5ff,#638cff);box-shadow:3px 3px 0 #070c26,0 0 17px rgba(99,140,255,.42)}
+.mr-token-ship{position:absolute;z-index:2;bottom:34px;left:50%;font-size:43px;filter:drop-shadow(0 0 12px #43dcff);transform:translateX(-50%);animation:mr-token-ship-hover 1.8s ease-in-out infinite}
+.mr-token-laser{position:absolute;z-index:1;left:calc(50% - 2px);bottom:78px;width:4px;height:125px;border-radius:99px;background:linear-gradient(to top,#fff,#49efff 42%,#7d5dff);box-shadow:0 0 9px #55edff,0 0 22px #685dff;animation:mr-token-fire .75s ease-out infinite}
+.mr-token-game-caption{position:absolute;bottom:9px;left:12px;right:12px;text-align:center;font-size:10px;letter-spacing:.03em;color:#b9d9ff}
+.mr-token-live-dot:before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:#21c77a;box-shadow:0 0 0 3px rgba(33,199,122,.14)}
+.mr-token-heatmap{border-color:#d6ddeb;background:linear-gradient(135deg,#fff,#f7fbff);box-shadow:4px 4px 0 #e1e8f4}
+.mr-token-heatmap-total{border:1px solid #d9e6dc;border-radius:999px;padding:5px 9px;background:#f0fff4;color:#167b43;font-size:11px;font-weight:800}
+.mr-token-heatmap-grid{display:grid;grid-template-columns:repeat(21,minmax(0,1fr));grid-auto-flow:row;gap:4px}
+.mr-token-heat{display:block;aspect-ratio:1/1;min-width:0;border:1px solid rgba(20,83,45,.06);border-radius:3px;background:#ebedf0}
+.mr-token-heat-1{background:#b7efc5}.mr-token-heat-2{background:#6fdb8b}.mr-token-heat-3{background:#35b968}.mr-token-heat-4{background:#16803d}
+@keyframes mr-token-star-drift{from{background-position:0 0,13px 19px,29px 7px}to{background-position:0 150px,13px 169px,29px 157px}}
+@keyframes mr-token-alien-float{0%,100%{translate:0 0;rotate:-3deg}50%{translate:0 -8px;rotate:3deg}}
+@keyframes mr-token-ship-hover{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@keyframes mr-token-fire{0%{opacity:.1;transform:scaleY(.4);transform-origin:bottom}40%{opacity:1;transform:scaleY(1)}100%{opacity:.25;transform:translateY(-35px) scaleY(.8)}}
+@media(max-width:640px){.mr-token-battle{min-height:285px}.mr-token-stat{top:10px;padding:8px;max-width:48%}.mr-token-stat small{font-size:9px}.mr-token-alien-row{left:4%;right:4%;top:48%;gap:4px}.mr-token-heatmap-grid{grid-template-columns:repeat(14,minmax(0,1fr));gap:3px}.mr-token-moon{width:95px;height:95px;right:5%;top:33%}}
+@media(prefers-reduced-motion:reduce){.mr-token-stars,.mr-token-alien,.mr-token-ship,.mr-token-laser{animation:none!important}}
