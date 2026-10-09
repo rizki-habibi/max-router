@@ -110,7 +110,7 @@ export default function App() {
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Public */}
-          <Route path="/"       element={<Navigate to="/login" replace />} />
+          <Route path="/"       element={<Landing />} />
           <Route path="/login"  element={<Login />} />
           <Route path="/callback" element={<Callback />} />
 
