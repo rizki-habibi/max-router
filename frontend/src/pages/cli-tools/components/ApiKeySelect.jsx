@@ -34,7 +34,7 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
   if (noKeys && mode !== CUSTOM_VALUE) {
     return (
       <span className={`min-w-0 rounded bg-surface/40 px-2 py-2 text-xs text-text-muted sm:py-1.5 ${className}`}>
-        {cloudEnabled ? "No API keys - Create one in Keys page" : "sk_9router (default)"}
+        {cloudEnabled ? "Belum ada kunci API — buat kunci di menu Kunci API" : "sk_9router (default)"}
       </span>
     );
   }
@@ -49,7 +49,7 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
         {apiKeys.map((k) => (
           <option key={k.id} value={k.key}>{k.key}</option>
         ))}
-        <option value={CUSTOM_VALUE}>Custom...</option>
+        <option value={CUSTOM_VALUE}>Kunci khusus…</option>
       </select>
       {mode === CUSTOM_VALUE && (
         <input
