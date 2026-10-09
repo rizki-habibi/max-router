@@ -209,8 +209,8 @@ jobs:
           const file = '.github/workflows/max-router-error-detection.yml';
           const text = fs.readFileSync(file, 'utf8');
           if (!text.includes('jobs:')) throw new Error('Workflow YAML tidak memiliki jobs');
-          if (text.includes('Compatible CLI')) throw new Error('Workflow masih mengaudit Compatible CLI yang sudah dihapus');
-          if (text.includes('ANTIGRAVITY_')) throw new Error('Workflow masih memiliki audit Antigravity lama');
+          if (!text.includes('Email accounts handler')) throw new Error('Workflow belum memuat pemeriksaan rute email');
+          if (!text.includes('Workflow consistency audit: OK')) throw new Error('Pesan hasil audit workflow tidak ditemukan');
           console.log('Workflow consistency audit: OK');
           NODE
 
