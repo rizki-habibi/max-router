@@ -96,17 +96,46 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
   const totalTokens = recent.reduce((sum, r) => sum + (Number(r.promptTokens) || 0) + (Number(r.completionTokens) || 0), 0);
   const successful = recent.filter((r) => !r.status || ["ok", "success", "200"].includes(String(r.status).toLowerCase())).length;
   const successRate = recent.length ? Math.round((successful / recent.length) * 100) : 0;
-  const requestSignature = recent[0] ? [recent[0].timestamp, recent[0].id, recent[0].model, recent[0].promptTokens, recent[0].completionTokens].join(":") : "";
+  const requestSignature = recent.map((request) => request.id ?? [request.timestamp, request.model, request.provider, request.promptTokens, request.completionTokens].join(":")).join("|");
+  const seenRequestsRef = useRef(null);
 
+  // A shot represents a completed, successful response from the router, not an idle animation.
   useEffect(() => {
-    if (requestSignature && lastSeen && requestSignature !== lastSeen) {
-      setShots((value) => value + 1);
-      const game = gameRef.current;
-      game.lasers.push({ x: game.width * game.pilotX, y: game.height - 76, speed: 560, power: Math.max(1, Number(recent[0]?.completionTokens) || 1), fresh: true });
-      game.particles.push(...Array.from({ length: 8 }, (_, i) => ({ x: game.width * game.pilotX, y: game.height - 70, vx: Math.cos(i * Math.PI / 4) * 55, vy: Math.sin(i * Math.PI / 4) * 55, life: .55, color: "#69f5ff" })));
+    if (!recent.length) return;
+    const getId = (request) => String(request.id ?? [request.timestamp, request.model, request.provider, request.promptTokens, request.completionTokens].join(":"));
+    const isSuccessful = (request) => {
+      const status = String(request.status ?? "ok").toLowerCase();
+      return ["ok", "success", "200", "completed"].includes(status);
+    };
+    const currentIds = new Set(recent.map(getId));
+
+    // Seed the list on first load; only responses arriving after the page is open trigger shots.
+    if (seenRequestsRef.current === null) {
+      seenRequestsRef.current = currentIds;
+      return;
     }
-    if (requestSignature) setLastSeen(requestSignature);
-  }, [requestSignature, lastSeen, recent]);
+
+    const previousIds = seenRequestsRef.current;
+    const newlyCompleted = recent
+      .filter((request) => !previousIds.has(getId(request)) && isSuccessful(request))
+      .reverse();
+
+    newlyCompleted.forEach((request) => {
+      const game = gameRef.current;
+      const x = game.width * game.pilotX;
+      game.lasers.push({ x, y: game.height - 76, speed: 620, power: Math.max(1, Number(request.completionTokens) || 1), fresh: true });
+      game.particles.push(...Array.from({ length: 8 }, (_, i) => ({
+        x, y: game.height - 70,
+        vx: Math.cos(i * Math.PI / 4) * 55,
+        vy: Math.sin(i * Math.PI / 4) * 55,
+        life: .55, color: "#69f5ff",
+      })));
+      setShots((value) => value + 1);
+    });
+
+    // Remember all observed IDs (including failed responses) so they never fire later by accident.
+    seenRequestsRef.current = currentIds;
+  }, [requestSignature]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -116,7 +145,6 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
     const game = gameRef.current;
     let active = true;
     let lastSpawn = 0;
-    let lastAutoFire = 0;
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -188,11 +216,6 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
 
       if (enabled) {
         if (time - lastSpawn > Math.max(520, 1350 - Math.min(shots, 15) * 40)) { spawnEnemy(); lastSpawn = time; }
-        // Arcade auto-fire keeps the scene alive; real new request adds a brighter shot.
-        if (time - lastAutoFire > 780) {
-          game.lasers.push({ x: w * game.pilotX, y: h - 72, speed: 390, power: 1, fresh: false });
-          lastAutoFire = time;
-        }
       }
       game.enemies = game.enemies.filter((enemy) => enemy.y < h + 35 && enemy.hp > 0);
       game.enemies.forEach((enemy) => {
@@ -255,7 +278,7 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
           <div>
             <div className="mr-token-kicker">MODE ARKADE · PERTAHANAN GALAKSI</div>
             <h2 className="mt-1 text-xl font-extrabold sm:text-2xl">Pilot AI: Serangan Token</h2>
-            <p className="mt-1 text-sm opacity-80">Pesawat menembak, alien bergerak, dan permintaan AI baru memicu tembakan energi.</p>
+            <p className="mt-1 text-sm opacity-80">Alien bergerak di galaksi. Pesawat hanya menembak saat Max Router menerima respons AI yang berhasil.</p>
           </div>
           <button type="button" onClick={() => setEnabled((value) => !value)} className="mr-token-toggle rounded-xl border-2 px-3 py-2 text-sm font-bold">
             {enabled ? "Jeda permainan" : "Lanjut bermain"}
@@ -275,7 +298,7 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
           <span className="mr-token-live-dot">{recent.length ? "Data permintaan tersambung" : "Menunggu permintaan AI"}</span>
-          <span className="opacity-70">Efek permainan berjalan langsung di kanvas</span>
+          <span className="opacity-70">Tembakan mengikuti respons AI yang berhasil</span>
         </div>
       </div>
       <div className="mr-token-heatmap rounded-2xl border-2 p-4 sm:p-5">
