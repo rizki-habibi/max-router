@@ -132,7 +132,7 @@ export default function ProfilPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <span className="material-symbols-outlined" aria-hidden="true">health_and_safety</span>
+              <ShieldCheck size={25} aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2 className="text-xl font-bold">Pusat Diagnostik</h2>
@@ -275,7 +275,7 @@ function DiagnosticCard({ item, copied, onCopy }) {
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           <button type="button" onClick={() => onCopy(report, id)} className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2">
-            <span className="material-symbols-outlined mr-1 align-middle text-[16px]" aria-hidden="true">content_copy</span>
+            <Copy className="mr-1 inline-block align-middle" size={15} aria-hidden="true" />
             {copied === id ? "Berhasil disalin" : "Salin Temuan"}
           </button>
           <button type="button" onClick={() => onCopy(JSON.stringify(item, null, 2), id + "-json")} className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-semibold hover:bg-surface-2">
