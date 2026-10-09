@@ -626,7 +626,7 @@ export default function APIPageClient({ machineId }) {
   };
 
   const pollFunnelEnable = async (enableUrl) => {
-    requestUserAuth(enableUrl, "Open Funnel Settings");
+    requestUserAuth(enableUrl, "Buka Pengaturan Funnel");
     setTsProgress("Click \"Open Funnel Settings\" untuk mengaktifkan Funnel...");
     for (let i = 0; i < 40; i++) {
       await new Promise((r) => setTimeout(r, 3000));
@@ -650,7 +650,7 @@ export default function APIPageClient({ machineId }) {
       } catch { /* retry */ }
     }
     clearUserAuth();
-    setTsStatus({ type: "error", message: "Timed out waiting for Funnel to be enabled." });
+    setTsStatus({ type: "error", message: "Waktu tunggu habis saat menunggu Funnel diaktifkan." });
   };
 
   const handleDisableTailscale = async () => {
@@ -975,7 +975,7 @@ export default function APIPageClient({ machineId }) {
           <div className="mt-4">
             <SecurityWarning
               message={unsafeReason}
-              action={{ label: "Open settings", href: "/dashboard/profile" }}
+              action={{ label: "Buka pengaturan", href: "/dashboard/profile" }}
             />
           </div>
         )}
@@ -985,8 +985,8 @@ export default function APIPageClient({ machineId }) {
           <div className="mt-4 flex flex-col gap-2">
             {!requireApiKey && (
               <SecurityWarning
-                message="Require API key is disabled — your endpoint is publicly accessible without authentication."
-                action={{ label: "Enable", href: "#require-api-key" }}
+                message="Kewajiban kunci API dinonaktifkan — endpoint kamu dapat diakses publik tanpa autentikasi."
+                action={{ label: "Aktifkan", href: "#require-api-key" }}
               />
             )}
             {(!requireLogin || !hasPassword) && (
@@ -997,7 +997,7 @@ export default function APIPageClient({ machineId }) {
                     : "Kata sandi panel belum diatur — atur di Pengaturan."
                 }
                 action={{
-                  label: !requireLogin ? "Enable" : "Ubah kata sandi",
+                  label: !requireLogin ? "Aktifkan" : "Ubah kata sandi",
                   href: "/dashboard/profile",
                 }}
               />
@@ -1013,25 +1013,25 @@ export default function APIPageClient({ machineId }) {
               onChange={() => handleTunnelDashboardAccess(!tunnelDashboardAccess)}
             />
             <div className="flex items-center gap-1.5">
-              <p className="font-medium text-sm">Allow dashboard access via tunnel</p>
-              <Tooltip text="When enabled, the dashboard can be accessed through your tunnel or Tailscale URL (login still required). When disabled, dashboard access via tunnel/Tailscale is completely blocked." />
+              <p className="font-medium text-sm">Izinkan akses dasbor melalui tunnel</p>
+              <Tooltip text="Jika diaktifkan, dasbor dapat diakses melalui URL tunnel atau Tailscale (login tetap diperlukan). Jika dinonaktifkan, akses dasbor melalui tunnel/Tailscale diblokir sepenuhnya." />
             </div>
           </div>
         )}
       </Card>
 
-      {/* Token Saver (RTK + Caveman) */}
+      {/* Penghemat Token (RTK + Caveman) */}
       <Card id="rtk">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">bolt</span>
-            Token Saver
+            Penghemat Token
           </h2>
         </div>
         <div className="flex items-center justify-between pt-2 pb-4 border-b border-border gap-4">
           <div className="min-w-0 flex-1">
             <p className="font-medium">
-              Compress tool output{" "}
+              Ringkas keluaran alat{" "}
               <a
                 href="https://github.com/rtk-ai/rtk"
                 target="_blank"
@@ -1042,7 +1042,7 @@ export default function APIPageClient({ machineId }) {
               </a>
             </p>
             <p className="text-sm text-text-muted">
-              git/grep/ls/tree/logs → 60-90% fewer input tokens
+              git/grep/ls/tree/logs → 60–90% lebih sedikit token masukan
             </p>
           </div>
           <Toggle
@@ -1053,7 +1053,7 @@ export default function APIPageClient({ machineId }) {
         <div className="flex items-center justify-between pt-4 gap-4 flex-wrap">
           <div className="min-w-0 flex-1">
             <p className="font-medium">
-              Compress LLM output{" "}
+              Ringkas keluaran LLM{" "}
               <a
                 href="https://github.com/JuliusBrussee/caveman"
                 target="_blank"
@@ -1064,7 +1064,7 @@ export default function APIPageClient({ machineId }) {
               </a>
             </p>
             <p className="text-sm text-text-muted">
-              Terse-style system prompt → ~65% fewer output tokens (up to 87%)
+              Prompt sistem ringkas → sekitar 65% lebih sedikit token keluaran (hingga 87%)
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -1099,23 +1099,23 @@ export default function APIPageClient({ machineId }) {
         </div>
       </Card>
 
-      {/* API Keys */}
+      {/* Kunci API */}
       <Card id="require-api-key">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">vpn_key</span>
-            API Keys
+            Kunci API
           </h2>
           <Button icon="add" onClick={() => setShowAddModal(true)}>
-            Create Key
+            Buat Kunci
           </Button>
         </div>
 
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
           <div>
-            <p className="font-medium">Require API key</p>
+            <p className="font-medium">Wajibkan kunci API</p>
             <p className="text-sm text-text-muted">
-              Requests without a valid key will be rejected
+              Permintaan tanpa kunci yang valid akan ditolak
             </p>
           </div>
           <Toggle
@@ -1126,7 +1126,7 @@ export default function APIPageClient({ machineId }) {
 
         {isRemoteHost && !requireApiKey && (
           <div className="mb-4 -mt-2">
-            <SecurityWarning message="Endpoint is exposed without an API key." />
+            <SecurityWarning message="Endpoint terbuka tanpa kunci API." />
           </div>
         )}
 
@@ -1135,10 +1135,10 @@ export default function APIPageClient({ machineId }) {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
               <span className="material-symbols-outlined text-[32px]">vpn_key</span>
             </div>
-            <p className="text-text-main font-medium mb-1">No API keys yet</p>
-            <p className="text-sm text-text-muted mb-4">Create your first API key to get started</p>
+            <p className="text-text-main font-medium mb-1">Belum ada kunci API</p>
+            <p className="text-sm text-text-muted mb-4">Buat kunci API pertama untuk memulai</p>
             <Button icon="add" onClick={() => setShowAddModal(true)}>
-              Create Key
+              Buat Kunci
             </Button>
           </div>
         ) : (
@@ -1157,7 +1157,7 @@ export default function APIPageClient({ machineId }) {
                     <button
                       onClick={() => toggleKeyVisibility(key.id)}
                       className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
-                      title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
+                      title={visibleKeys.has(key.id) ? "Sembunyikan kunci" : "Tampilkan kunci"}
                     >
                       <span className="material-symbols-outlined text-[14px]">
                         {visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
@@ -1173,10 +1173,10 @@ export default function APIPageClient({ machineId }) {
                     </button>
                   </div>
                   <p className="text-xs text-text-muted mt-1">
-                    Created {new Date(key.createdAt).toLocaleDateString()}
+                    Dibuat {new Date(key.createdAt).toLocaleDateString("id-ID")}
                   </p>
                   {key.isActive === false && (
-                    <p className="text-xs text-orange-500 mt-1">Paused</p>
+                    <p className="text-xs text-orange-500 mt-1">Dijeda</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -1186,8 +1186,8 @@ export default function APIPageClient({ machineId }) {
                     onChange={(checked) => {
                       if (key.isActive && !checked) {
                         setConfirmState({
-                          title: "Pause API Key",
-                          message: `Pause API key "${key.name}"?\n\nThis key will stop working immediately but can be resumed later.`,
+                          title: "Jeda Kunci API",
+                          message: `Jeda kunci API "${key.name}"?\n\nKunci ini akan langsung berhenti berfungsi, tetapi dapat diaktifkan kembali nanti.`,
                           onConfirm: async () => {
                             setConfirmState(null);
                             handleToggleKey(key.id, checked);
@@ -1197,7 +1197,7 @@ export default function APIPageClient({ machineId }) {
                         handleToggleKey(key.id, checked);
                       }
                     }}
-                    title={key.isActive ? "Pause key" : "Resume key"}
+                    title={key.isActive ? "Jeda kunci" : "Aktifkan kembali kunci"}
                   />
                   <button
                     onClick={() => handleDeleteKey(key.id)}
