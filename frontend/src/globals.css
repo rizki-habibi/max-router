@@ -720,3 +720,192 @@ button {
     box-shadow: 12px 0 40px rgba(0,0,0,.18);
   }
 }
+
+
+/* ============================================================
+   MAX ROUTER — comic-inspired dashboard refinement
+   Clear hierarchy, inked edges, responsive data tables.
+   ============================================================ */
+:root {
+  --mr-comic-ink: #20263a;
+  --mr-comic-paper: #fffdf8;
+  --mr-comic-yellow: #ffe58a;
+  --mr-comic-coral: #ff795d;
+  --mr-comic-outline: rgba(32, 38, 58, .16);
+}
+.dark {
+  --mr-comic-ink: #e9edff;
+  --mr-comic-paper: #242632;
+  --mr-comic-outline: rgba(226, 232, 255, .14);
+}
+.dashboard-comic-glow {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(103,183,255,.10) 1px, transparent 0),
+    radial-gradient(ellipse at 95% 0%, rgba(124,92,255,.10), transparent 36%);
+  background-size: 18px 18px, auto;
+}
+.mr-provider-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mr-provider-page h1,
+.mr-provider-page h2,
+.mr-provider-page h3 {
+  letter-spacing: -.025em;
+}
+.mr-provider-page h1 {
+  text-wrap: balance;
+}
+.mr-provider-page .mr-provider-hero {
+  position: relative;
+  isolation: isolate;
+  border: 2px solid var(--mr-comic-ink);
+  border-radius: 18px;
+  background: linear-gradient(120deg, rgba(103,183,255,.12), rgba(124,92,255,.08) 55%, rgba(255,229,138,.12));
+  box-shadow: 5px 5px 0 var(--mr-comic-outline);
+}
+.mr-provider-page .mr-provider-hero::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 46px;
+  height: 30px;
+  opacity: .55;
+  pointer-events: none;
+  background-image: radial-gradient(var(--mr-blue) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+}
+.mr-provider-page .mr-comic-panel {
+  min-width: 0;
+  border: 1px solid var(--mr-comic-outline);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--mr-comic-outline);
+  overflow: hidden;
+}
+.mr-provider-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 10px;
+}
+.mr-provider-page :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(103,183,255,.8);
+  outline-offset: 2px;
+}
+.mr-provider-page .mr-provider-connections {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--mr-comic-outline);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--mr-comic-outline);
+}
+.mr-provider-page .mr-provider-connections > .overflow-x-auto {
+  max-width: 100%;
+}
+.mr-provider-page .mr-provider-connections thead {
+  background-image: linear-gradient(90deg, rgba(103,183,255,.10), rgba(124,92,255,.07));
+}
+.mr-provider-page .mr-provider-connections tbody tr {
+  transition: background-color .15s ease;
+}
+.mr-provider-page .mr-provider-connections tbody tr:hover {
+  background-color: rgba(103,183,255,.06);
+}
+@media (max-width: 1150px) {
+  .mr-provider-page .mr-provider-connections > .overflow-x-auto {
+    overflow: visible;
+  }
+  .mr-provider-page .mr-provider-connections table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .mr-provider-page .mr-provider-connections thead {
+    display: none;
+  }
+  .mr-provider-page .mr-provider-connections tbody {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+  .mr-provider-page .mr-provider-connections tbody tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px 42px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 8px;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--mr-comic-outline);
+    border-radius: 14px;
+    background: var(--color-surface);
+    box-shadow: 0 3px 0 var(--mr-comic-outline);
+  }
+  .mr-provider-page .mr-provider-connections tbody td {
+    display: block;
+    min-width: 0 !important;
+    padding: 8px 6px;
+    overflow-wrap: anywhere;
+    border: 0;
+  }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(1),
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(2) {
+    grid-row: 1;
+    align-self: start;
+  }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(3),
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(4),
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(5),
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(6) {
+    grid-column: 1 / -1;
+    padding: 10px 6px;
+    border-top: 1px dashed var(--mr-comic-outline);
+  }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(3)::before,
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(4)::before,
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(5)::before,
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(6)::before {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(3)::before { content: "Nama / status"; }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(4)::before { content: "Cakupan kunci API"; }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(5)::before { content: "Pemakaian / reset"; }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(6)::before { content: "Tindakan"; }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(4) select {
+    width: 100%;
+  }
+  .mr-provider-page .mr-provider-connections tbody td:nth-child(5) > div {
+    min-width: 0 !important;
+  }
+}
+@media (max-width: 520px) {
+  .mr-provider-page {
+    gap: 18px;
+  }
+  .mr-provider-page .mr-provider-connections > .border-b {
+    padding: 12px;
+  }
+  .mr-provider-page .mr-provider-connections .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .mr-provider-page .mr-provider-connections tbody {
+    padding: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mr-provider-page *,
+  .mr-provider-page *::before,
+  .mr-provider-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
