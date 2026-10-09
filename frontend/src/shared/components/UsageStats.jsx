@@ -87,28 +87,162 @@ function RecentRequests({ requests = [] }) {
 
 function TokenSpaceArcade({ requests = [], period = "today" }) {
   const [enabled, setEnabled] = useState(true);
-  const [shot, setShot] = useState(0);
+  const [shots, setShots] = useState(0);
+  const [pilotX, setPilotX] = useState(0.5);
   const [lastSeen, setLastSeen] = useState("");
-  const recent = Array.isArray(requests) ? requests.slice(0, 18) : [];
+  const canvasRef = useRef(null);
+  const gameRef = useRef({ enemies: [], lasers: [], particles: [], lastFrame: 0, lastShot: 0, width: 0, height: 0, pilotX: 0.5, score: 0, raf: 0 });
+  const recent = Array.isArray(requests) ? requests : [];
   const totalTokens = recent.reduce((sum, r) => sum + (Number(r.promptTokens) || 0) + (Number(r.completionTokens) || 0), 0);
-  const successful = recent.filter((r) => !r.status || ["ok", "success"].includes(String(r.status).toLowerCase())).length;
+  const successful = recent.filter((r) => !r.status || ["ok", "success", "200"].includes(String(r.status).toLowerCase())).length;
   const successRate = recent.length ? Math.round((successful / recent.length) * 100) : 0;
+  const requestSignature = recent[0] ? [recent[0].timestamp, recent[0].id, recent[0].model, recent[0].promptTokens, recent[0].completionTokens].join(":") : "";
 
   useEffect(() => {
-    const newest = recent[0];
-    const signature = newest ? String(newest.timestamp || "") + ":" + String(newest.model || "") + ":" + String(newest.promptTokens || 0) : "";
-    if (signature && lastSeen && signature !== lastSeen) setShot((value) => value + 1);
-    if (signature) setLastSeen(signature);
-  }, [requests, lastSeen, recent]);
+    if (requestSignature && lastSeen && requestSignature !== lastSeen) {
+      setShots((value) => value + 1);
+      const game = gameRef.current;
+      game.lasers.push({ x: game.width * game.pilotX, y: game.height - 76, speed: 560, power: Math.max(1, Number(recent[0]?.completionTokens) || 1), fresh: true });
+      game.particles.push(...Array.from({ length: 8 }, (_, i) => ({ x: game.width * game.pilotX, y: game.height - 70, vx: Math.cos(i * Math.PI / 4) * 55, vy: Math.sin(i * Math.PI / 4) * 55, life: .55, color: "#69f5ff" })));
+    }
+    if (requestSignature) setLastSeen(requestSignature);
+  }, [requestSignature, lastSeen, recent]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+    const game = gameRef.current;
+    let active = true;
+    let lastSpawn = 0;
+    let lastAutoFire = 0;
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      game.width = Math.max(320, rect.width);
+      game.height = Math.max(260, rect.height);
+      canvas.width = Math.floor(game.width * dpr);
+      canvas.height = Math.floor(game.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    observer?.observe(canvas);
+    const spawnEnemy = (x = Math.random() * .84 + .08, type = Math.floor(Math.random() * 4)) => {
+      game.enemies.push({ x: x * game.width, y: -25, baseX: x * game.width, phase: Math.random() * 7, speed: 22 + Math.random() * 26, type, hp: 1 + (type === 3 ? 1 : 0), radius: 13 + Math.random() * 5 });
+    };
+    for (let i = 0; i < 9; i++) spawnEnemy(.09 + (i % 9) * .1, i % 4);
+    const drawShip = (x, y) => {
+      ctx.save(); ctx.translate(x, y);
+      ctx.shadowColor = "#51e8ff"; ctx.shadowBlur = 18;
+      ctx.fillStyle = "#ff9d45"; ctx.beginPath(); ctx.moveTo(-9, 17); ctx.lineTo(-3, 5); ctx.lineTo(0, 18); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(9, 17); ctx.lineTo(3, 5); ctx.lineTo(0, 18); ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 7; ctx.fillStyle = "#f7fbff"; ctx.strokeStyle = "#101936"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(16, 8); ctx.lineTo(6, 6); ctx.lineTo(0, 15); ctx.lineTo(-6, 6); ctx.lineTo(-16, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#45dfff"; ctx.beginPath(); ctx.ellipse(0, -4, 5, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    };
+    const drawEnemy = (enemy, time) => {
+      const x = enemy.x + Math.sin(time * .0016 + enemy.phase) * 17;
+      const y = enemy.y;
+      const colors = ["#5ef0b7", "#ff70d8", "#ffd166", "#79a7ff"];
+      const color = colors[enemy.type % colors.length];
+      ctx.save(); ctx.translate(x, y); ctx.shadowColor = color; ctx.shadowBlur = 13;
+      ctx.fillStyle = color; ctx.strokeStyle = "#101936"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.roundRect(-enemy.radius, -enemy.radius * .68, enemy.radius * 2, enemy.radius * 1.45, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#121a3c";
+      ctx.fillRect(-enemy.radius * .58, -enemy.radius * .25, 4, 6);
+      ctx.fillRect(enemy.radius * .2, -enemy.radius * .25, 4, 6);
+      ctx.strokeStyle = "#121a3c"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-enemy.radius * .4, enemy.radius * .45); ctx.lineTo(0, enemy.radius * .58); ctx.lineTo(enemy.radius * .4, enemy.radius * .45); ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fillRect(-enemy.radius * .9, enemy.radius * .55, 4, 6);
+      ctx.fillRect(enemy.radius * .55, enemy.radius * .55, 4, 6);
+      ctx.restore();
+      enemy.drawX = x;
+    };
+    const draw = (time) => {
+      if (!active) return;
+      const dt = Math.min(.04, game.lastFrame ? (time - game.lastFrame) / 1000 : .016);
+      game.lastFrame = time;
+      const w = game.width, h = game.height;
+      ctx.clearRect(0, 0, w, h);
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, "#090f2c"); bg.addColorStop(.55, "#17285b"); bg.addColorStop(1, "#253e7a");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 82; i++) {
+        const x = (i * 97.13) % w;
+        const y = ((i * 53.7 + time * (.008 + (i % 3) * .004)) % h);
+        ctx.globalAlpha = .25 + (i % 5) * .13;
+        ctx.fillStyle = i % 7 === 0 ? "#ffd166" : "#c5e9ff";
+        ctx.fillRect(x, y, i % 9 === 0 ? 2.5 : 1.5, i % 9 === 0 ? 2.5 : 1.5);
+      }
+      ctx.globalAlpha = 1;
+      // Animated planet and its rings
+      const px = w * .82, py = h * .28, pr = Math.min(40, w * .07);
+      const planet = ctx.createRadialGradient(px - pr * .35, py - pr * .4, 2, px, py, pr);
+      planet.addColorStop(0, "#e4b8ff"); planet.addColorStop(.55, "#9668e8"); planet.addColorStop(1, "#423b9b");
+      ctx.fillStyle = planet; ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(151,224,255,.35)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(px, py + 5, pr * 1.45, pr * .36, -.18, 0, Math.PI * 2); ctx.stroke();
+
+      if (enabled) {
+        if (time - lastSpawn > Math.max(520, 1350 - Math.min(shots, 15) * 40)) { spawnEnemy(); lastSpawn = time; }
+        // Arcade auto-fire keeps the scene alive; real new request adds a brighter shot.
+        if (time - lastAutoFire > 780) {
+          game.lasers.push({ x: w * game.pilotX, y: h - 72, speed: 390, power: 1, fresh: false });
+          lastAutoFire = time;
+        }
+      }
+      game.enemies = game.enemies.filter((enemy) => enemy.y < h + 35 && enemy.hp > 0);
+      game.enemies.forEach((enemy) => {
+        if (enabled) { enemy.y += enemy.speed * dt; enemy.x = enemy.baseX + Math.sin(time * .001 + enemy.phase) * 22; }
+        drawEnemy(enemy, time);
+      });
+      game.lasers = game.lasers.filter((laser) => laser.y > -25);
+      game.lasers.forEach((laser) => {
+        if (enabled) laser.y -= laser.speed * dt;
+        ctx.save(); ctx.strokeStyle = laser.fresh ? "#ffffff" : "#56eaff"; ctx.shadowColor = "#58efff"; ctx.shadowBlur = laser.fresh ? 22 : 10;
+        ctx.lineWidth = laser.fresh ? 4 : 2; ctx.beginPath(); ctx.moveTo(laser.x, laser.y + 13); ctx.lineTo(laser.x, laser.y - (laser.fresh ? 29 : 19)); ctx.stroke(); ctx.restore();
+        for (const enemy of game.enemies) {
+          if (Math.abs((enemy.drawX || enemy.x) - laser.x) < enemy.radius + 7 && Math.abs(enemy.y - laser.y) < enemy.radius + 15) {
+            enemy.hp -= 1; laser.y = -100;
+            if (enemy.hp <= 0) {
+              game.score += 10;
+              for (let j = 0; j < 7; j++) game.particles.push({ x: enemy.drawX || enemy.x, y: enemy.y, vx: (Math.random() - .5) * 100, vy: (Math.random() - .5) * 100, life: .45, color: ["#62f2bd", "#ff78d9", "#ffd166"][enemy.type % 3] });
+            }
+            break;
+          }
+        }
+      });
+      game.particles = game.particles.filter((p) => p.life > 0);
+      game.particles.forEach((p) => {
+        if (enabled) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+        ctx.globalAlpha = Math.max(0, p.life * 2); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 3, 3);
+      });
+      ctx.globalAlpha = 1;
+      drawShip(w * game.pilotX, h - 48 + Math.sin(time * .004) * 3);
+      ctx.fillStyle = "rgba(5,10,30,.72)"; ctx.fillRect(12, h - 31, w - 24, 20);
+      ctx.fillStyle = "#bfeaff"; ctx.font = "bold 10px ui-monospace, monospace";
+      ctx.fillText("SKOR " + game.score + "  •  TEMBAKAN " + shots + "  •  " + (enabled ? "SISTEM AKTIF" : "JEDA"), 22, h - 17);
+      game.raf = requestAnimationFrame(draw);
+    };
+    game.raf = requestAnimationFrame(draw);
+    return () => { active = false; cancelAnimationFrame(game.raf); observer?.disconnect(); };
+  }, [enabled, shots]);
+
+  useEffect(() => { gameRef.current.pilotX = pilotX; }, [pilotX]);
+  const movePilot = (event) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPilotX(Math.max(.06, Math.min(.94, (event.clientX - rect.left) / rect.width)));
+  };
   const days = Array.from({ length: 84 }, (_, index) => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - (83 - index));
-    const dayKey = date.toLocaleDateString("en-CA");
+    const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - (83 - index));
+    const dayKey = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
     const count = recent.filter((r) => {
-      const timestamp = r.timestamp ? new Date(r.timestamp) : null;
-      return timestamp && !Number.isNaN(timestamp.getTime()) && timestamp.toLocaleDateString("en-CA") === dayKey;
+      const stamp = r.timestamp ? new Date(r.timestamp) : null;
+      return stamp && !Number.isNaN(stamp.getTime()) && [stamp.getFullYear(), String(stamp.getMonth() + 1).padStart(2, "0"), String(stamp.getDate()).padStart(2, "0")].join("-") === dayKey;
     }).length;
     return { date, count, dayKey };
   });
@@ -119,65 +253,47 @@ function TokenSpaceArcade({ requests = [], period = "today" }) {
       <div className="mr-token-game-shell relative overflow-hidden rounded-2xl border-2 p-4 sm:p-5">
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="mr-token-kicker">MISI TOKEN · 9ROUTER SPACE DEFENSE</div>
-            <h2 className="mt-1 text-xl font-extrabold sm:text-2xl">Pertahanan Galaksi AI</h2>
-            <p className="mt-1 text-sm opacity-80">Setiap permintaan yang tercatat menjadi energi dalam misi ini.</p>
+            <div className="mr-token-kicker">MODE ARKADE · PERTAHANAN GALAKSI</div>
+            <h2 className="mt-1 text-xl font-extrabold sm:text-2xl">Pilot AI: Serangan Token</h2>
+            <p className="mt-1 text-sm opacity-80">Pesawat menembak, alien bergerak, dan permintaan AI baru memicu tembakan energi.</p>
           </div>
           <button type="button" onClick={() => setEnabled((value) => !value)} className="mr-token-toggle rounded-xl border-2 px-3 py-2 text-sm font-bold">
-            {enabled ? "Jeda animasi" : "Mulai animasi"}
+            {enabled ? "Jeda permainan" : "Lanjut bermain"}
           </button>
         </div>
-        <div className={`mr-token-battle relative mt-4 overflow-hidden rounded-xl border-2 ${enabled ? "is-playing" : "is-paused"}`}>
-          <div className="mr-token-stars" aria-hidden="true" />
-          <div className="mr-token-moon" aria-hidden="true" />
+        <div className="mr-token-battle mr-token-battle-canvas relative mt-4 overflow-hidden rounded-xl border-2">
+          <canvas ref={canvasRef} className="mr-token-game-canvas" onPointerMove={movePilot} onPointerDown={movePilot} aria-label="Permainan pesawat. Gerakkan tetikus atau sentuh layar untuk mengendalikan pesawat." />
           <div className="mr-token-stat mr-token-stat-left">
-            <span>ENERGI TERPAKAI</span>
-            <strong>{fmt(totalTokens)}</strong>
-            <small>Token dari {recent.length} permintaan terbaru</small>
+            <span>TOKEN TERCATAT</span><strong>{fmt(totalTokens)}</strong>
+            <small>{recent.length} permintaan tersedia</small>
           </div>
           <div className="mr-token-stat mr-token-stat-right">
-            <span>AKURASI MISI</span>
-            <strong>{recent.length ? successRate + "%" : "—"}</strong>
-            <small>{recent.length ? successful + " permintaan berhasil" : "Menunggu data permintaan"}</small>
+            <span>KEBERHASILAN</span><strong>{recent.length ? successRate + "%" : "—"}</strong>
+            <small>{successful} permintaan berhasil</small>
           </div>
-          <div className="mr-token-alien-row" aria-label="Alien target">
-            {Array.from({ length: 7 }, (_, index) => (
-              <span key={index} className={`mr-token-alien alien-${index % 4}`} style={{ animationDelay: `${index * 0.19}s` }} aria-hidden="true">
-                {["✹", "👾", "✦", "◉"][index % 4]}
-              </span>
-            ))}
-          </div>
-          {enabled && recent.length > 0 && <span key={shot} className="mr-token-laser" aria-hidden="true" />}
-          <div className="mr-token-ship" aria-label="Pesawat penjaga">🚀</div>
-          <div className="mr-token-game-caption">
-            {recent.length ? `Misi aktif · ${recent.length} permintaan terbaru terpantau` : "Menunggu permintaan AI pertama untuk memulai misi"}
-          </div>
+          <div className="mr-token-game-hint">GERAKKAN KURSOR UNTUK MENGENDALIKAN PESAWAT</div>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span className="mr-token-live-dot">{recent.length ? "Data aktivitas tersedia" : "Belum ada aktivitas terbaru"}</span>
-          <span className="opacity-70">Animasi dekoratif · angka mengikuti log permintaan</span>
+          <span className="mr-token-live-dot">{recent.length ? "Data permintaan tersambung" : "Menunggu permintaan AI"}</span>
+          <span className="opacity-70">Efek permainan berjalan langsung di kanvas</span>
         </div>
       </div>
-
       <div className="mr-token-heatmap rounded-2xl border-2 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-base font-extrabold">Peta Aktivitas Token</h3>
-            <p className="mt-1 text-sm opacity-70">Seperti kotak kontribusi GitHub: makin hijau, makin banyak permintaan yang tercatat.</p>
-          </div>
+          <div><h3 className="text-base font-extrabold">Peta Aktivitas Token</h3><p className="mt-1 text-sm opacity-70">Setiap kotak mewakili aktivitas permintaan yang masih tersedia di data.</p></div>
           <span className="mr-token-heatmap-total">{recent.length} permintaan terbaru</span>
         </div>
         <div className="mr-token-heatmap-grid mt-4" role="img" aria-label="Peta aktivitas harian berdasarkan permintaan terbaru">
           {days.map((day) => {
             const level = day.count === 0 ? 0 : Math.min(4, Math.ceil((day.count / maxCount) * 4));
-            return <span key={day.dayKey} className={`mr-token-heat mr-token-heat-${level}`} title={`${day.dayKey}: ${day.count} permintaan yang masih tercakup log terbaru`} />;
+            return <span key={day.dayKey} className={\`mr-token-heat mr-token-heat-\${level}\`} title={\`\${day.dayKey}: \${day.count} permintaan dalam data yang tersedia\`} />;
           })}
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs opacity-75">
-          <span>Aktivitas yang terdeteksi dari log terbaru</span>
-          <span className="flex items-center gap-1.5">Sedikit { [0,1,2,3,4].map((level) => <i key={level} className={`mr-token-heat mr-token-heat-${level}`} />)} Banyak</span>
+          <span>Warna hijau menunjukkan jumlah permintaan per hari</span>
+          <span className="flex items-center gap-1.5">Sedikit {[0,1,2,3,4].map((level) => <i key={level} className={\`mr-token-heat mr-token-heat-\${level}\`} />)} Banyak</span>
         </div>
-        <p className="mt-2 text-xs opacity-60">Kotak tanpa warna berarti tidak ada permintaan dalam data yang tersedia; bukan bukti bahwa tidak pernah ada penggunaan.</p>
+        <p className="mt-2 text-xs opacity-60">Hari tanpa data ditampilkan kosong; riwayat lengkap memerlukan agregasi dari backend.</p>
       </div>
     </section>
   );
