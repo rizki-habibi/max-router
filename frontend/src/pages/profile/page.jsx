@@ -136,7 +136,7 @@ export default function ProfilPage() {
                   <option value="all">Semua Tingkat</option><option value="error">Kesalahan</option><option value="warning">Peringatan</option><option value="info">Informasi</option>
                 </select>
               </div>
-            </div>      </div>
+            </div>
           </Card>
 
           {filtered.length === 0 ? (
