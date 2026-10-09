@@ -1186,7 +1186,7 @@ export default function APIPageClient({ machineId }) {
             </Button>
           </div>
         ) : (
-          {filteredKeys.length === 0 ? (
+          filteredKeys.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
               <p className="font-medium">Kunci API tidak ditemukan</p>
               <p className="mt-1 text-sm text-text-muted">Ubah kata pencarian atau saringan status.</p>
@@ -1259,7 +1259,7 @@ export default function APIPageClient({ machineId }) {
               </div>
             ))}
           </div>
-          )}
+          )
         )}
       </Card>
 
