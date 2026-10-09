@@ -1,6 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { Menu, ChevronLeft, ChevronRight, UserRound, Bell, BellOff, AlertCircle, AlertTriangle, CheckCircle2, Info, X, Search, Activity, Server, Layers, KeyRound, ChartNoAxesColumn, Network, Settings, Languages, Monitor, Home } from "lucide-react";
+import { Menu, ChevronLeft, ChevronRight, UserRound, Bell, BellOff, AlertCircle, AlertTriangle, CheckCircle2, Info, X, Search, Activity, Server, Layers, KeyRound, BarChart3, Network, Settings, Languages, Monitor, Home } from "lucide-react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import PropTypes from "prop-types";
