@@ -110,6 +110,9 @@ export default function ProvidersPage() {
   const [connections, setConnections] = useState([]);
   const [providerNodes, setProviderNodes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [localSearch, setLocalSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [authFilter, setAuthFilter] = useState("all");
 
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
@@ -124,9 +127,11 @@ export default function ProvidersPage() {
     return () => unregisterSearch();
   }, [registerSearch, unregisterSearch]);
 
-  const matchSearch = (name) =>
-    !searchQuery.trim() ||
-    name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+  const matchSearch = (name) => {
+    const query = [searchQuery, localSearch].map((value) => String(value || "").trim().toLowerCase()).filter(Boolean);
+    const normalizedName = String(name || "").toLowerCase();
+    return query.every((term) => normalizedName.includes(term));
+  };
 
   const sortByPriority = (entries, authType) =>
     [...entries].sort(([ka, a], [kb, b]) => {
@@ -338,6 +343,16 @@ export default function ProvidersPage() {
     );
   }
 
+  const availableAuthTypes = [...new Set(savedProviderEntries.map((entry) => entry.authType || "apikey"))];
+  const visibleProviderEntries = savedProviderEntries.filter((entry) => {
+    if (authFilter !== "all" && (entry.authType || "apikey") !== authFilter) return false;
+    const stats = getProviderStats(entry.id, entry.authType);
+    if (statusFilter === "connected") return stats.connected > 0;
+    if (statusFilter === "error") return stats.error > 0;
+    if (statusFilter === "disabled") return stats.allDisabled;
+    if (statusFilter === "not-connected") return stats.total === 0 || (stats.connected === 0 && stats.error === 0);
+    return true;
+  });
   const hasAnyResult = savedProviderEntries.length > 0;
 
   return (
@@ -370,8 +385,42 @@ export default function ProvidersPage() {
             </p>
           </div>
 
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-surface p-3 sm:grid-cols-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor="provider-search" className="text-xs font-medium text-text-muted">Cari penyedia</label>
+              <Input id="provider-search" value={localSearch} onChange={(event) => setLocalSearch(event.target.value)} placeholder="Nama penyedia..." />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor="provider-status-filter" className="text-xs font-medium text-text-muted">Saring status</label>
+              <select id="provider-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+                <option value="all">Semua status</option>
+                <option value="connected">Tersambung</option>
+                <option value="error">Ada kesalahan</option>
+                <option value="disabled">Dinonaktifkan</option>
+                <option value="not-connected">Belum tersambung</option>
+              </select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor="provider-auth-filter" className="text-xs font-medium text-text-muted">Jenis autentikasi</label>
+              <select id="provider-auth-filter" value={authFilter} onChange={(event) => setAuthFilter(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+                <option value="all">Semua jenis</option>
+                {availableAuthTypes.map((type) => <option key={type} value={type}>{type === "apikey" ? "Kunci API" : type === "oauth" ? "Masuk OAuth" : type}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-xs text-text-muted sm:col-span-3">
+              <span>Menampilkan {visibleProviderEntries.length} dari {savedProviderEntries.length} penyedia</span>
+              {(localSearch || statusFilter !== "all" || authFilter !== "all") && <button type="button" onClick={() => { setLocalSearch(""); setStatusFilter("all"); setAuthFilter("all"); }} className="rounded-lg px-2 py-1 font-semibold text-brand-500 hover:bg-surface-2">Hapus semua saringan</button>}
+            </div>
+          </div>
+
+          {visibleProviderEntries.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
+              <p className="font-medium">Penyedia tidak ditemukan</p>
+              <p className="mt-1 text-sm text-text-muted">Ubah kata pencarian atau saringan yang dipilih.</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {savedProviderEntries.map((entry) => {
+            {visibleProviderEntries.map((entry) => {
               const info = {
                 id: entry.id,
                 name: entry.name,
@@ -394,6 +443,7 @@ export default function ProvidersPage() {
               );
             })}
           </div>
+          )}
         </div>
       )}
 
