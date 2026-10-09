@@ -2,8 +2,8 @@
 const FEATURES = [
   { 
     icon: "link", 
-    title: "Unified Endpoint", 
-    desc: "Access all providers via a single standard API URL.", 
+    title: "Endpoint Terpadu", 
+    desc: "Akses semua penyedia melalui satu URL API standar.", 
     colors: {
       border: "hover:border-blue-500/50",
       bg: "hover:bg-blue-500/5",
@@ -14,8 +14,8 @@ const FEATURES = [
   },
   { 
     icon: "bolt", 
-    title: "Easy Setup", 
-    desc: "Get up and running in minutes with npx command.", 
+    title: "Pengaturan Mudah", 
+    desc: "Mulai dalam beberapa menit dengan perintah npx.", 
     colors: {
       border: "hover:border-orange-500/50",
       bg: "hover:bg-orange-500/5",
@@ -26,8 +26,8 @@ const FEATURES = [
   },
   { 
     icon: "shield_with_heart", 
-    title: "Model Fallback", 
-    desc: "Automatically switch providers on failure or high latency.", 
+    title: "Cadangan Model", 
+    desc: "Beralih penyedia secara otomatis saat gagal atau lambat.", 
     colors: {
       border: "hover:border-rose-500/50",
       bg: "hover:bg-rose-500/5",
@@ -38,8 +38,8 @@ const FEATURES = [
   },
   { 
     icon: "monitoring", 
-    title: "Usage Tracking", 
-    desc: "Detailed analytics and cost monitoring across all models.", 
+    title: "Pelacakan Pemakaian", 
+    desc: "Analisis penggunaan dan pemantauan biaya semua model.", 
     colors: {
       border: "hover:border-purple-500/50",
       bg: "hover:bg-purple-500/5",
@@ -50,8 +50,8 @@ const FEATURES = [
   },
   { 
     icon: "key", 
-    title: "OAuth & API Keys", 
-    desc: "Securely manage credentials in one vault.", 
+    title: "OAuth dan Kunci API", 
+    desc: "Kelola kredensial dengan aman di satu tempat.", 
     colors: {
       border: "hover:border-amber-500/50",
       bg: "hover:bg-amber-500/5",
@@ -62,8 +62,8 @@ const FEATURES = [
   },
   { 
     icon: "cloud_sync", 
-    title: "Cloud Sync", 
-    desc: "Sync your configurations across devices instantly.", 
+    title: "Sinkronisasi Awan", 
+    desc: "Sinkronkan konfigurasi antarperangkat.", 
     colors: {
       border: "hover:border-sky-500/50",
       bg: "hover:bg-sky-500/5",
@@ -74,8 +74,8 @@ const FEATURES = [
   },
   { 
     icon: "terminal", 
-    title: "CLI Support", 
-    desc: "Works with Claude Code, Codex, Cline, Cursor, and more.", 
+    title: "Dukungan CLI", 
+    desc: "Terhubung dengan Claude Code, Codex, Cline, Cursor, dan lainnya.", 
     colors: {
       border: "hover:border-emerald-500/50",
       bg: "hover:bg-emerald-500/5",
@@ -86,8 +86,8 @@ const FEATURES = [
   },
   { 
     icon: "dashboard", 
-    title: "Dashboard", 
-    desc: "Visual dashboard for real-time traffic analysis.", 
+    title: "Dasbor", 
+    desc: "Dasbor visual untuk memantau lalu lintas secara langsung.", 
     colors: {
       border: "hover:border-fuchsia-500/50",
       bg: "hover:bg-fuchsia-500/5",
@@ -105,7 +105,7 @@ export default function Features() {
         <div className="mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Fitur Unggulan</h2>
           <p className="text-gray-400 max-w-xl text-lg">
-            Everything you need to manage your AI infrastructure in one place, built for scale.
+            Semua alat untuk mengelola infrastruktur AI dalam satu tempat yang siap berkembang.
           </p>
         </div>
         
