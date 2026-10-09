@@ -56,11 +56,18 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     // Connections without a scope remain Global for backward compatibility.
     // A scoped connection is only eligible for the matching incoming API key.
     const requestApiKeyId = options?.apiKeyId || null;
-    const connections = allConnections.filter((connection) => {
+    const globalConnections = allConnections.filter((connection) => {
       const scopeId = connection.providerSpecificData?.apiKeyScopeId || connection.apiKeyScopeId || null;
-      if (!scopeId || scopeId === "global") return true;
-      return Boolean(requestApiKeyId && scopeId === requestApiKeyId);
+      return !scopeId || scopeId === "global";
     });
+    const scopedConnections = requestApiKeyId
+      ? allConnections.filter((connection) =>
+          (connection.providerSpecificData?.apiKeyScopeId || connection.apiKeyScopeId) === requestApiKeyId
+        )
+      : [];
+    // A key-specific pool replaces the Global pool for that provider, preventing
+    // accidental rotation between unrelated credentials. Global remains the fallback.
+    const connections = scopedConnections.length > 0 ? scopedConnections : globalConnections;
     log.debug("AUTH", `${provider} | total connections: ${connections.length}, excluded count: ${excludeSet.size}, model: ${model || "any"}`);
 
     if (connections.length === 0) {
