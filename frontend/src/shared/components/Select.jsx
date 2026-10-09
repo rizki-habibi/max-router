@@ -6,7 +6,7 @@ export default function Select({
   options = [],
   value,
   onChange,
-  placeholder = "Select an option",
+  placeholder = "Pilih salah satu opsi",
   error,
   hint,
   disabled = false,
@@ -18,7 +18,7 @@ export default function Select({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label className="text-sm font-medium text-text-main">
+        <label htmlFor={props.id} className="text-sm font-medium text-text-main">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
