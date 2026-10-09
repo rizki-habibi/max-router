@@ -13,7 +13,7 @@ export default function Navigation() {
           type="button"
           className="flex items-center gap-3 cursor-pointer bg-transparent border-none p-0"
           onClick={() => navigate("/")}
-          aria-label="Navigate to home"
+          aria-label="Kembali ke beranda"
         >
           <img src="/branding/9router-v3-logo.png" alt="9Router V3" className="size-8 object-contain" />
           <h2 className="text-white text-xl font-bold tracking-tight">9Router V3</h2>
@@ -23,7 +23,7 @@ export default function Navigation() {
         <div className="hidden md:flex items-center gap-8">
           <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#features">Fitur</a>
           <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="#how-it-works">Cara Kerja</a>
-          <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="https://github.com/decolua/9router#readme" target="_blank" rel="noopener noreferrer">Docs</a>
+          <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors" href="https://github.com/decolua/9router#readme" target="_blank" rel="noopener noreferrer">Dokumentasi</a>
           <a className="text-gray-300 hover:text-white text-sm font-medium transition-colors flex items-center gap-1" href="https://github.com/decolua/9router" target="_blank" rel="noopener noreferrer">
             GitHub <span className="material-symbols-outlined text-[14px]">open_in_new</span>
           </a>
