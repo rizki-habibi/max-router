@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
+import { Menu, ChevronLeft, ChevronRight, UserRound, Bell, BellOff, AlertCircle, AlertTriangle, CheckCircle2, Info, X, Search, Activity, Server, Layers, KeyRound, ChartNoAxesColumn, Network, Settings, Languages, Monitor, Home } from "lucide-react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import PropTypes from "prop-types";
@@ -10,6 +11,19 @@ import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
+
+const HEADER_ICONS = {
+  menu: Menu, chevron_left: ChevronLeft, chevron_right: ChevronRight,
+  person: UserRound, notifications: Bell, notifications_none: BellOff,
+  error: AlertCircle, warning: AlertTriangle, check_circle: CheckCircle2,
+  info: Info, close: X, search: Search, api: Activity, dns: Server,
+  layers: Layers, vpn_key: KeyRound, data_usage: ChartNoAxesColumn,
+  lan: Network, settings: Settings, translate: Languages, monitor: Monitor, home: Home,
+};
+function HeaderIcon({ name, className = "" }) {
+  const Icon = HEADER_ICONS[name] || Activity;
+  return <Icon aria-hidden="true" className={className} size="1em" strokeWidth={2} />;
+}
 
 const getPageInfo = (pathname) => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };
@@ -211,7 +225,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
             onClick={onMenuClick}
             className="text-text-main hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined">menu</span>
+            <HeaderIcon name="menu" className="size-5" />
           </button>
         )}
       </div>
@@ -224,9 +238,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
         title={sidebarCollapsed ? "Buka panel" : "Tutup panel"}
         aria-label={sidebarCollapsed ? "Buka panel" : "Tutup panel"}
       >
-        <span className="mr-comic-toggle-icon material-symbols-outlined text-[19px]">
-          {sidebarCollapsed ? "chevron_right" : "chevron_left"}
-        </span>
+        <HeaderIcon name={sidebarCollapsed ? "chevron_right" : "chevron_left"} className="size-5" />
       </button>
 
       {/* Page title with breadcrumbs */}
@@ -239,9 +251,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
                 className="flex items-center gap-2"
               >
                 {index > 0 && (
-                  <span className="material-symbols-outlined text-text-muted text-base">
-                    chevron_right
-                  </span>
+                  <HeaderIcon name="chevron_right" className="text-text-muted text-base" />
                 )}
                 {crumb.href ? (
                   <Link
@@ -273,9 +283,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
           <div>
             <div className="flex items-center gap-2">
               {icon && (
-                <span className="material-symbols-outlined text-primary text-xl lg:text-2xl">
-                  {icon}
-                </span>
+                <HeaderIcon name={icon} className="text-primary text-xl lg:text-2xl" />
               )}
               <h1 className="text-base lg:text-2xl font-semibold tracking-tight truncate">
                 {title}
@@ -294,7 +302,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
       <div className="flex items-center gap-1 shrink-0">
         {displayName && loginMethod === "OIDC" && (
           <div className="hidden sm:flex items-center max-w-[220px] px-3 py-1.5 rounded-full border border-border bg-surface/70 text-xs text-text-muted truncate">
-            <span className="material-symbols-outlined text-[14px] mr-1.5 text-primary">person</span>
+            <HeaderIcon name="person" className="text-[14px] mr-1.5 text-primary" />
             <span className="truncate">{displayName}</span>
             <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
               OIDC
@@ -309,7 +317,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
             aria-label="Notifikasi"
             title="Notifikasi"
           >
-            <span className="material-symbols-outlined text-[21px]">notifications</span>
+            <HeaderIcon name="notifications" className="text-[21px]" />
             {notifications.length > 0 && (
               <span className="absolute right-1 top-1 flex min-w-4 h-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
                 {notifications.length > 99 ? "99+" : notifications.length}
@@ -330,17 +338,17 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
               <div className="max-h-80 overflow-y-auto p-2">
                 {notifications.length === 0 ? (
                   <div className="px-4 py-8 text-center">
-                    <span className="material-symbols-outlined text-3xl text-text-muted/60">notifications_none</span>
+                    <HeaderIcon name="notifications_none" className="text-3xl text-text-muted/60" />
                     <p className="mt-2 text-xs text-text-muted">Belum ada notifikasi</p>
                   </div>
                 ) : notifications.slice().reverse().map((n) => (
                   <div key={n.id} className="flex gap-2 rounded-xl px-3 py-2.5 hover:bg-primary/5">
-                    <span className="material-symbols-outlined mt-0.5 text-[17px] text-primary">{n.type === "error" ? "error" : n.type === "warning" ? "warning" : n.type === "success" ? "check_circle" : "info"}</span>
+                    <HeaderIcon name={n.type === "error" ? "error" : n.type === "warning" ? "warning" : n.type === "success" ? "check_circle" : "info"} className="mt-0.5 text-[17px] text-primary" />
                     <div className="min-w-0 flex-1">
                       {n.title && <p className="text-xs font-semibold">{n.title}</p>}
                       <p className="text-xs text-text-muted">{n.message}</p>
                     </div>
-                    {n.dismissible && <button type="button" onClick={() => removeNotification(n.id)} className="text-text-muted hover:text-text-main"><span className="material-symbols-outlined text-[15px]">close</span></button>}
+                    {n.dismissible && <button type="button" onClick={() => removeNotification(n.id)} className="text-text-muted hover:text-text-main"><HeaderIcon name="close" className="text-[15px]" /></button>}
                   </div>
                 ))}
               </div>
@@ -365,9 +373,7 @@ function HeaderSearch() {
 
   return (
     <div className="relative w-[160px] sm:w-[220px]">
-      <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-[16px] pointer-events-none">
-        search
-      </span>
+      <HeaderIcon name="search" className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-[16px] pointer-events-none" />
       <input
         type="text"
         value={query}
@@ -382,7 +388,7 @@ function HeaderSearch() {
           className="absolute right-1 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main p-0.5 rounded"
           aria-label="Clear search"
         >
-          <span className="material-symbols-outlined text-[16px]">close</span>
+          <HeaderIcon name="close" className="text-[16px]" />
         </button>
       )}
     </div>
