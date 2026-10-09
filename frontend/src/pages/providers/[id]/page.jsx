@@ -1203,7 +1203,7 @@ export default function ProviderDetailPage() {
       <div className="text-center py-20">
         <p className="text-text-muted">Provider not found</p>
         <Link to="/dashboard/providers" className="text-primary mt-4 inline-block">
-          Back to Providers
+          Kembali ke Penyedia
         </Link>
       </div>
     );
@@ -1227,9 +1227,9 @@ export default function ProviderDetailPage() {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-6 px-1 sm:gap-8 sm:px-0">
+    <div className="mr-provider-page dashboard-comic-glow flex min-w-0 flex-col gap-6 rounded-2xl px-2 py-3 sm:gap-8 sm:px-3 sm:py-4">
       {/* Header */}
-      <div className="min-w-0">
+      <div className="mr-provider-hero min-w-0 p-4 sm:p-5">
         <Link
           to="/dashboard/providers"
           className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-primary transition-colors mb-4"
@@ -1268,12 +1268,12 @@ export default function ProviderDetailPage() {
                   className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                 >
                   <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  {providerInfo.notice?.apiKeyUrl ? "Get API Key" : "Sign up / Learn more"}
+                  {providerInfo.notice?.apiKeyUrl ? "Ambil Kunci API" : "Daftar / Pelajari"}
                 </a>
               )}
             </div>
             <p className="text-text-muted">
-              {connections.length} connection{connections.length === 1 ? "" : "s"}
+              {connections.length} koneksi
             </p>
           </div>
         </div>
@@ -1297,7 +1297,7 @@ export default function ProviderDetailPage() {
               rel="noopener noreferrer"
               className="inline-flex justify-center rounded bg-blue-500 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-600 sm:py-0.5"
             >
-              Get API Key →
+              Ambil Kunci API →
             </a>
           )}
         </div>
