@@ -8,7 +8,7 @@ import {
   isValidApiKey,
 } from "../services/auth.js";
 import { cacheClaudeHeaders } from "open-sse/utils/claudeHeaderCache.js";
-import { getSettings } from "../../lib/localDb.js";
+import { getSettings, getApiKeyByValue } from "../../lib/localDb.js";
 import { getModelInfo, getComboModels } from "../services/model.js";
 import { handleChatCore } from "open-sse/handlers/chatCore.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
@@ -58,6 +58,8 @@ export async function handleChat(request, clientRawRequest = null) {
   // Log API key (masked)
   const authHeader = request.headers?.["authorization"] ?? request.headers?.get?.("Authorization");
   const apiKey = extractApiKey(request);
+  const apiKeyRecord = apiKey ? await getApiKeyByValue(apiKey).catch(() => null) : null;
+  const apiKeyId = apiKeyRecord?.id || null;
   if (authHeader && apiKey) {
     const masked = log.maskKey(apiKey);
     log.debug("AUTH", `API Key: ${masked}`);
@@ -102,7 +104,7 @@ export async function handleChat(request, clientRawRequest = null) {
     return handleComboChat({
       body,
       models: comboModels,
-      handleSingleModel: (b, m) => handleSingleModelChat(b, m, clientRawRequest, request, apiKey),
+      handleSingleModel: (b, m) => handleSingleModelChat(b, m, clientRawRequest, request, apiKey, apiKeyId),
       log,
       comboName: modelStr,
       comboStrategy,
@@ -111,13 +113,13 @@ export async function handleChat(request, clientRawRequest = null) {
   }
 
   // Single model request
-  return handleSingleModelChat(body, modelStr, clientRawRequest, request, apiKey);
+  return handleSingleModelChat(body, modelStr, clientRawRequest, request, apiKey, apiKeyId);
 }
 
 /**
  * Handle single model chat request
  */
-async function handleSingleModelChat(body, modelStr, clientRawRequest = null, request = null, apiKey = null) {
+async function handleSingleModelChat(body, modelStr, clientRawRequest = null, request = null, apiKey = null, apiKeyId = null) {
   const modelInfo = await getModelInfo(modelStr);
 
   // If provider is null, this might be a combo name - check and handle
@@ -164,7 +166,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   let lastStatus = null;
 
   while (true) {
-    const credentials = await getProviderCredentials(provider, excludeConnectionIds, model);
+    const credentials = await getProviderCredentials(provider, excludeConnectionIds, model, { apiKeyId });
 
     // All accounts unavailable
     if (!credentials || credentials.allRateLimited) {
