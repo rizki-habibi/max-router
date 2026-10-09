@@ -39,7 +39,7 @@ const getPageInfo = (pathname) => {
     const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
     return {
       title: kindConfig?.label || kindId,
-      description: `Kelola ${kindConfig?.label || kindId} providers`,
+      description: `Kelola penyedia ${kindConfig?.label || kindId}`,
       icon: kindConfig?.icon || "perm_media",
       breadcrumbs: [],
     };
@@ -198,7 +198,7 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
         navigate(0);
       }
     } catch (err) {
-      console.error("Failed to logout:", err);
+      console.error("Gagal keluar:", err);
     }
   };
 
