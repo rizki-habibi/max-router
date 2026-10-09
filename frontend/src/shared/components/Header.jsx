@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 import PropTypes from "prop-types";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
-import ThemeToggle from "@/shared/components/ThemeToggle";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
@@ -356,7 +355,6 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
           )}
         </div>
         <HeaderSearch />
-        <ThemeToggle />
         <HeaderMenu onLogout={handleLogout} isLoggedIn={isLoggedIn} />
       </div>
     </header>
