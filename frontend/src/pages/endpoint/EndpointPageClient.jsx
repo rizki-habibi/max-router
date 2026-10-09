@@ -561,7 +561,7 @@ export default function APIPageClient({ machineId }) {
     setTsConnecting(true);
     setTsLoading(true);
     setTsStatus(null);
-    setTsProgress("Connecting...");
+    setTsProgress("Menghubungkan...");
     clearUserAuth();
     try {
       const res = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
@@ -860,7 +860,7 @@ export default function APIPageClient({ machineId }) {
                   <span className="material-symbols-outlined text-sm">error</span>
                   {tunnelStatus.message}
                 </div>
-                <Button size="sm" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>Enable</Button>
+                <Button size="sm" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>Aktifkan</Button>
               </>
             ) : tunnelChecking ? (
               <>
@@ -928,7 +928,7 @@ export default function APIPageClient({ machineId }) {
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  {tsProgress || "Connecting..."}
+                  {tsProgress || "Menghubungkan..."}
                 </div>
                 {tsAuthUrl && (
                   <Button
@@ -936,7 +936,7 @@ export default function APIPageClient({ machineId }) {
                     icon="open_in_new"
                     onClick={() => window.open(tsAuthUrl, "tailscale_auth", "width=600,height=700,noopener,noreferrer")}
                   >
-                    {tsAuthLabel || "Open"}
+                    {tsAuthLabel || "Buka"}
                   </Button>
                 )}
                 <button
@@ -953,7 +953,7 @@ export default function APIPageClient({ machineId }) {
                   <span className="material-symbols-outlined text-sm">error</span>
                   {tsStatus.message}
                 </div>
-                <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>Enable</Button>
+                <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>Aktifkan</Button>
               </>
             ) : (
               <Button
@@ -1336,7 +1336,7 @@ export default function APIPageClient({ machineId }) {
             <Button onClick={handleEnableTunnel} fullWidth>
               Start Tunnel
             </Button>
-            <Button onClick={() => setShowEnableTunnelModal(false)} variant="ghost" fullWidth>Cancel</Button>
+            <Button onClick={() => setShowEnableTunnelModal(false)} variant="ghost" fullWidth>Batalkan</Button>
           </div>
         </div>
       </Modal>
@@ -1351,9 +1351,9 @@ export default function APIPageClient({ machineId }) {
           <p className="text-sm text-text-muted">The Cloudflare tunnel will be disconnected. Remote access via tunnel URL will stop working.</p>
           <div className="flex gap-2">
             <Button onClick={handleDisableTunnel} fullWidth disabled={tunnelLoading} variant="danger">
-              {tunnelLoading ? "Disabling..." : "Disable"}
+              {tunnelLoading ? "Menonaktifkan..." : "Nonaktifkan"}
             </Button>
-            <Button onClick={() => setShowDisableTunnelModal(false)} variant="ghost" fullWidth disabled={tunnelLoading}>Cancel</Button>
+            <Button onClick={() => setShowDisableTunnelModal(false)} variant="ghost" fullWidth disabled={tunnelLoading}>Batalkan</Button>
           </div>
         </div>
       </Modal>
@@ -1381,7 +1381,7 @@ export default function APIPageClient({ machineId }) {
                 <Button onClick={handleInstallTailscale} fullWidth>
                   Install Tailscale
                 </Button>
-                <Button onClick={() => setShowTsModal(false)} variant="ghost" fullWidth>Cancel</Button>
+                <Button onClick={() => setShowTsModal(false)} variant="ghost" fullWidth>Batalkan</Button>
               </div>
             </div>
           )}
@@ -1417,7 +1417,7 @@ export default function APIPageClient({ machineId }) {
                 >
                   Connect
                 </Button>
-                <Button onClick={() => setShowTsModal(false)} variant="ghost" fullWidth>Cancel</Button>
+                <Button onClick={() => setShowTsModal(false)} variant="ghost" fullWidth>Batalkan</Button>
               </div>
             </div>
           )}
@@ -1436,9 +1436,9 @@ export default function APIPageClient({ machineId }) {
           <p className="text-sm text-text-muted">Tailscale Funnel will be stopped. Remote access via Tailscale URL will stop working.</p>
           <div className="flex gap-2">
             <Button onClick={handleDisableTailscale} fullWidth disabled={tsLoading} variant="danger">
-              {tsLoading ? "Disabling..." : "Disable"}
+              {tsLoading ? "Menonaktifkan..." : "Nonaktifkan"}
             </Button>
-            <Button onClick={() => setShowDisableTsModal(false)} variant="ghost" fullWidth disabled={tsLoading}>Cancel</Button>
+            <Button onClick={() => setShowDisableTsModal(false)} variant="ghost" fullWidth disabled={tsLoading}>Batalkan</Button>
           </div>
         </div>
       </Modal>
