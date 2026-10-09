@@ -909,3 +909,35 @@ button {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Shared comic component treatment */
+.mr-comic-card {
+  border: 1px solid var(--mr-comic-outline, rgba(32,38,58,.16));
+  box-shadow: 0 3px 0 var(--mr-comic-outline, rgba(32,38,58,.12));
+}
+.mr-comic-button {
+  border-radius: 10px;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.mr-comic-button:not(:disabled) {
+  box-shadow: 0 3px 0 rgba(32,38,58,.16);
+}
+.mr-comic-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: saturate(1.06);
+  box-shadow: 0 4px 0 rgba(32,38,58,.18);
+}
+.mr-comic-button:not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(32,38,58,.14);
+}
+.dark .mr-comic-button:not(:disabled) {
+  box-shadow: 0 3px 0 rgba(0,0,0,.32);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mr-comic-button,
+  .mr-comic-card {
+    transition: none !important;
+  }
+}
