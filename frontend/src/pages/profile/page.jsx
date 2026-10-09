@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/shared/components";
-import { Activity, AlertTriangle, CheckCircle2, CircleHelp, Copy, Info, LoaderCircle, Radar, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleHelp, Copy, Info, LoaderCircle, Radar, ShieldCheck } from "lucide-react";
 
 const readJson = async (url, signal) => {
   const response = await fetch(url, { cache: "no-store", signal });
@@ -139,9 +139,7 @@ export default function ProfilPage() {
               <p className="text-sm text-text-muted">Periksa konfigurasi, server, antarmuka, basis data, lingkungan, rute, dan kesehatan aplikasi.</p>
             </div>
           </div>
-          <Button variant="primary" icon="radar" loading={scanning} onClick={scan} disabled={scanning}>
-            {scanning ? "Sedang memeriksa…" : "Periksa Semua Sistem"}
-          </Button>
+          <button type="button" onClick={scan} disabled={scanning} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60">{scanning ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <Radar size={17} aria-hidden="true" />}{scanning ? "Sedang memeriksa…" : "Periksa Semua Sistem"}</button>
         </div>
 
         {message && (
@@ -294,7 +292,7 @@ function Stat({ label, value, icon, tone }) {
   return (
     <div className="rounded-xl border border-border-subtle p-4">
       <div className="flex items-center gap-2">
-        <span className={"material-symbols-outlined rounded-lg p-1.5 " + classes} aria-hidden="true">{icon}</span>
+        <span className={"rounded-lg p-1.5 " + classes} aria-hidden="true">{icon === "error" ? <AlertTriangle size={19} /> : icon === "warning" ? <AlertTriangle size={19} /> : <Info size={19} />}</span>
         <span className="text-sm text-text-muted">{label}</span>
       </div>
       <p className="mt-2 text-3xl font-bold tabular-nums">{value}</p>
