@@ -11,9 +11,9 @@ const readJson = async (url) => {
 
 const formatIssue = (item) => [
   "[" + item.id + "] " + String(item.severity || "").toUpperCase(),
-  "Area: " + item.area,
+  "Bagian: " + item.area,
   "Masalah: " + item.title,
-  "Detail: " + item.detail,
+  "Rincian: " + item.detail,
   item.evidence ? "Bukti: " + item.evidence : "",
   item.fix ? "Solusi: " + item.fix : ""
 ].filter(Boolean).join("\n");
@@ -23,6 +23,7 @@ export default function ProfilPage() {
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState("");
   const [filter, setFilter] = useState("all");
+  const [severityFilter, setSeverityFilter] = useState("all");
   const [message, setMessage] = useState("");
 
   const scan = useCallback(async () => {
@@ -41,8 +42,8 @@ export default function ProfilPage() {
 
   const findings = data?.findings || [];
   const filtered = useMemo(
-    () => filter === "all" ? findings : findings.filter(x => x.area === filter),
-    [findings, filter]
+    () => findings.filter((x) => (filter === "all" || x.area === filter) && (severityFilter === "all" || x.severity === severityFilter)),
+    [findings, filter, severityFilter]
   );
 
   const copyText = async (text, key) => {
@@ -51,18 +52,18 @@ export default function ProfilPage() {
       setCopied(key);
       setTimeout(() => setCopied(""), 1800);
     } catch {
-      setMessage("Clipboard browser tidak tersedia.");
+      setMessage("Fitur papan klip browser tidak tersedia.");
     }
   };
 
   const copyAll = () => {
     const header = [
-      "MAX ROUTER — FULL DIAGNOSTIC REPORT",
+      "MAX ROUTER — LAPORAN DIAGNOSTIK LENGKAP",
       "Waktu: " + (data?.scannedAt || "-"),
       "Durasi: " + (data?.durationMs || 0) + " ms",
-      "Error: " + (data?.summary?.error || 0),
-      "Warning: " + (data?.summary?.warning || 0),
-      "Info: " + (data?.summary?.info || 0),
+      "Kesalahan: " + (data?.summary?.error || 0),
+      "Peringatan: " + (data?.summary?.warning || 0),
+      "Informasi: " + (data?.summary?.info || 0),
       ""
     ].join("\n");
     copyText(header + findings.map(formatIssue).join("\n\n"), "all");
@@ -84,7 +85,7 @@ export default function ProfilPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold">Pusat Diagnostik</h2>
-                <p className="text-sm text-text-muted">Periksa YML, backend, UI/UX, database, environment, route dan kesehatan aplikasi.</p>
+                <p className="text-sm text-text-muted">Periksa konfigurasi YML, server, antarmuka, basis data, lingkungan, rute, dan kesehatan aplikasi.</p>
               </div>
             </div>
           </div>
@@ -118,23 +119,24 @@ export default function ProfilPage() {
                 className="rounded-xl border border-border-subtle px-3 py-2 text-sm font-medium hover:bg-surface-2"
               >
                 <span className="material-symbols-outlined mr-1 align-middle text-[18px]">content_copy</span>
-                {copied === "all" ? "Semua tersalin" : "Salin Semua Error"}
+                {copied === "all" ? "Semua tersalin" : "Salin Semua Temuan"}
               </button>
             </div>
 
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setFilter(category)}
-                  className={"whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold " +
-                    (filter === category ? "bg-primary text-white" : "bg-surface-2 text-text-muted")}
-                >
-                  {category === "all" ? "Semua" : category}
-                </button>
-              ))}
-            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="diagnostic-area-filter" className="text-xs font-semibold text-text-muted">Saring berdasarkan bagian</label>
+                <select id="diagnostic-area-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm">
+                  {categories.map((category) => <option key={category} value={category}>{category === "all" ? "Semua Bagian" : category}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="diagnostic-severity-filter" className="text-xs font-semibold text-text-muted">Saring berdasarkan tingkat</label>
+                <select id="diagnostic-severity-filter" value={severityFilter} onChange={(event) => setSeverityFilter(event.target.value)} className="rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm">
+                  <option value="all">Semua Tingkat</option><option value="error">Kesalahan</option><option value="warning">Peringatan</option><option value="info">Informasi</option>
+                </select>
+              </div>
+            </div>      </div>
           </Card>
 
           {filtered.length === 0 ? (
