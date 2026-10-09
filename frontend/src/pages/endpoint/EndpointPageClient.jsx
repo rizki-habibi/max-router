@@ -58,6 +58,7 @@ export default function APIPageClient({ machineId }) {
   const [keyStatusFilter, setKeyStatusFilter] = useState("all");
   const [keySort, setKeySort] = useState("newest");
   const [loading, setLoading] = useState(true);
+  const [keysLoadError, setKeysLoadError] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [creatingKey, setCreatingKey] = useState(false);
@@ -347,14 +348,18 @@ export default function APIPageClient({ machineId }) {
   };
 
   const fetchData = async () => {
+    setLoading(true);
+    setKeysLoadError("");
     try {
       const keysRes = await fetch("/api/keys", { signal: AbortSignal.timeout(8000), cache: "no-store" });
+      if (!keysRes.ok) throw new Error(`Server mengembalikan status ${keysRes.status}`);
       const keysData = await keysRes.json();
       if (keysRes.ok) {
         setKeys(keysData.keys || []);
       }
     } catch (error) {
-      console.log("Gagal mengambil data:", error);
+      console.error("Gagal mengambil data kunci API:", error);
+      setKeysLoadError("Data kunci API belum dapat dimuat. Periksa koneksi server lalu coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -789,15 +794,6 @@ export default function APIPageClient({ machineId }) {
     }
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-8">
-        <CardSkeleton />
-        <CardSkeleton />
-      </div>
-    );
-  }
-
   const currentEndpoint = baseUrl;
 
   return (
@@ -1174,7 +1170,14 @@ export default function APIPageClient({ machineId }) {
           </div>
         )}
 
-        {keys.length === 0 ? (
+        {loading ? (
+          <div className="rounded-xl border border-border bg-surface-2/60 px-4 py-5 text-sm text-text-muted" role="status">Memuat daftar kunci API…</div>
+        ) : keysLoadError ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm" role="alert">
+            <p className="font-medium mb-2">{keysLoadError}</p>
+            <Button variant="secondary" onClick={fetchData}>Coba Lagi</Button>
+          </div>
+        ) : keys.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
               <span className="material-symbols-outlined text-[32px]">vpn_key</span>
