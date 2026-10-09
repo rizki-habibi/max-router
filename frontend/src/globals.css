@@ -941,3 +941,58 @@ button {
     transition: none !important;
   }
 }
+
+
+/* Endpoint page: stronger comic treatment on the actual production route */
+.mr-endpoint-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mr-endpoint-page > .mr-comic-card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--mr-comic-outline, rgba(32,38,58,.22)) !important;
+  border-radius: 16px !important;
+  box-shadow: 4px 4px 0 var(--mr-comic-outline, rgba(32,38,58,.18)) !important;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.mr-endpoint-page > .mr-comic-card:hover {
+  border-color: rgba(103,183,255,.52) !important;
+  box-shadow: 5px 5px 0 var(--mr-comic-outline, rgba(32,38,58,.18)) !important;
+}
+.mr-endpoint-page > .mr-comic-card > h2,
+.mr-endpoint-page > .mr-comic-card h2 {
+  line-height: 1.4;
+  text-wrap: balance;
+}
+.mr-endpoint-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+.mr-endpoint-page :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(103,183,255,.85);
+  outline-offset: 2px;
+}
+.mr-endpoint-page .mr-comic-button {
+  border-radius: 10px;
+}
+@media (max-width: 640px) {
+  .mr-endpoint-page {
+    gap: 18px;
+  }
+  .mr-endpoint-page > .mr-comic-card {
+    padding: 16px !important;
+    border-radius: 14px !important;
+    box-shadow: 3px 3px 0 var(--mr-comic-outline, rgba(32,38,58,.16)) !important;
+  }
+  .mr-endpoint-page > .mr-comic-card h2 {
+    font-size: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mr-endpoint-page > .mr-comic-card {
+    transition: none;
+  }
+}
