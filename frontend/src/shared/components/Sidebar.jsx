@@ -122,7 +122,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 </button>
                 <button
                   onClick={() => copy(INSTALL_CMD)}
-                  title="Salin perintah pemasangan"
+                  title="Salin perintah instalasi"
                   className="flex-1 text-left hover:opacity-80 transition-opacity cursor-pointer min-w-0"
                 >
                   <code className="block text-[10px] text-green-600/80 dark:text-amber-400/70 font-mono truncate">
@@ -245,7 +245,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         onClose={() => setShowUpdateModal(false)}
         onConfirm={handleUpdate}
         title="Perbarui 9Router V3"
-        message={`Tampilkan perintah pemasangan untuk v${updateInfo?.latestVersion || ""}? Perintah dapat disalin lalu server dimatikan untuk pemasangan manual.`}
+        message={`Tampilkan perintah instalasi untuk v${updateInfo?.latestVersion || ""}? Perintah dapat disalin, lalu server akan dimatikan untuk instalasi manual.`}
         confirmText="Tampilkan Perintah"
         cancelText="Batal"
         variant="primary"
