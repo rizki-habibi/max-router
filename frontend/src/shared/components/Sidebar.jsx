@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { Activity, BarChart3, Bot, Layers, MessageSquare, Search, Server, SlidersHorizontal, Terminal, Network, Settings, Power, Copy } from "lucide-react";
 import PropTypes from "prop-types";
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
@@ -8,6 +9,16 @@ import { APP_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
+
+const NAV_ICONS = {
+  api: Activity, dns: Server, chat: MessageSquare, manage_search: Search,
+  layers: Layers, bar_chart: BarChart3, tune: SlidersHorizontal,
+  terminal: Terminal, lan: Network, smart_toy: Bot, settings: Settings,
+};
+function NavIcon({ name, active = false }) {
+  const Icon = NAV_ICONS[name] || Activity;
+  return <Icon aria-hidden="true" size={18} strokeWidth={active ? 2.5 : 2} className={active ? "text-primary" : "text-text-muted group-hover:text-primary transition-colors"} />;
+}
 
 const navItems = [
   { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
@@ -149,89 +160,10 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                   : "text-text-muted hover:bg-surface-2 hover:text-text-main"
               )}
             >
-              <span
-                className={cn(
-                  "material-symbols-outlined text-[18px]",
-                  isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors"
-                )}
-              >
-                {item.icon}
-              </span>
-              <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
-            </Link>
-          ))}
-
-          {/* System section */}
-          <div className="pt-3 mt-2 space-y-0.5">
-            <p className={cn("px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2", collapsed ? "hidden" : "")}>
-              Sistem
-            </p>
-
-
-            {systemItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={onClose}
-                className={cn(
-                  "mr-comic-nav-item flex items-center rounded-xl transition-all group",
-                  collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
-                  isActive(item.href)
-                    ? "bg-primary/10 text-primary"
-                    : "text-text-muted hover:bg-surface-2 hover:text-text-main"
-                )}
-              >
-                <span
-                  className={cn(
-                    "material-symbols-outlined text-[18px]",
-                    isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors"
-                  )}
-                >
-                  {item.icon}
-                </span>
-                <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
-              </Link>
-            ))}
-
-            {/* Debug items */}
-            {debugItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={onClose}
-                className={cn(
-                  "mr-comic-nav-item flex items-center rounded-xl transition-all group",
-                  collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
-                  isActive(item.href)
-                    ? "bg-primary/10 text-primary"
-                    : "text-text-muted hover:bg-surface-2 hover:text-text-main"
-                )}
-              >
-                <span className={cn("material-symbols-outlined text-[18px]", isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors")}>{item.icon}</span>
-                <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>{item.label}</span>
-              </Link>
-            ))}
-
-            {/* Settings */}
-            <Link
-              to="/dashboard/profile"
-              onClick={onClose}
-              className={cn(
-                "mr-comic-nav-item flex items-center rounded-xl transition-all group",
-                collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1",
-                isActive("/dashboard/profile")
-                  ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-surface-2 hover:text-text-main"
-              )}
-            >
-              <span
-                className={cn(
-                  "material-symbols-outlined text-[18px]",
-                  isActive("/dashboard/profile") ? "fill-1" : "group-hover:text-primary transition-colors"
-                )}
-              >
-                settings
-              </span>
+              <NavIcon name={item.icon} active={isActive(item.href)} />
+              <NavIcon name={item.icon} active={isActive(item.href)} />
+                <NavIcon name={item.icon} active={isActive(item.href)} />
+                <NavIcon name="settings" active={isActive("/dashboard/profile")} />
               <span className={cn("text-[13px] font-medium", collapsed ? "hidden" : "")}>Pengaturan</span>
             </Link>
           </div>
@@ -267,7 +199,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
           ) : (
             <div className="text-center p-8">
               <div className="flex items-center justify-center size-16 rounded-full bg-red-500/20 text-red-500 mx-auto mb-4">
-                <span className="material-symbols-outlined text-[32px]">power_off</span>
+                <Power size={32} aria-hidden="true" />
               </div>
               <h2 className="text-xl font-semibold text-white mb-2">Server Terputus</h2>
               <p className="text-text-muted mb-6">Server proksi telah dihentikan.</p>
@@ -294,7 +226,7 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
     <div className="w-full max-w-lg rounded-xl bg-neutral-900/95 border border-white/10 p-6 text-white">
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center justify-center size-11 rounded-full bg-amber-500/20 text-amber-400">
-          <span className="material-symbols-outlined text-[24px]">content_copy</span>
+          <Copy size={24} aria-hidden="true" />
         </div>
         <div>
           <h2 className="text-lg font-semibold">Perbarui 9Router V3{latestVersion ? ` ke v${latestVersion}` : ""}</h2>
