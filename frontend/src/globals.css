@@ -1073,10 +1073,10 @@ button {
 
 
 /* Token Space Arcade + GitHub-style activity heatmap */
-.mr-token-arcade{color:var(--text-main,#172033)}
-.mr-token-game-shell{border-color:#1e293b;background:linear-gradient(125deg,#fff 0%,#f2f7ff 52%,#fff5e9 100%);box-shadow:5px 5px 0 #d6dff3,7px 7px 0 rgba(255,116,81,.22)}
-.mr-token-kicker{font-size:10px;font-weight:900;letter-spacing:.16em;color:#7055d9}
-.mr-token-toggle{border-color:#263454;background:#fff;color:#172033;box-shadow:3px 3px 0 #263454}
+.mr-token-arcade{color:#f2efff}
+.mr-token-game-shell{border-color:#8c79ff;background:linear-gradient(125deg,#17152f 0%,#20183d 48%,#122d45 100%);color:#f7f2ff;box-shadow:5px 5px 0 #080817,7px 7px 0 rgba(255,107,87,.42)}
+.mr-token-kicker{font-size:10px;font-weight:900;letter-spacing:.16em;color:#ffdf5d}
+.mr-token-toggle{border-color:#ffdf5d;background:linear-gradient(135deg,#ff6b57,#ff9c62);color:#211b38;box-shadow:3px 3px 0 #080817}
 .mr-token-battle{min-height:310px;border-color:#20294d;background:radial-gradient(ellipse at 50% 110%,#2855a0 0%,#171b4c 48%,#090f2c 100%);color:#fff}
 .mr-token-stars{position:absolute;inset:0;opacity:.75;background-image:radial-gradient(circle,#fff 1px,transparent 1.5px),radial-gradient(circle,#64e7ff 1px,transparent 1.5px),radial-gradient(circle,#ffd66b 1px,transparent 1.5px);background-size:37px 37px,61px 61px,83px 83px;background-position:0 0,13px 19px,29px 7px;animation:mr-token-star-drift 24s linear infinite}
 .mr-token-moon{position:absolute;width:140px;height:140px;right:10%;top:22%;border-radius:50%;background:radial-gradient(circle at 32% 28%,#d2b8ff,#8059d6 45%,#332d80 74%);box-shadow:0 0 38px rgba(148,116,255,.35);opacity:.7}
@@ -1094,10 +1094,10 @@ button {
 .mr-token-laser{position:absolute;z-index:1;left:calc(50% - 2px);bottom:78px;width:4px;height:125px;border-radius:99px;background:linear-gradient(to top,#fff,#49efff 42%,#7d5dff);box-shadow:0 0 9px #55edff,0 0 22px #685dff;animation:mr-token-fire .75s ease-out infinite}
 .mr-token-game-caption{position:absolute;bottom:9px;left:12px;right:12px;text-align:center;font-size:10px;letter-spacing:.03em;color:#b9d9ff}
 .mr-token-live-dot:before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:#21c77a;box-shadow:0 0 0 3px rgba(33,199,122,.14)}
-.mr-token-heatmap{border-color:#d6ddeb;background:linear-gradient(135deg,#fff,#f7fbff);box-shadow:4px 4px 0 #e1e8f4}
-.mr-token-heatmap-total{border:1px solid #d9e6dc;border-radius:999px;padding:5px 9px;background:#f0fff4;color:#167b43;font-size:11px;font-weight:800}
+.mr-token-heatmap{border-color:#8c79ff;background:linear-gradient(135deg,#17152f,#1b2342 58%,#123344);color:#f7f2ff;box-shadow:4px 4px 0 #080817,6px 6px 0 rgba(85,216,239,.22)}
+.mr-token-heatmap-total{border:1px solid rgba(112,230,178,.55);border-radius:999px;padding:5px 9px;background:#153b37;color:#8cf5bd;font-size:11px;font-weight:800}
 .mr-token-heatmap-grid{display:grid;grid-template-columns:repeat(21,minmax(0,1fr));grid-auto-flow:row;gap:4px}
-.mr-token-heat{display:block;aspect-ratio:1/1;min-width:0;border:1px solid rgba(20,83,45,.06);border-radius:3px;background:#ebedf0}
+.mr-token-heat{display:block;aspect-ratio:1/1;min-width:0;border:1px solid rgba(168,153,255,.22);border-radius:3px;background:#292742}
 .mr-token-heat-1{background:#b7efc5}.mr-token-heat-2{background:#6fdb8b}.mr-token-heat-3{background:#35b968}.mr-token-heat-4{background:#16803d}
 @keyframes mr-token-star-drift{from{background-position:0 0,13px 19px,29px 7px}to{background-position:0 150px,13px 169px,29px 157px}}
 @keyframes mr-token-alien-float{0%,100%{translate:0 0;rotate:-3deg}50%{translate:0 -8px;rotate:3deg}}
@@ -1105,6 +1105,17 @@ button {
 @keyframes mr-token-fire{0%{opacity:.1;transform:scaleY(.4);transform-origin:bottom}40%{opacity:1;transform:scaleY(1)}100%{opacity:.25;transform:translateY(-35px) scaleY(.8)}}
 @media(max-width:640px){.mr-token-battle{min-height:285px}.mr-token-stat{top:10px;padding:8px;max-width:48%}.mr-token-stat small{font-size:9px}.mr-token-alien-row{left:4%;right:4%;top:48%;gap:4px}.mr-token-heatmap-grid{grid-template-columns:repeat(14,minmax(0,1fr));gap:3px}.mr-token-moon{width:95px;height:95px;right:5%;top:33%}}
 @media(prefers-reduced-motion:reduce){.mr-token-stars,.mr-token-alien,.mr-token-ship,.mr-token-laser{animation:none!important}}
+
+/* Usage dashboard: remove leftover white/light cards and keep the comic galaxy palette */
+.mr-usage-comic>.grid:first-of-type>.rounded-xl{background:linear-gradient(145deg,#1c1935,#202744 62%,#183344)!important;color:#f7f2ff!important;border:2px solid #8c79ff!important;border-radius:17px!important;box-shadow:4px 4px 0 #080817,6px 6px 0 rgba(255,107,87,.3)!important}
+.mr-usage-comic>.grid:first-of-type>.rounded-xl .text-text-muted{color:#bcb8d7!important}
+.mr-usage-comic>.grid:first-of-type>.rounded-xl:nth-child(1){border-top-color:#55d8ef!important}
+.mr-usage-comic>.grid:first-of-type>.rounded-xl:nth-child(2){border-top-color:#ff8ac6!important}
+.mr-usage-comic>.grid:first-of-type>.rounded-xl:nth-child(3){border-top-color:#70e6b2!important}
+.mr-usage-comic>.grid:first-of-type>.rounded-xl:nth-child(4){border-top-color:#ffdf5d!important}
+.mr-usage-comic .mr-token-heat-0{background:#292742}
+.mr-usage-comic .mr-token-heat-1{background:#24594e}.mr-usage-comic .mr-token-heat-2{background:#258a70}.mr-usage-comic .mr-token-heat-3{background:#45c99a}.mr-usage-comic .mr-token-heat-4{background:#8cf5bd}
+.mr-usage-comic .mr-token-arcade p,.mr-usage-comic .mr-token-heatmap p{color:#c8c4e2}
 
 
 /* Canvas arcade: live animated shooter, no static emoji ship/enemy row */
