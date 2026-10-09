@@ -304,9 +304,7 @@ function Capability({ label, ok }) {
   const known = typeof ok === "boolean";
   return (
     <div className="flex min-w-0 items-center gap-2 rounded-xl bg-surface-2 p-3">
-      <span className={"material-symbols-outlined text-[20px] " + (ok === true ? "text-green-600" : ok === false ? "text-amber-600" : "text-text-muted")} aria-hidden="true">
-        {ok === true ? "check_circle" : ok === false ? "warning" : "help"}
-      </span>
+      <span className={ok === true ? "text-green-600" : ok === false ? "text-amber-600" : "text-text-muted"} aria-hidden="true">{ok === true ? <CheckCircle2 size={20} /> : ok === false ? <AlertTriangle size={20} /> : <CircleHelp size={20} />}</span>
       <span className="min-w-0 text-sm font-medium">{label}</span>
       <span className="ml-auto text-xs text-text-muted">{known ? (ok ? "Tersedia" : "Perlu diperiksa") : "Belum diketahui"}</span>
     </div>
