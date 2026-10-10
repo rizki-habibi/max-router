@@ -178,3 +178,59 @@ body { overscroll-behavior: none; }
 @media (max-width: 1023px) {
   .mr-comic-sidebar { height: 100dvh !important; max-height: 100dvh !important; }
 }
+
+
+/* Bright pink comic palette and fully opaque surfaces */
+:root {
+  --comic-pink: #ff79b0;
+  --comic-pink-soft: #ffe0ef;
+  --comic-lavender: #e8ddff;
+  --comic-mint: #d7f8e8;
+  --comic-sky: #d9f2ff;
+}
+.mr-comic-sidebar {
+  background: linear-gradient(180deg, #35224f 0%, #43265c 48%, #2c2148 100%) !important;
+  border-right-color: #211632 !important;
+}
+.mr-comic-nav-item { color: #fff0fb !important; }
+.mr-comic-nav-item:hover {
+  background: #674178 !important;
+  color: #ffffff !important;
+  border-color: #ffb8d7 !important;
+}
+.mr-comic-nav-item[aria-current="page"] {
+  background: #ff9fc9 !important;
+  border-color: #fff0f7 !important;
+  color: #382344 !important;
+}
+.mr-comic-icon-tile {
+  border-color: #211632 !important;
+  box-shadow: 2px 2px 0 #211632 !important;
+}
+.mr-comic-icon-tile[data-icon="api"] { background: #ff8b79 !important; }
+.mr-comic-icon-tile[data-icon="dns"] { background: #71e0ef !important; }
+.mr-comic-icon-tile[data-icon="chat"] { background: #ff8fc0 !important; }
+.mr-comic-icon-tile[data-icon="manage_search"] { background: #ffe27a !important; }
+.mr-comic-icon-tile[data-icon="layers"] { background: #c6a8ff !important; }
+.mr-comic-icon-tile[data-icon="bar_chart"] { background: #7ce8b5 !important; }
+.mr-comic-icon-tile[data-icon="tune"] { background: #ffb36b !important; }
+.mr-comic-icon-tile[data-icon="terminal"] { background: #8ad9ff !important; }
+.mr-comic-icon-tile[data-icon="lan"] { background: #8fb8ff !important; }
+.mr-comic-icon-tile[data-icon="smart_toy"] { background: #f2a1ff !important; }
+.mr-comic-icon-tile[data-icon="settings"] { background: #ffe27a !important; }
+.mr-comic-sidebar-toggle { color: #35224f !important; background: #ff9fc9 !important; }
+.mr-comic-sidebar-toggle:hover { background: #ff79b0 !important; color: #35224f !important; }
+.mr-comic-nav-item[aria-current="page"] .mr-comic-icon-tile {
+  background: #fff7fb !important;
+}
+/* Do not let comic cards inherit translucent utility backgrounds */
+.mr-dashboard-comic-content .mr-comic-solid-card {
+  opacity: 1 !important;
+  background-color: #ffe0ef !important;
+  color: #39213f !important;
+  border: 2px solid #39213f !important;
+  box-shadow: 3px 3px 0 rgba(57,33,63,.18) !important;
+}
+.mr-dashboard-comic-content .mr-comic-solid-card :is(p, span, strong, h2, h3) {
+  opacity: 1 !important;
+}
