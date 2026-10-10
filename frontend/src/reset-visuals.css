@@ -1,5 +1,0 @@
-/* Temporary full reset: rebuild the entire UI from zero.
-   !important also overrides normal inline styles without changing JS/JSX logic. */
-*, *::before, *::after {
-  all: revert !important;
-}
