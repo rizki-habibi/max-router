@@ -234,3 +234,56 @@ body { overscroll-behavior: none; }
 .mr-dashboard-comic-content .mr-comic-solid-card :is(p, span, strong, h2, h3) {
   opacity: 1 !important;
 }
+
+
+/* Final v2: high-contrast colorful sidebar, stronger than legacy theme selectors */
+aside.mr-comic-sidebar {
+  background: linear-gradient(180deg, #38204f 0%, #4b2862 50%, #302044 100%) !important;
+  color: #fff4fb !important;
+  border-right: 3px solid #24152f !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item {
+  color: #ffe9f5 !important;
+  background-color: transparent !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item:hover {
+  color: #ffffff !important;
+  background: #70417d !important;
+  border-color: #ffb5d5 !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item[aria-current="page"] {
+  background: #ff9fc9 !important;
+  color: #35213e !important;
+  border-color: #fff0f7 !important;
+  box-shadow: 3px 3px 0 #21132b !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item[aria-current="page"] span:not(.mr-comic-icon-tile) {
+  color: #35213e !important;
+}
+aside.mr-comic-sidebar .mr-comic-icon-tile {
+  color: #2e2040 !important;
+  border: 2px solid #21152e !important;
+  box-shadow: 2px 2px 0 #21152e !important;
+}
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="api"] { background: #ff8a76 !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="dns"] { background: #64ddeb !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="chat"] { background: #ff8fc4 !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="manage_search"] { background: #ffe078 !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="layers"] { background: #c6a6ff !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="bar_chart"] { background: #73e6ae !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="tune"] { background: #ffb46f !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="terminal"] { background: #8bd9ff !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="lan"] { background: #8eafff !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="smart_toy"] { background: #f1a0ff !important; }
+aside.mr-comic-sidebar .mr-comic-icon-tile[data-icon="settings"] { background: #ffe078 !important; }
+aside.mr-comic-sidebar .mr-comic-nav-item[aria-current="page"] .mr-comic-icon-tile { background: #fff8fc !important; }
+aside.mr-comic-sidebar .mr-comic-sidebar-toggle {
+  color: #35213e !important;
+  background: #ff9fc9 !important;
+  border: 2px solid #21152e !important;
+  box-shadow: 2px 2px 0 #21152e !important;
+}
+aside.mr-comic-sidebar .mr-comic-sidebar-toggle:hover { background: #ff79b0 !important; color: #35213e !important; }
+
+/* Remove translucent/oversized appearance from provider cards */
+.mr-provider-topology-card { opacity: 1 !important; }
