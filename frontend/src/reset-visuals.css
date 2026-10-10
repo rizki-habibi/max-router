@@ -1,25 +1,5 @@
-/* Frontend visual reset: keep React behavior and document structure, remove presentation. */
+/* Temporary full reset: rebuild the entire UI from zero.
+   !important also overrides normal inline styles without changing JS/JSX logic. */
 *, *::before, *::after {
-  color: inherit !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border-color: transparent !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-  outline-color: currentColor !important;
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  animation: none !important;
-  transition: none !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-  font-weight: inherit !important;
-  font-style: inherit !important;
-  line-height: normal !important;
-  letter-spacing: normal !important;
-  text-transform: none !important;
-  text-decoration: none !important;
-  opacity: 1 !important;
+  all: revert !important;
 }
