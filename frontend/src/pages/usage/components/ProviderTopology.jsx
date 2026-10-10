@@ -6,25 +6,25 @@ const STATUS_STYLES = {
     label: "Habis",
     light: "bg-red-500 shadow-[0_0_9px_rgba(239,68,68,0.85)]",
     text: "text-red-600",
-    ring: "border-red-500/30 bg-red-500/5",
+    ring: "border-red-500/50 bg-[#FFE1E1] text-[#7F1D1D]",
   },
   waiting: {
     label: "Menunggu",
     light: "bg-amber-400 shadow-[0_0_9px_rgba(251,191,36,0.85)]",
     text: "text-amber-600",
-    ring: "border-amber-400/40 bg-amber-400/5",
+    ring: "border-amber-500/50 bg-[#FFF0BD] text-[#78350F]",
   },
   running: {
     label: "Jalan",
     light: "bg-emerald-500 shadow-[0_0_9px_rgba(16,185,129,0.85)]",
     text: "text-emerald-600",
-    ring: "border-emerald-500/30 bg-emerald-500/5",
+    ring: "border-emerald-500/50 bg-[#D8F8D8] text-[#14532D]",
   },
   inactive: {
     label: "Mati",
     light: "bg-gray-400",
     text: "text-text-muted",
-    ring: "border-border bg-bg-subtle/50",
+    ring: "border-[#A9A3C7] bg-[#EAE6FF] text-[#332B55]",
   },
 };
 
@@ -46,13 +46,35 @@ function resolveStatus(provider, isRunning) {
   return "inactive";
 }
 
-function EmptySlot() {
+const EMPTY_TIPS = [
+  {
+    title: "Tambah provider baru",
+    description: "Buka menu Penyedia untuk menambahkan layanan AI. Provider baru akan muncul di sini.",
+    className: "border-[#F0B54A] bg-[#FFF0BD] text-[#78350F]",
+    icon: "＋",
+  },
+  {
+    title: "Kenali lampu status",
+    description: "Merah: limit habis · Kuning: menunggu · Hijau: request aktif · Abu-abu: idle/nonaktif.",
+    className: "border-[#78B8E8] bg-[#DDF1FF] text-[#17436B]",
+    icon: "●",
+  },
+  {
+    title: "Kelola pilihan provider",
+    description: "Tambahkan beberapa provider agar pilihan layanan lebih fleksibel saat mengirim request.",
+    className: "border-[#B6A1F5] bg-[#EEE6FF] text-[#4C347F]",
+    icon: "↗",
+  },
+];
+
+function EmptySlot({ tip }) {
   return (
-    <li
-      aria-hidden="true"
-      className="flex min-h-[54px] min-w-[190px] items-center justify-center rounded-lg border border-dashed border-border/80 bg-bg-subtle/20 px-3 py-2.5"
-    >
-      <span className="text-xs text-text-muted/50">Slot penyedia kosong</span>
+    <li className={`flex min-h-[82px] min-w-[190px] flex-col justify-center gap-1.5 rounded-lg border-2 px-3 py-2.5 shadow-[2px_3px_0_rgba(45,35,70,0.12)] ${tip.className}`}>
+      <span className="flex items-center gap-2 text-xs font-bold">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-current/30 bg-white/60 text-sm" aria-hidden="true">{tip.icon}</span>
+        {tip.title}
+      </span>
+      <span className="text-[11px] leading-snug opacity-90">{tip.description}</span>
     </li>
   );
 }
@@ -136,7 +158,7 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
                 <li
                   key={key}
                   title={detail ? String(detail) : `${name}: ${style.label}`}
-                  className={`flex min-w-0 min-h-[54px] items-center justify-between gap-3 rounded-lg border px-3 py-2.5 ${style.ring}`}
+                  className={`flex min-w-0 min-h-[62px] items-center justify-between gap-3 rounded-lg border-2 px-3 py-2.5 shadow-[2px_3px_0_rgba(45,35,70,0.12)] ${style.ring}`}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <span
@@ -150,11 +172,11 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
                 </li>
               );
             })}
-            {Array.from({ length: slotCount }, (_, index) => <EmptySlot key={`empty-${index}`} />)}
+            {Array.from({ length: slotCount }, (_, index) => <EmptySlot key={`empty-${index}`} tip={EMPTY_TIPS[index % EMPTY_TIPS.length]} />)}
           </ul>
         </div>
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-text-muted">Geser untuk melihat penyedia lainnya</span>
+          <span className="min-w-0 text-[11px] leading-snug text-text-muted">Tips: tambah provider lewat menu <strong>Penyedia</strong> · kartu status akan terisi otomatis</span>
           <div className="flex gap-1.5">
             <button
               type="button"
