@@ -229,17 +229,6 @@ export default function Header({ onMenuClick, onToggleCollapse, sidebarCollapsed
         )}
       </div>
 
-      {/* Desktop sidebar toggle */}
-      <button
-        type="button"
-        onClick={onToggleCollapse}
-        className="mr-comic-toggle hidden lg:flex items-center justify-center size-10 shrink-0"
-        title={sidebarCollapsed ? "Buka panel" : "Tutup panel"}
-        aria-label={sidebarCollapsed ? "Buka panel" : "Tutup panel"}
-      >
-        <HeaderIcon name={sidebarCollapsed ? "chevron_right" : "chevron_left"} className="size-5" />
-      </button>
-
       {/* Page title with breadcrumbs */}
       <div className="flex flex-col min-w-0 flex-1">
         {breadcrumbs.length > 0 ? (
