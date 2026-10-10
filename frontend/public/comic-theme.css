@@ -1,0 +1,67 @@
+/* 9Router Comic UI — served as a CDN stylesheet */
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Bangers&display=swap');
+
+:root {
+  font-family: 'Comic Neue', system-ui, sans-serif !important;
+  color: #25223b !important;
+  background: #fff8e9 !important;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --comic-ink: #28233d;
+  --comic-paper: #fffdf6;
+  --comic-orange: #ff795e;
+  --comic-yellow: #ffdf68;
+  --comic-purple: #b8a4ff;
+  --comic-blue: #a8e8ff;
+  --comic-green: #b8f0cf;
+}
+html, body, #root { min-height: 100%; width: 100%; margin: 0; }
+body { background: #fff8e9 !important; color: var(--comic-ink) !important; font-family: 'Comic Neue', system-ui, sans-serif !important; }
+button, input, textarea, select { font: inherit !important; }
+button { cursor: pointer; }
+.dashboard-comic-glow {
+  background-color: #fff8e9 !important;
+  background-image: radial-gradient(#d9c8a8 1px, transparent 1px) !important;
+  background-size: 18px 18px !important;
+  color: var(--comic-ink) !important;
+}
+.landing-grid { opacity: .3 !important; }
+aside, nav, [data-sidebar], .sidebar {
+  background: #29243f !important;
+  color: #fffaf0 !important;
+}
+header {
+  background: rgba(255,253,246,.96) !important;
+  color: var(--comic-ink) !important;
+  border-bottom: 3px solid var(--comic-ink) !important;
+  box-shadow: 0 4px 0 rgba(40,35,61,.12) !important;
+}
+main { color: var(--comic-ink) !important; }
+h1, h2, h3, h4 { color: var(--comic-ink) !important; font-family: 'Bangers', 'Comic Neue', sans-serif !important; letter-spacing: .04em !important; }
+button, [role="button"] {
+  border: 2px solid var(--comic-ink) !important;
+  border-radius: 12px !important;
+  box-shadow: 3px 3px 0 var(--comic-ink) !important;
+  transition: transform .12s ease, box-shadow .12s ease !important;
+}
+button:hover, [role="button"]:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--comic-ink) !important; }
+button:active, [role="button"]:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--comic-ink) !important; }
+input, textarea, select {
+  background: #fffdf6 !important; color: var(--comic-ink) !important;
+  border: 2px solid var(--comic-ink) !important; border-radius: 10px !important;
+  box-shadow: 2px 2px 0 rgba(40,35,61,.2) !important;
+}
+[role="dialog"], [role="menu"], .rounded-xl, .rounded-2xl, .rounded-lg, .bg-surface, .bg-card, .bg-white {
+  border-color: var(--comic-ink) !important;
+}
+.bg-primary, .bg-orange-500, .bg-orange-600, .bg-\[\#ff795e\] { background-color: var(--comic-orange) !important; color: var(--comic-ink) !important; }
+.text-primary { color: #d84c36 !important; }
+.shadow, .shadow-md, .shadow-lg, .shadow-xl { box-shadow: 3px 3px 0 rgba(40,35,61,.22) !important; }
+.rounded-xl, .rounded-2xl, .rounded-lg { border-radius: 14px !important; }
+hr { border-color: #ded2bc !important; }
+a { color: #6c4ad1; text-underline-offset: 3px; }
+::selection { background: var(--comic-yellow); color: var(--comic-ink); }
+@media (max-width: 768px) {
+  .dashboard-comic-glow { background-size: 14px 14px !important; }
+  button, [role="button"] { max-width: 100%; }
+}
