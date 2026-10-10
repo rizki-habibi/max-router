@@ -14,4 +14,12 @@
   animation: none !important;
   transition: none !important;
   font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  font-style: inherit !important;
+  line-height: normal !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+  opacity: 1 !important;
 }
