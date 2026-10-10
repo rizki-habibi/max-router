@@ -93,7 +93,7 @@ function AIIntegrationCard({ requests = [] }) {
   const successRate = recent.length ? Math.round((successful / recent.length) * 100) : null;
 
   return (
-    <section className="rounded-xl border-2 border-[#B6A1F5] bg-[#EEE6FF] p-4 text-[#332B55] shadow-[3px_4px_0_rgba(45,35,70,0.12)] sm:p-5" aria-label="Integrasi AI">
+    <section className="mr-comic-solid-card rounded-xl border-2 border-[#B6A1F5] bg-[#FFE0EF] p-4 text-[#39213F] shadow-[3px_4px_0_rgba(45,35,70,0.12)] sm:p-5" aria-label="Integrasi AI">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#B6A1F5] bg-white/80 text-xl" aria-hidden="true">✦</span>
@@ -108,7 +108,7 @@ function AIIntegrationCard({ requests = [] }) {
         </a>
       </div>
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="rounded-lg border border-[#B6A1F5] bg-white/75 p-3">
+        <div className="rounded-lg border-2 border-[#B6A1F5] bg-[#FFF8FC] p-3">
           <p className="text-xs font-medium text-[#6B55A3]">Permintaan terbaru</p>
           <p className="mt-1 text-xl font-extrabold">{fmt(recent.length)}</p>
         </div>
@@ -119,7 +119,7 @@ function AIIntegrationCard({ requests = [] }) {
         <div className="rounded-lg border border-[#B6A1F5] bg-white/75 p-3">
           <p className="text-xs font-medium text-[#6B55A3]">CDN tampilan</p>
           <p className="mt-1 text-xl font-extrabold">Terpasang</p>
-          <p className="mt-0.5 text-xs text-[#6B55A3]">Tema komik dimuat dari jsDelivr</p>
+          <p className="mt-0.5 text-xs text-[#6B55A3]">Tema komik dari CSS</p>
         </div>
       </div>
     </section>
