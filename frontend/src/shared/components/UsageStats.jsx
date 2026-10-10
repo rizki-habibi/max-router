@@ -538,8 +538,8 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       {/* Overview cards */}
       {loading ? spinner : <OverviewCards stats={stats} />}
 
-      {/* Space-shooter token activity and GitHub-style contribution heatmap */}
-      {loading ? null : <TokenSpaceArcade requests={stats?.recentRequests || []} period={period} />}
+      {/* Compact AI integration panel replaces the oversized arcade game */}
+      {loading ? null : <AIIntegrationCard requests={stats?.recentRequests || []} />}
 
       {/* Provider topology + Recent Requests */}
       {loading ? spinner : (
