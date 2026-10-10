@@ -119,7 +119,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
             aria-label={collapsed ? "Buka sidebar" : "Ciutkan sidebar"}
           >
             <span aria-hidden="true">{collapsed ? "»" : "«"}</span>
-            {!collapsed && <span className="text-xs font-bold">Ciutkan</span>}
+            
           </button>
         </div>
 
