@@ -109,7 +109,7 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
   };
 
   return (
-    <section className="flex min-w-0 flex-col rounded-xl border-2 border-[#39213F] bg-[#FFF0F7] p-4 text-[#39213F] shadow-[3px_4px_0_rgba(57,33,63,.14)]">
+    <section className="flex min-w-0 flex-col rounded-xl border-2 border-[#39213F] bg-[#FFF0F7] p-3 text-[#39213F] shadow-[3px_4px_0_rgba(57,33,63,.14)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-text">Penyedia AI</h2>
@@ -147,10 +147,10 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
       <div className="relative mt-4 min-w-0">
         <div
           ref={scrollRef}
-          className="overflow-x-auto overscroll-x-contain scroll-smooth pb-1"
+          className="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-1"
           style={{ scrollbarWidth: "thin" }}
         >
-          <ul className="grid w-max min-w-full auto-cols-[minmax(190px,1fr)] grid-flow-col grid-rows-2 gap-2">
+          <ul className="grid w-max auto-cols-[220px] grid-flow-col grid-rows-2 gap-2">
             {filteredEntries.map(({ provider, name, status, key }) => {
               const style = STATUS_STYLES[status];
               const detail = provider?.errorMessage || provider?.lastError || provider?.statusMessage;
@@ -158,7 +158,7 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
                 <li
                   key={key}
                   title={detail ? String(detail) : `${name}: ${style.label}`}
-                  className={`flex min-w-0 min-h-[62px] items-center justify-between gap-3 rounded-lg border-2 px-3 py-2.5 shadow-[2px_3px_0_rgba(45,35,70,0.12)] ${style.ring}`}
+                  className={`mr-provider-topology-card flex h-[58px] w-[220px] min-w-0 items-center justify-between gap-2 rounded-lg border-2 px-2.5 py-2 shadow-[2px_3px_0_rgba(45,35,70,0.12)] ${style.ring}` }
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <span
