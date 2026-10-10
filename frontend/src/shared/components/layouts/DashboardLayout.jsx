@@ -87,7 +87,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Sidebar - Desktop */}
-      <div className="hidden lg:flex min-h-full">
+      <div className="hidden lg:flex h-screen max-h-screen shrink-0 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleSidebarCollapsed} />
       </div>
 
@@ -101,11 +101,11 @@ export default function DashboardLayout() {
       </div>
 
       {/* Main content */}
-      <main className="dashboard-comic-glow flex flex-col flex-1 h-full min-w-0 relative transition-colors duration-300 isolate">
+      <main className="dashboard-comic-glow flex flex-col flex-1 h-screen min-h-0 min-w-0 relative transition-colors duration-300 isolate overflow-hidden">
         {/* Faint grid background */}
         <div className="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true" />
         <Header key={pathname} onMenuClick={() => setSidebarOpen(true)} onToggleCollapse={toggleSidebarCollapsed} sidebarCollapsed={sidebarCollapsed} />
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${pathname === "/dashboard/docs" ? "" : "p-3 sm:p-4 lg:p-6 xl:p-8"} ${pathname === "/dashboard/docs" ? "flex flex-col overflow-hidden" : ""}`}>
+        <div className={`mr-comic-page-scroll flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto custom-scrollbar ${pathname === "/dashboard/docs" ? "" : "p-3 sm:p-4 lg:p-6 xl:p-8"} ${pathname === "/dashboard/docs" ? "flex flex-col overflow-hidden" : ""}`}>
           <div className={`mr-dashboard-comic-content ${pathname === "/dashboard/docs" ? "flex-1 w-full h-full flex flex-col" : "w-full max-w-7xl mx-auto"}`}><Outlet /></div>
         </div>
       </main>
