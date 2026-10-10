@@ -104,11 +104,23 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
   return (
     <>
       <aside className={cn("mr-comic-sidebar flex shrink-0 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-[width] duration-200 min-h-full", collapsed ? "w-[72px]" : "w-72")}>
-        {/* Traffic lights */}
-        <div className="flex items-center gap-2 px-6 pt-5 pb-2">
-          <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
-          <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-          <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+        {/* Sidebar controls */}
+        <div className={cn("flex items-center pt-4 pb-2", collapsed ? "flex-col gap-3 px-3" : "justify-between px-5")}>
+          <div className="flex items-center gap-2" aria-label="Status Max Router">
+            <span className="mr-comic-status-dot bg-[#ff6b6b]" />
+            <span className="mr-comic-status-dot bg-[#ffd166]" />
+            <span className="mr-comic-status-dot bg-[#06d6a0]" />
+          </div>
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="mr-comic-sidebar-toggle"
+            title={collapsed ? "Buka sidebar" : "Ciutkan sidebar"}
+            aria-label={collapsed ? "Buka sidebar" : "Ciutkan sidebar"}
+          >
+            <span aria-hidden="true">{collapsed ? "»" : "«"}</span>
+            {!collapsed && <span className="text-xs font-bold">Ciutkan</span>}
+          </button>
         </div>
 
         {/* Logo */}
