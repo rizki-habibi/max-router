@@ -127,3 +127,54 @@ a { color: #6c4ad1; text-underline-offset: 3px; }
 .mr-comic-sidebar a { color: inherit; }
 .mr-comic-sidebar a[aria-current="page"] span:not(.mr-comic-icon-tile) { color: #292343 !important; font-weight: 800 !important; }
 @media (max-width: 1023px) { .mr-comic-sidebar-toggle { min-width: 34px; } }
+
+/* Global layout, scrolling and comic readability fixes */
+html, body, #root { height: 100%; min-height: 0; overflow: hidden; }
+body { overscroll-behavior: none; }
+.mr-comic-sidebar {
+  height: 100vh !important; min-height: 0 !important; max-height: 100vh !important;
+  overflow: hidden !important; box-sizing: border-box !important;
+  border-right: 3px solid #292343 !important;
+  border-radius: 0 !important;
+}
+.mr-comic-sidebar > nav {
+  min-height: 0 !important; flex: 1 1 auto !important;
+  overflow-x: hidden !important; overflow-y: auto !important;
+  overscroll-behavior: contain; scrollbar-gutter: stable;
+}
+.mr-comic-sidebar-toggle {
+  width: 32px !important; height: 32px !important; min-width: 32px !important;
+  min-height: 32px !important; padding: 0 !important; gap: 0 !important;
+  border: 0 !important; border-radius: 8px !important; box-shadow: none !important;
+  color: #fff9ed !important; background: transparent !important;
+  font-size: 24px !important; font-weight: 800 !important;
+}
+.mr-comic-sidebar-toggle:hover { color: #ffd166 !important; background: rgba(255,255,255,.12) !important; transform: none !important; }
+.mr-comic-page-scroll {
+  scrollbar-width: thin; scrollbar-color: #8b6cff #eee5d4;
+  overscroll-behavior: contain; scrollbar-gutter: stable;
+}
+.mr-comic-page-scroll::-webkit-scrollbar,
+.mr-comic-sidebar nav::-webkit-scrollbar,
+.mr-comic-sidebar > nav::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar { width: 9px; height: 9px; }
+.mr-comic-page-scroll::-webkit-scrollbar-track,
+.mr-comic-sidebar > nav::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track { background: #eee5d4; border-radius: 8px; }
+.mr-comic-page-scroll::-webkit-scrollbar-thumb,
+.mr-comic-sidebar > nav::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #8b6cff; border: 2px solid #eee5d4; border-radius: 8px; }
+.mr-comic-page-scroll::-webkit-scrollbar-thumb:hover,
+.mr-comic-sidebar > nav::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ff805d; }
+.mr-dashboard-comic-content { min-width: 0; }
+.mr-dashboard-comic-content table { max-width: 100%; }
+.mr-dashboard-comic-content :is(.overflow-x-auto, .overflow-auto) { max-width: 100%; scrollbar-width: thin; scrollbar-color: #8b6cff #eee5d4; }
+.mr-dashboard-comic-content pre, .mr-dashboard-comic-content code { overflow-wrap: anywhere; }
+.mr-dashboard-comic-content :is(input, select, textarea) { max-width: 100%; min-width: 0; }
+.mr-dashboard-comic-content :is(.grid, [class*="grid-cols-"]) { min-width: 0; }
+.mr-dashboard-comic-content > * { min-width: 0; }
+.mr-comic-header { flex-shrink: 0 !important; width: 100%; box-sizing: border-box; }
+@media (max-width: 1023px) {
+  .mr-comic-sidebar { height: 100dvh !important; max-height: 100dvh !important; }
+}
