@@ -50,7 +50,7 @@ function EmptySlot() {
   return (
     <li
       aria-hidden="true"
-      className="flex min-h-[54px] min-w-[210px] flex-1 items-center justify-center rounded-lg border border-dashed border-border/80 bg-bg-subtle/20 px-3 py-2.5"
+      className="flex min-h-[54px] min-w-[190px] items-center justify-center rounded-lg border border-dashed border-border/80 bg-bg-subtle/20 px-3 py-2.5"
     >
       <span className="text-xs text-text-muted/50">Slot penyedia kosong</span>
     </li>
@@ -83,7 +83,7 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
 
   const slotCount = Math.max(0, 6 - filteredEntries.length);
   const scroll = (direction) => {
-    if (scrollRef.current) scrollRef.current.scrollBy({ left: direction * 300, behavior: "smooth" });
+    if (scrollRef.current) scrollRef.current.scrollBy({ left: direction * 420, behavior: "smooth" });
   };
 
   return (
@@ -128,7 +128,7 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
           className="overflow-x-auto overscroll-x-contain scroll-smooth pb-1"
           style={{ scrollbarWidth: "thin" }}
         >
-          <ul className="grid min-w-[540px] grid-cols-2 gap-2 sm:min-w-[620px] sm:grid-cols-3">
+          <ul className="grid w-max min-w-full auto-cols-[minmax(190px,1fr)] grid-flow-col grid-rows-2 gap-2">
             {filteredEntries.map(({ provider, name, status, key }) => {
               const style = STATUS_STYLES[status];
               const detail = provider?.errorMessage || provider?.lastError || provider?.statusMessage;
