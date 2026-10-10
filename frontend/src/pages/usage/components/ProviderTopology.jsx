@@ -109,13 +109,13 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
   };
 
   return (
-    <section className="flex min-w-0 flex-col rounded-xl border border-border bg-surface p-4">
+    <section className="flex min-w-0 flex-col rounded-xl border-2 border-[#39213F] bg-[#FFF0F7] p-4 text-[#39213F] shadow-[3px_4px_0_rgba(57,33,63,.14)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-text">Penyedia AI</h2>
-          <p className="mt-1 text-xs text-text-muted">{providers.length} penyedia tersedia</p>
+          <p className="mt-1 text-xs text-[#70536F]">{providers.length} penyedia tersedia</p>
         </div>
-        <span className="text-xs font-semibold text-text-muted">{counts.running} berjalan</span>
+        <span className="text-xs font-bold text-[#70536F]">{counts.running} berjalan</span>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -166,7 +166,7 @@ export default function ProviderTopology({ providers = [], activeRequests = [] }
                       role="img"
                       aria-label={style.label}
                     />
-                    <span className="truncate text-sm font-medium text-text">{name}</span>
+                    <span className="truncate text-sm font-semibold text-[#39213F]">{name}</span>
                   </span>
                   <span className={`shrink-0 text-xs font-semibold ${style.text}`}>{style.label}</span>
                 </li>
