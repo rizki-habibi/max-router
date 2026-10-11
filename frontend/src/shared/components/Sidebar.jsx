@@ -26,6 +26,7 @@ function NavIcon({ name, active = false }) {
 
 const navItems = [
   { href: "/dashboard", label: "Beranda", icon: "home" },
+  { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
   { href: "/dashboard/providers", label: "Penyedia", icon: "dns" },
   { href: "/dashboard/compatible-chat", label: "Obrolan Kompatibel", icon: "chat" },
   { href: "/dashboard/model-detection", label: "Deteksi Model", icon: "manage_search" },
