@@ -180,6 +180,13 @@ export default function DashboardPage() {
     } catch { setNotice("Clipboard tidak tersedia di browser ini. Coba gunakan HTTPS atau izinkan akses clipboard."); }
   };
 
+  useEffect(() => {
+    if (!loadingMetrics && !autoRepairAttempted && metrics.errors.length > 0) {
+      setAutoRepairAttempted(true);
+      repairErrors();
+    }
+  }, [loadingMetrics, autoRepairAttempted, metrics.errors.length]);
+
   return (
     <div className="space-y-5 pb-5">
       <section className="relative overflow-hidden rounded-2xl border-2 border-[#332746] bg-[#fff0f7] p-5 sm:p-7 shadow-[4px_4px_0_rgba(51,39,70,.12)]">
