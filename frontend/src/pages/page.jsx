@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const shortcuts = [
   { title: "Penyedia AI", description: "Tambah dan kelola koneksi penyedia model AI.", href: "/dashboard/providers", icon: Server, tone: "cyan" },
   { title: "Endpoint API", description: "Lihat alamat API untuk menghubungkan aplikasi.", href: "/dashboard/endpoint", icon: Activity, tone: "coral" },
-  { title: "Obrolan Kompatibel", description: "Buka antarmuka obrolan yang kompatibel dengan API.", href: "/dashboard/chat", icon: MessageSquare, tone: "pink" },
+  { title: "Obrolan Kompatibel", description: "Buka antarmuka obrolan yang kompatibel dengan API.", href: "/dashboard/compatible-chat", icon: MessageSquare, tone: "pink" },
   { title: "Deteksi Model", description: "Periksa model yang tersedia dari penyedia.", href: "/dashboard/model-detection", icon: Search, tone: "yellow" },
   { title: "Gabungan Model", description: "Atur urutan model dan strategi cadangan.", href: "/dashboard/combos", icon: Layers, tone: "purple" },
   { title: "Penggunaan", description: "Pantau statistik penggunaan dan permintaan API.", href: "/dashboard/usage", icon: BarChart3, tone: "green" },
