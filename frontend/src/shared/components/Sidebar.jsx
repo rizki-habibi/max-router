@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Activity, BarChart3, Bot, Layers, MessageSquare, Search, Server, SlidersHorizontal, Terminal, Network, Settings, Power, Copy } from "lucide-react";
+import { Activity, BarChart3, Bot, Layers, MessageSquare, Search, Server, SlidersHorizontal, Terminal, Network, Settings, Power, Copy, Home } from "lucide-react";
 import PropTypes from "prop-types";
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
@@ -11,7 +11,7 @@ import Button from "./Button";
 import { ConfirmModal } from "./Modal";
 
 const NAV_ICONS = {
-  api: Activity, dns: Server, chat: MessageSquare, manage_search: Search,
+  home: Home, api: Activity, dns: Server, chat: MessageSquare, manage_search: Search,
   layers: Layers, bar_chart: BarChart3, tune: SlidersHorizontal,
   terminal: Terminal, lan: Network, smart_toy: Bot, settings: Settings,
 };
@@ -25,7 +25,7 @@ function NavIcon({ name, active = false }) {
 }
 
 const navItems = [
-  { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
+  { href: "/dashboard", label: "Beranda", icon: "home" },
   { href: "/dashboard/providers", label: "Penyedia", icon: "dns" },
   { href: "/dashboard/chat", label: "Obrolan Kompatibel", icon: "chat" },
   { href: "/dashboard/model-detection", label: "Deteksi Model", icon: "manage_search" },
@@ -63,9 +63,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
   }, []);
 
   const isActive = (href) => {
-    if (href === "/dashboard/endpoint") {
-      return pathname === "/dashboard" || pathname.startsWith("/dashboard/endpoint");
-    }
+    if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
   };
 
