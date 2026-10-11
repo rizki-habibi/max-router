@@ -103,7 +103,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
 
   return (
     <>
-      <aside className={cn("mr-comic-sidebar flex shrink-0 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-[width] duration-200 min-h-full", collapsed ? "w-[72px]" : "w-72")}>
+      <aside className={cn("mr-comic-sidebar flex shrink-0 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-[width] duration-200 min-h-full", collapsed ? "w-[64px]" : "w-[232px]")}>
         {/* Sidebar controls */}
         <div className={cn("flex items-center pt-4 pb-2", collapsed ? "flex-col gap-3 px-3" : "justify-between px-5")}>
           <div className="flex items-center gap-2" aria-label="Status Max Router">
@@ -124,7 +124,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         </div>
 
         {/* Logo */}
-        <div className={cn("py-4 flex flex-col gap-2", collapsed ? "px-3 items-center" : "px-6")}>
+        <div className={cn("py-4 flex flex-col gap-2", collapsed ? "px-2 items-center" : "px-4")}>
           <Link to="/dashboard" className={cn("flex items-center", collapsed ? "justify-center" : "gap-3") } title={collapsed ? "9Router V3" : undefined}>
             <img src="/branding/9router-v3-logo.png" alt="9Router V3" className="size-9 rounded-[10px] object-contain" />
             <div className={cn("flex flex-col", collapsed ? "hidden" : "")}>
@@ -162,7 +162,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         </div>
 
         {/* Navigasi */}
-        <nav className={cn("flex-1 py-2 space-y-1 overflow-y-auto custom-scrollbar", collapsed ? "px-2" : "px-4")}>
+        <nav className={cn("flex-1 py-2 space-y-1 overflow-y-auto custom-scrollbar", collapsed ? "px-2" : "px-3")}>
           {navItems.map((item) => (
             <Link
               key={item.href}
