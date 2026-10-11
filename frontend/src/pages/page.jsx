@@ -1,4 +1,5 @@
-import { Activity, Bot, Layers, MessageSquare, Search, Server, BarChart3, SlidersHorizontal, Network, Settings, ArrowUpRight, Zap } from "lucide-react";
+import { Activity, Bot, Layers, MessageSquare, Search, Server, BarChart3, SlidersHorizontal, Network, Settings, ArrowUpRight, Zap, X, Filter, CircleAlert, CircleDollarSign, CheckCircle2, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 const shortcuts = [
