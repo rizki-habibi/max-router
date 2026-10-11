@@ -407,7 +407,7 @@ aside.mr-comic-sidebar .mr-comic-sidebar-toggle:hover {
   color: #302344 !important;
 }
 @media (min-width: 1024px) {
-  aside.mr-comic-sidebar.w-\\[64px\\] {
+  aside.mr-comic-sidebar.mr-comic-sidebar-collapsed {
     width: 64px !important;
     min-width: 64px !important;
     padding-left: 5px !important;
