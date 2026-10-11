@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const [apiKeys, setApiKeys] = useState([]);
   const [combos, setCombos] = useState([]);
   const [repairing, setRepairing] = useState(false);
+  const [autoRepairAttempted, setAutoRepairAttempted] = useState(false);
   const [repairedCount, setRepairedCount] = useState(0);
   const [notice, setNotice] = useState("");
   const [loadingMetrics, setLoadingMetrics] = useState(true);
@@ -127,20 +128,25 @@ export default function DashboardPage() {
     setRepairing(true);
     setNotice("");
     let fixed = 0;
+    let cooldownsCleared = 0;
     try {
       const availabilityRes = await fetch("/api/models/availability", { cache: "no-store" });
       const availabilityData = availabilityRes.ok ? await availabilityRes.json() : { models: [] };
+      const uniqueCooldowns = new Map();
       for (const item of (Array.isArray(availabilityData.models) ? availabilityData.models : [])) {
+        if (item?.provider && item?.model && item.model !== "__all") uniqueCooldowns.set(`${item.provider}:${item.model}`, item);
+      }
+      for (const item of uniqueCooldowns.values()) {
         if (!item?.provider || !item?.model || item.model === "__all") continue;
         try {
           const res = await fetch("/api/models/availability", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "clearCooldown", provider: item.provider, model: item.model }),
           });
-          if (res.ok) fixed += 1;
+          if (res.ok) cooldownsCleared += 1;
         } catch {}
       }
-      for (const item of metrics.errors) {
+      for (const item of metrics.errors.filter((entry) => entry?._kind === "connection").slice(0, 10)) {
         if (item?._kind !== "connection" || !item?.id) continue;
         try {
           const res = await fetch(`/api/providers/${encodeURIComponent(item.id)}/test`, { method: "POST" });
@@ -148,7 +154,7 @@ export default function DashboardPage() {
         } catch {}
       }
       setRepairedCount((count) => count + fixed);
-      setNotice(fixed ? `Pemeriksaan selesai. ${fixed} tindakan pemulihan berhasil.` : "Pemeriksaan selesai. Error belum pulih otomatis; periksa pesan error, status provider, dan API key.");
+      setNotice(`Pemeriksaan selesai: ${cooldownsCleared} cooldown dibersihkan, ${fixed} koneksi lolos tes. Error yang tersisa perlu diperiksa manual.`);
       await refreshMetrics();
     } finally { setRepairing(false); }
   };
