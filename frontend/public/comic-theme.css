@@ -287,3 +287,133 @@ aside.mr-comic-sidebar .mr-comic-sidebar-toggle:hover { background: #ff79b0 !imp
 
 /* Remove translucent/oversized appearance from provider cards */
 .mr-provider-topology-card { opacity: 1 !important; }
+
+
+/* Sidebar baru — ringkas, solid, nyaman dibaca */
+aside.mr-comic-sidebar {
+  width: 232px;
+  min-width: 232px;
+  background: #302344 !important;
+  background-image: none !important;
+  color: #fff5fb !important;
+  border: 0 !important;
+  border-right: 1px solid #4d3a60 !important;
+  box-shadow: none !important;
+  padding: 0 10px 10px !important;
+  gap: 0 !important;
+}
+aside.mr-comic-sidebar > div:first-child {
+  min-height: 48px;
+  padding: 10px 8px 6px !important;
+  border-bottom: 1px solid #4d3a60;
+}
+aside.mr-comic-sidebar > div:nth-child(2) {
+  padding: 14px 8px 12px !important;
+}
+aside.mr-comic-sidebar > div:nth-child(2) img {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  background: #ff9fc9;
+  padding: 3px;
+}
+aside.mr-comic-sidebar > div:nth-child(2) h1 {
+  font-family: 'Comic Neue', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  letter-spacing: -.02em !important;
+  color: #fff5fb !important;
+  font-weight: 800 !important;
+}
+aside.mr-comic-sidebar > div:nth-child(2) span {
+  color: #cbb9dc !important;
+}
+aside.mr-comic-sidebar > nav {
+  padding: 4px 2px 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  scrollbar-width: thin;
+  scrollbar-color: #725784 #302344;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item {
+  min-height: 38px !important;
+  height: 38px;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  display: flex !important;
+  gap: 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #d9cde5 !important;
+  text-decoration: none !important;
+  transition: background .15s ease, color .15s ease, border-color .15s ease !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item:hover {
+  background: #493457 !important;
+  border-color: #62476e !important;
+  color: #ffffff !important;
+  transform: none !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item[aria-current="page"] {
+  background: #ffb0d0 !important;
+  border-color: #ffc9df !important;
+  color: #35223f !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+}
+aside.mr-comic-sidebar .mr-comic-nav-item > span:not(.mr-comic-icon-tile) {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+aside.mr-comic-sidebar .mr-comic-icon-tile {
+  width: 27px !important;
+  height: 27px !important;
+  min-width: 27px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+aside.mr-comic-sidebar .mr-comic-icon-tile svg {
+  width: 15px;
+  height: 15px;
+}
+aside.mr-comic-sidebar nav > div.pt-3 {
+  margin-top: 8px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid #4d3a60;
+}
+aside.mr-comic-sidebar nav > div.pt-3 > p {
+  padding-left: 10px !important;
+  margin-bottom: 5px !important;
+  font-size: 9px !important;
+  letter-spacing: .12em !important;
+  color: #bca7ce !important;
+}
+aside.mr-comic-sidebar .mr-comic-sidebar-toggle {
+  color: #302344 !important;
+  background: #ffb0d0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-size: 19px !important;
+}
+aside.mr-comic-sidebar .mr-comic-sidebar-toggle:hover {
+  background: #ffd0e3 !important;
+  color: #302344 !important;
+}
+@media (min-width: 1024px) {
+  aside.mr-comic-sidebar.w-\\[64px\\] {
+    width: 64px !important;
+    min-width: 64px !important;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+  }
+}
+@media (max-width: 1023px) {
+  aside.mr-comic-sidebar { width: 232px !important; min-width: 232px !important; }
+}
