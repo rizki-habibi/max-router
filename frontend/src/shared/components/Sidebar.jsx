@@ -27,7 +27,7 @@ function NavIcon({ name, active = false }) {
 const navItems = [
   { href: "/dashboard", label: "Beranda", icon: "home" },
   { href: "/dashboard/providers", label: "Penyedia", icon: "dns" },
-  { href: "/dashboard/chat", label: "Obrolan Kompatibel", icon: "chat" },
+  { href: "/dashboard/compatible-chat", label: "Obrolan Kompatibel", icon: "chat" },
   { href: "/dashboard/model-detection", label: "Deteksi Model", icon: "manage_search" },
   { href: "/dashboard/combos", label: "Gabungan", icon: "layers" },
   { href: "/dashboard/usage", label: "Penggunaan", icon: "bar_chart" },
